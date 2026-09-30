@@ -1,0 +1,46 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "CFBundleDisplayName": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tickler"
+          }
+        }
+      }
+    },
+    "CFBundleName": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tickler"
+          }
+        }
+      }
+    },
+    "NSHumanReadableCopyright": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licence MIT"
+          }
+        }
+      }
+    },
+    "NSCalendarsFullAccessUsageDescription": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tickler copie tes rappels dans le calendrier que tu choisis, pour qu'ils apparaissent à côté de tes réunions."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
