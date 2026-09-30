@@ -172,3 +172,19 @@ final class Counter: @unchecked Sendable {
         lock.withLock { count += 1 }
     }
 }
+
+struct ReminderStoreSyncTests {
+    @Test func syncCandidatesIncludeOpenAndMapped() throws {
+        let store = try Fixture.store()
+        let open = try store.add(Fixture.draft("open", at: "2026-10-01 11:00"))
+        let doneMapped = try store.add(Fixture.draft("done mapped", at: "2026-10-01 12:00"))
+        let doneUnmapped = try store.add(Fixture.draft("done unmapped", at: "2026-10-01 13:00"))
+        try store.markDone(doneMapped.id)
+        try store.markDone(doneUnmapped.id)
+        try store.saveMapping(CalendarMapping(reminderId: doneMapped.id, eventIdentifier: "ev", calendarId: "c", syncedHash: "h"))
+
+        #expect(try store.syncCandidates().map(\.id) == [open.id, doneMapped.id])
+        try store.deleteMapping(reminderId: doneMapped.id)
+        #expect(try store.calendarMappings().isEmpty)
+    }
+}
