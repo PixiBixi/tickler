@@ -3,11 +3,11 @@
 Reminders that Claude Code writes for you, with a macOS menu bar app that notifies you on time and brings the Claude session back in one click.
 
 - `tickler`: the CLI Claude uses to add, list and close reminders (JSON output).
-- `Tickler.app`: menu bar item with a badge, a window filtered by date, notifications with actions (resume the session, snooze, reschedule, done, open the ticket or Slack thread), and a one-way copy of every reminder into a calendar of your choice.
+- `Tickler.app`: menu bar item with a badge, a window filtered by date, notifications with actions (resume the session, snooze, reschedule, done, open the ticket or Slack thread), live status of the linked MRs, tickets and PRs with an Approve button, and a one-way copy of every reminder into a calendar of your choice.
 
 Both share one SQLite file: `~/Library/Application Support/Tickler/tickler.sqlite`. The CLI works while the app is closed; the app picks up its changes instantly.
 
-Requirements: macOS 14 or later, Xcode 16 or later, [XcodeGen](https://github.com/yonaskolb/XcodeGen), [WezTerm](https://wezterm.org) for session resume.
+Requirements: macOS 14 or later, Xcode 16 or later, [XcodeGen](https://github.com/yonaskolb/XcodeGen). Optional: [WezTerm](https://wezterm.org), [Ghostty](https://ghostty.org) or [iTerm2](https://iterm2.com) for session resume; `glab`, `jira` ([jira-cli](https://github.com/ankitpokhrel/jira-cli)) and `gh`, logged in, for live status.
 
 ## Install
 
@@ -35,7 +35,8 @@ make install DEVELOPMENT_TEAM=XXXXXXXXXX
 | `tickler snooze <id> --for 1h` | Pushes it back from now: `15m`, `1h`, `2d`. Or `--to "YYYY-MM-DD HH:MM"` |
 | `tickler edit <id>` | `--title`, `--at`, `--notes <text>` or `--notes -` |
 | `tickler rm <id>` | Deletes it |
-| `tickler resume <id>` | Focuses the WezTerm pane of the reminder's Claude session, or reopens it with `claude --resume` in the reminder's folder |
+| `tickler resume <id>` | Focuses the tab of the reminder's Claude session in WezTerm, Ghostty or iTerm2, or reopens it with `claude --resume` in the reminder's folder. `TICKLER_TERMINAL=wezterm\|ghostty\|iterm` picks where new tabs open |
+| `tickler status <id>` | Live state of the linked GitLab MRs, Jira issues and GitHub PRs (pipeline, approvals, ticket status, checks). `--json` |
 | `tickler import-apple --list Claude` | One-shot import of the open reminders of an Apple Reminders list, which is left untouched |
 
 - `--session` defaults to `CLAUDE_CODE_SESSION_ID`, and `--cwd` to the current directory when a session is known.
@@ -75,6 +76,7 @@ Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 | Menu bar | Count of today's reminders (overdue included); the glyph turns solid while one is overdue. The popover shows the next reminder with Resume, Snooze and Done, then overdue, today, tomorrow and later |
 | Window | Views (Today, Next 7 Days, Overdue, All, Done), projects from the session folder, a 7-day strip to filter on a day, search, and a detail pane where title, date and notes edit in place |
 | Notifications | One per reminder at its time, with Resume Session, Snooze 15 min, Snooze 1 hour, Tomorrow 09:30, Reschedule (type "jeudi 14h" or "in 3h"), Open Ticket, Open Slack Thread or Open Link, Mark Done. Reminders missed while the Mac slept are notified on wake, as one summary beyond three |
+| Live status | For each linked GitLab MR, Jira issue or GitHub PR: pipeline, approvals, threads, conflicts, ticket status and assignee, checks. **Approve…** appears when GitLab says you may approve, and asks for confirmation first. Data from `glab`, `jira` and `gh`, run through your login shell, refreshed when older than 2 minutes |
 | Calendar | Every open reminder from 7 days ago to 60 days ahead becomes a 15 min event marked Free, without alert, with a `tickler://open/<id>` link |
 
 Keyboard: `⌘N` new reminder, `⌘R` resume the session, `⌘↩` mark done, `⌘O` open the window from the popover.
@@ -86,6 +88,7 @@ The date fields accept French and English: `demain 9h30`, `lundi 10h`, `dans 2h`
 | Setting | Default |
 |---|---|
 | Calendar | None. Pick a writable calendar, for instance a "Claude" calendar created in Google Calendar with its default notifications set to none |
+| Terminal | Automatic: a running session is found in WezTerm, Ghostty or iTerm2; new tabs open in the first one running. Or force one |
 | WezTerm binary | Found automatically in `/opt/homebrew/bin`, `/usr/local/bin`, then the app bundle |
 | Language | System, or force English or French (after a relaunch) |
 | Open at login | Off |
@@ -105,7 +108,7 @@ For notifications to stay on screen until you act, set Tickler to **Alerts** in 
 
 `lefthook install` sets up the pre-commit (format, lint, gitleaks, markdownlint, actionlint) and commit-msg (Conventional Commits) hooks. Debug builds write PNGs of their windows when started with `TICKLER_SNAPSHOT=<dir>`.
 
-Layout: `Sources/TicklerCore` (model, store, date parsing, planners, session resume), `Sources/TicklerCLI`, `App/` (SwiftUI app), `project.yml` (XcodeGen), `assets/brand` (icon masters). Design notes live in `docs/superpowers`.
+Layout: `Sources/TicklerCore` (model, store, date parsing, planners, session resume, live status), `Sources/TicklerCLI`, `App/` (SwiftUI app), `project.yml` (XcodeGen), `assets/brand` (icon masters). Design notes live in `docs/superpowers`.
 
 ## License
 
