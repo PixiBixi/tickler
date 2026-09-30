@@ -46,6 +46,7 @@ final class NotificationService: NSObject {
         let settings = await center.notificationSettings()
         if settings.authorizationStatus == .notDetermined {
             _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+            AppModel.shared.bringToFront()
         } else if let url =
             URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=\(Tickler.bundleIdentifier)")
         {

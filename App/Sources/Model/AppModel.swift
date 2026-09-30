@@ -68,6 +68,12 @@ final class AppModel {
 
     private var pendingWindowOpen = false
 
+    /// A system permission prompt takes focus away; once answered, nothing gives it back, and the window ends up behind others.
+    func bringToFront() {
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.windows.first { $0.identifier?.rawValue.contains(WindowID.main) == true && $0.isVisible }?.makeKeyAndOrderFront(nil)
+    }
+
     func showMainWindow() {
         if let openMainWindow {
             openMainWindow()

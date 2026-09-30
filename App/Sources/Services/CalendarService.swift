@@ -49,6 +49,7 @@ final class CalendarService {
 
     func requestAccess() async -> Bool {
         let granted = await (try? eventStore.requestFullAccessToEvents()) ?? false
+        AppModel.shared.bringToFront()
         loadCalendars()
         return granted
     }
