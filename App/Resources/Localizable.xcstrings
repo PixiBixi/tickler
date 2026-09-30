@@ -1164,6 +1164,16 @@
         }
       }
     },
+    "Settings (⌘,)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réglages (⌘,)"
+          }
+        }
+      }
+    },
     "Snooze": {
       "localizations": {
         "fr": {

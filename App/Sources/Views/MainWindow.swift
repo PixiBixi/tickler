@@ -91,7 +91,15 @@ struct SidebarView: View {
                     .foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
                 }
-                CalendarStatusLabel()
+                HStack {
+                    CalendarStatusLabel()
+                    Spacer()
+                    SettingsLink {
+                        Image(systemName: "gearshape").font(.system(size: 13))
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Settings (⌘,)")
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 18)

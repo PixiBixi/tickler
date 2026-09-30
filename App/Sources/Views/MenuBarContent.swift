@@ -125,6 +125,11 @@ struct MenuBarContent: View {
                 .keyboardShortcut("o")
             Spacer()
             CalendarStatusLabel()
+            SettingsLink {
+                Image(systemName: "gearshape")
+            }
+            .buttonStyle(.borderless)
+            .help("Settings (⌘,)")
         }
         .font(.system(size: 12))
         .foregroundStyle(.secondary)
