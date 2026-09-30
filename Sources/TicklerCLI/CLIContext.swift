@@ -40,6 +40,7 @@ public struct CLIContext: Sendable {
     public var fetchAppleReminders: @Sendable (String) throws -> Data
     public var stdout: Output
     public var stderr: Output
+    public var liveRunner: CommandRunning = DirectRunner()
 
     public static var live: CLIContext {
         CLIContext(

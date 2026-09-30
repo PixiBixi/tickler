@@ -32,21 +32,37 @@ struct CLIHarness {
     var environment: [String: String] = [:]
     var stdin = ""
     var fetchApple: @Sendable (String) throws -> Data = { _ in Data("[]".utf8) }
+    var liveRunner: CommandRunning = StubRunner(responses: [:])
 
     func run(_ arguments: String...) -> CLIResult {
         let out = Output()
         let err = Output()
         let input = stdin
         let apple = fetchApple
-        let context = CLIContext(
+        var context = CLIContext(
             environment: environment, currentDirectory: "/work/current", calendar: Self.calendar, now: { Self.now },
             readStdin: { input }, notifyChange: {}, makeDriver: { nil }, fetchAppleReminders: apple, stdout: out, stderr: err
         )
+        context.liveRunner = liveRunner
         let code = TicklerCommand.run(arguments + ["--db", database], context: context)
         return CLIResult(code: code, out: out.captured, err: err.captured)
     }
 
     func store() throws -> ReminderStore {
         try ReminderStore(database: TicklerDatabase(path: database), calendar: Self.calendar, now: { Self.now }, onChange: {})
+    }
+}
+
+/// Answers a tool call by the suffix of its command line; throws for the tools listed in `failing`.
+struct StubRunner: CommandRunning {
+    let responses: [String: String]
+    var failing: Set<String> = []
+
+    func run(_ tool: String, _ arguments: [String]) async throws -> Data {
+        if failing.contains(tool) {
+            throw LiveError.failed(tool: tool, message: "not logged in")
+        }
+        let line = ([tool] + arguments).joined(separator: " ")
+        return Data((responses.first { line.hasSuffix($0.key) }?.value ?? "{}").utf8)
     }
 }
