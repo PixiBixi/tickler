@@ -1,0 +1,5 @@
+# Line length is not enforced: prose is never hard-wrapped, and tables and code blocks run long.
+default: true
+MD013: false
+# Table pipe spacing is cosmetic and editors format tables differently.
+MD060: false
