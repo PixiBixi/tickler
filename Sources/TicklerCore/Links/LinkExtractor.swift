@@ -22,7 +22,9 @@ public enum LinkExtractor {
             guard let swiftRange = Range(match.range, in: text) else { continue }
             let raw = String(text[swiftRange]).trimmingCharacters(in: trailing)
             guard raw.hasPrefix("http://") || raw.hasPrefix("https://"), let url = URL(string: raw) else { continue }
-            if seen.insert(url.absoluteString).inserted { urls.append(url) }
+            if seen.insert(url.absoluteString).inserted {
+                urls.append(url)
+            }
         }
         return urls
     }
@@ -56,7 +58,9 @@ public enum LinkExtractor {
         var seen = Set(urls.map(\.absoluteString))
         for raw in explicit {
             guard let url = URL(string: raw.trimmingCharacters(in: .whitespaces)), url.scheme?.hasPrefix("http") == true else { continue }
-            if seen.insert(url.absoluteString).inserted { urls.append(url) }
+            if seen.insert(url.absoluteString).inserted {
+                urls.append(url)
+            }
         }
         return urls.enumerated().map { position, url in
             let (kind, label) = classify(url)

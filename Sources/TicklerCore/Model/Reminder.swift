@@ -35,7 +35,9 @@ public struct Reminder: Codable, Hashable, Sendable, Identifiable, FetchableReco
     public var project: String? {
         guard let cwd, !cwd.isEmpty else { return nil }
         let path = (cwd as NSString).standardizingPath
-        if path == NSHomeDirectory() || path == "~" { return "~" }
+        if path == NSHomeDirectory() || path == "~" {
+            return "~"
+        }
         return (path as NSString).lastPathComponent
     }
 }

@@ -114,7 +114,9 @@ public final class ReminderStore: Sendable {
             reminder.dueAt = dueAt
             reminder.rescheduleCount += 1
             reminder.notifiedAt = nil
-            if reminder.status == .done { reminder.status = .open; reminder.doneAt = nil }
+            if reminder.status == .done {
+                reminder.status = .open; reminder.doneAt = nil
+            }
         }
     }
 
@@ -126,8 +128,12 @@ public final class ReminderStore: Sendable {
         }
         guard title != nil || notes != nil else { return try require(id) }
         return try mutate(id) { reminder, _ in
-            if let title { reminder.title = title }
-            if let notes { reminder.notes = notes }
+            if let title {
+                reminder.title = title
+            }
+            if let notes {
+                reminder.notes = notes
+            }
         } afterSave: { db, before, after in
             guard before.notes != after.notes else { return }
             let fromOldNotes = Set(LinkExtractor.extract(from: before.notes).map(\.absoluteString))

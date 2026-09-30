@@ -18,7 +18,9 @@ public final class TicklerDatabase: Sendable {
 
     /// `TICKLER_DB` overrides the default location, for tests and experiments.
     public static func defaultPath(environment: [String: String] = ProcessInfo.processInfo.environment) -> String {
-        if let override = environment["TICKLER_DB"], !override.isEmpty { return override }
+        if let override = environment["TICKLER_DB"], !override.isEmpty {
+            return override
+        }
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return support.appendingPathComponent("Tickler/tickler.sqlite").path
     }
