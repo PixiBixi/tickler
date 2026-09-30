@@ -32,10 +32,26 @@ final class NotificationService: NSObject {
         }
     }
 
+    private(set) var status: UNAuthorizationStatus = .notDetermined
+
     func refreshSettings() async {
         let settings = await center.notificationSettings()
-        authorized = settings.authorizationStatus == .authorized
+        status = settings.authorizationStatus
+        authorized = [.authorized, .provisional].contains(settings.authorizationStatus)
         usesBanners = settings.alertStyle == .banner
+    }
+
+    /// macOS shows its prompt only once: after a refusal, the only way is System Settings.
+    func requestOrOpenSettings() async {
+        let settings = await center.notificationSettings()
+        if settings.authorizationStatus == .notDetermined {
+            _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+        } else if let url =
+            URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=\(Tickler.bundleIdentifier)")
+        {
+            NSWorkspace.shared.open(url)
+        }
+        await refreshSettings()
     }
 
     /// Applies the plan and clears banners of reminders done, deleted or moved since. Returns the reminders whose

@@ -1,3 +1,4 @@
+import AppKit
 import EventKit
 import Foundation
 import TicklerCore
@@ -29,6 +30,21 @@ final class CalendarService {
             _ = await requestAccess()
         }
         loadCalendars()
+    }
+
+    /// Asked once by macOS; refused or write-only access can only be changed in System Settings.
+    func requestOrOpenSettings() async {
+        if EKEventStore.authorizationStatus(for: .event) == .notDetermined {
+            _ = await requestAccess()
+        } else if !hasAccess, let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars") {
+            NSWorkspace.shared.open(url)
+        }
+        loadCalendars()
+    }
+
+    var isRefused: Bool {
+        let status = EKEventStore.authorizationStatus(for: .event)
+        return status != .notDetermined && status != .fullAccess
     }
 
     func requestAccess() async -> Bool {
