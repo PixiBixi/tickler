@@ -41,6 +41,11 @@ public final class ReminderStore: Sendable {
         return reminder
     }
 
+    /// Any status: a deleted import still counts as imported.
+    public func find(externalRef: String) throws -> Reminder? {
+        try database.pool.read { db in try Reminder.filter(Column("externalRef") == externalRef).fetchOne(db) }
+    }
+
     public func links(for id: String) throws -> [ReminderLink] {
         try database.pool.read { db in
             try ReminderLink.filter(Column("reminderId") == id).order(Column("position")).fetchAll(db)

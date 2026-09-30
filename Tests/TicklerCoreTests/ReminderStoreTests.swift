@@ -56,6 +56,15 @@ struct ReminderStoreTests {
         #expect(try store.links(for: added.id).map(\.label) == ["OPS-2204", "rollout-readiness"])
     }
 
+    @Test func findsByExternalRef() throws {
+        let store = try Fixture.store()
+        var draft = Fixture.draft("Imported", at: "2026-10-02 09:00")
+        draft.externalRef = "x-apple-reminder://ABC"
+        let added = try store.add(draft)
+        #expect(try store.find(externalRef: "x-apple-reminder://ABC")?.id == added.id)
+        #expect(try store.find(externalRef: "other") == nil)
+    }
+
     @Test func getUnknownReturnsNil() throws {
         #expect(try Fixture.store().get("zzzzzz") == nil)
     }
