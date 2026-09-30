@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><title>Tickler symbol</title>
+<circle cx="128" cy="128" r="102" fill="none" stroke="#000" stroke-width="22"/>
+<path d="M78 78 L128 128 L94 162" fill="none" stroke="#000" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="146" y="147" width="42" height="22" rx="5" fill="#000"/>
+</svg>
