@@ -5,8 +5,15 @@ public protocol ProcessInspecting: Sendable {
     func isAlive(_ pid: Int32) -> Bool
     /// `/dev/ttysNNN` of the process' controlling terminal.
     func ttyPath(of pid: Int32) -> String?
-    /// A `claude --resume <id>` process, if one runs.
-    func pid(runningResumeOf sessionId: String) -> Int32?
+    func commandLine(of pid: Int32) -> [String]?
+    /// One pass over the process table: the session id of every running `claude --resume <id>`, with its pid.
+    func resumedSessions() -> [String: Int32]
+}
+
+public extension ProcessInspecting {
+    func pid(runningResumeOf sessionId: String) -> Int32? {
+        resumedSessions()[sessionId]
+    }
 }
 
 /// Reads the process table through libproc and sysctl, no `ps` subprocess.
@@ -26,17 +33,22 @@ public struct SystemProcessInspector: ProcessInspecting {
         return "/dev/" + String(cString: name)
     }
 
-    public func pid(runningResumeOf sessionId: String) -> Int32? {
+    public func commandLine(of pid: Int32) -> [String]? {
+        arguments(of: pid)
+    }
+
+    public func resumedSessions() -> [String: Int32] {
         let count = proc_listallpids(nil, 0)
-        guard count > 0 else { return nil }
+        guard count > 0 else { return [:] }
         var pids = [Int32](repeating: 0, count: Int(count) * 2)
         let filled = proc_listallpids(&pids, Int32(pids.count * MemoryLayout<Int32>.stride))
+        var sessions: [String: Int32] = [:]
         for pid in pids.prefix(Int(max(filled, 0))) where pid > 0 {
-            if let args = arguments(of: pid), Self.isResume(of: sessionId, arguments: args) {
-                return pid
+            if let args = arguments(of: pid), let id = Self.resumedSession(in: args) {
+                sessions[id] = pid
             }
         }
-        return nil
+        return sessions
     }
 
     func arguments(of pid: Int32) -> [String]? {
@@ -68,9 +80,26 @@ public struct SystemProcessInspector: ProcessInspecting {
         return args
     }
 
+    /// `claude` itself, or node running the Claude Code package (npm installs).
+    static func isClaude(_ args: [String]) -> Bool {
+        args.prefix(2).contains { ($0 as NSString).lastPathComponent == "claude" || $0.contains("claude-code") }
+    }
+
+    /// The session id of `claude --resume <id>`, `-r <id>` or `--resume=<id>`.
+    static func resumedSession(in args: [String]) -> String? {
+        guard isClaude(args) else { return nil }
+        for (index, arg) in args.enumerated() {
+            if arg.hasPrefix("--resume=") {
+                return String(arg.dropFirst("--resume=".count))
+            }
+            if arg == "--resume" || arg == "-r", index + 1 < args.count {
+                return args[index + 1]
+            }
+        }
+        return nil
+    }
+
     static func isResume(of sessionId: String, arguments args: [String]) -> Bool {
-        guard let first = args.first, (first as NSString).lastPathComponent == "claude",
-              let flag = args.firstIndex(of: "--resume"), flag + 1 < args.count else { return false }
-        return args[flag + 1] == sessionId
+        resumedSession(in: args) == sessionId
     }
 }

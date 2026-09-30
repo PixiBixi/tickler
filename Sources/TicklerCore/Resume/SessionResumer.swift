@@ -71,10 +71,23 @@ public struct SessionResumer: Sendable {
 
     /// The registry covers sessions started normally; a session resumed from another one has no file, so match its command line.
     func livePid(of sessionId: String) -> Int32? {
-        if let record = registry.records(for: sessionId).first(where: { inspector.isAlive($0.pid) }) {
+        if let record = registry.records(for: sessionId).first(where: isLive) {
             return record.pid
         }
         return inspector.pid(runningResumeOf: sessionId)
+    }
+
+    /// Registry files outlive their process and pids get reused: the pid must still be a Claude process.
+    private func isLive(_ record: SessionRegistry.Record) -> Bool {
+        inspector.isAlive(record.pid) && inspector.commandLine(of: record.pid).map(SystemProcessInspector.isClaude) == true
+    }
+
+    /// Which of `sessionIds` still run, reading the registry once and the process table once.
+    public func runningSessions(_ sessionIds: Set<String>) -> Set<String> {
+        guard !sessionIds.isEmpty else { return [] }
+        let live = Set(registry.allRecords().filter { sessionIds.contains($0.sessionId) && isLive($0) }.map(\.sessionId))
+        let resumed = Set(inspector.resumedSessions().keys)
+        return sessionIds.filter { live.contains($0) || resumed.contains($0) }
     }
 
     /// Scrubs the calling session's markers: an inherited CLAUDE_CODE_CHILD_SESSION turns transcript saving off.
@@ -104,10 +117,13 @@ public struct SessionRegistry: Sendable {
     }
 
     public func records(for sessionId: String) -> [Record] {
+        allRecords().filter { $0.sessionId == sessionId }
+    }
+
+    public func allRecords() -> [Record] {
         let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
         return files
             .filter { $0.pathExtension == "json" }
             .compactMap { try? JSONDecoder().decode(Record.self, from: Data(contentsOf: $0)) }
-            .filter { $0.sessionId == sessionId }
     }
 }

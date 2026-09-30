@@ -8,6 +8,7 @@ final class FakeInspector: ProcessInspecting, @unchecked Sendable {
     var alive: Set<Int32> = []
     var ttys: [Int32: String] = [:]
     var resumePid: Int32?
+    var commandLines: [Int32: [String]] = [:]
 
     func isAlive(_ pid: Int32) -> Bool {
         alive.contains(pid)
@@ -17,8 +18,13 @@ final class FakeInspector: ProcessInspecting, @unchecked Sendable {
         ttys[pid]
     }
 
-    func pid(runningResumeOf _: String) -> Int32? {
-        resumePid
+    /// Alive pids look like Claude unless a test says otherwise.
+    func commandLine(of pid: Int32) -> [String]? {
+        commandLines[pid] ?? (alive.contains(pid) ? ["claude"] : nil)
+    }
+
+    func resumedSessions() -> [String: Int32] {
+        resumePid.map { [sessionId: $0] } ?? [:]
     }
 }
 
@@ -89,6 +95,24 @@ struct SessionResumerTests {
         #expect(driver.calls == ["activate 3", "front"])
     }
 
+    @Test func reusedPidIsNotTheSession() throws {
+        try writeRecord(pid: 100)
+        let inspector = FakeInspector()
+        inspector.alive = [100]
+        inspector.commandLines = [100: ["/usr/bin/vim"]]
+        let driver = FakeDriver()
+        #expect(try resumer(inspector, driver).resume(sessionId: sessionId, fallbackCwd: folder) == .spawned(paneId: "42"))
+        #expect(resumer(inspector, driver).runningSessions([sessionId]).isEmpty)
+    }
+
+    @Test func runningSessionsChecksEachIdOnce() throws {
+        try writeRecord(pid: 100)
+        let inspector = FakeInspector()
+        inspector.alive = [100]
+        let other = "11111111-2222-3333-4444-555555555555"
+        #expect(resumer(inspector, FakeDriver()).runningSessions([sessionId, other]) == [sessionId])
+    }
+
     @Test func staleRecordSpawnsInTheReminderFolder() throws {
         try writeRecord(pid: 100)
         let driver = FakeDriver()
@@ -155,6 +179,18 @@ struct ProcessArgumentsTests {
         buffer.append(Data("/opt/homebrew/bin/claude\0\0\0".utf8))
         buffer.append(Data("claude\0--resume\0\(sessionId)\0HOME=/Users/x\0".utf8))
         #expect(SystemProcessInspector.arguments(fromProcArgs: buffer) == ["claude", "--resume", sessionId])
+    }
+
+    @Test func matchesOtherResumeForms() {
+        #expect(SystemProcessInspector.resumedSession(in: ["claude", "-r", sessionId]) == sessionId)
+        #expect(SystemProcessInspector.resumedSession(in: ["claude", "--resume=\(sessionId)"]) == sessionId)
+        #expect(SystemProcessInspector.resumedSession(in: [
+            "node",
+            "/opt/lib/node_modules/@anthropic-ai/claude-code/cli.js",
+            "--resume",
+            sessionId,
+        ]) == sessionId)
+        #expect(SystemProcessInspector.resumedSession(in: ["claude"]) == nil)
     }
 
     @Test func matchesResumeInvocations() {

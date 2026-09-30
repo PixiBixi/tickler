@@ -37,6 +37,6 @@ public enum SnoozePreset: String, CaseIterable, Sendable {
 public extension SessionResumer {
     /// Whether the session still runs somewhere, to show "running" or "ended" next to Resume.
     func isRunning(sessionId: String) -> Bool {
-        livePid(of: sessionId) != nil
+        !runningSessions([sessionId]).isEmpty
     }
 }
