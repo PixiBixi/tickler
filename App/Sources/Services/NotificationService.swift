@@ -38,13 +38,16 @@ final class NotificationService: NSObject {
         usesBanners = settings.alertStyle == .banner
     }
 
-    func reconcile(reminders: [Reminder], links: [String: [ReminderLink]]) async {
+    /// Applies the plan and clears banners of reminders done, deleted or moved since. Returns the reminders whose
+    /// banner is on screen but not yet recorded as notified: the app was in the background when they fired.
+    func reconcile(reminders: [Reminder], links: [String: [ReminderLink]]) async -> [String] {
         let pending = await center.pendingNotificationRequests().map(\.identifier)
             .filter { !$0.hasPrefix(NotificationCategory.summaryIdentifier) }
         let plan = NotificationPlanner.plan(reminders: reminders, links: links, pendingIds: Set(pending), now: Date())
         center.removePendingNotificationRequests(withIdentifiers: plan.remove)
         for planned in plan.add {
-            let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: planned.reminder.dueAt)
+            // With a time zone the components name an absolute instant: travel does not shift the reminder.
+            let components = Calendar.current.dateComponents(in: .current, from: planned.reminder.dueAt)
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             let request = UNNotificationRequest(
                 identifier: planned.id,
@@ -53,6 +56,13 @@ final class NotificationService: NSObject {
             )
             try? await center.add(request)
         }
+        let delivered = await center.deliveredNotifications().map(\.request.identifier)
+        center.removeDeliveredNotifications(withIdentifiers: NotificationPlanner.staleDelivered(
+            deliveredIds: delivered,
+            reminders: reminders
+        ))
+        let shown = Set(delivered)
+        return reminders.filter { $0.notifiedAt == nil && shown.contains(NotificationPlanner.requestId(for: $0)) }.map(\.id)
     }
 
     /// Returns the ids of the reminders it notified, for the model to record.
@@ -147,7 +157,13 @@ final class NotificationService: NSObject {
                 actions.append(link)
             }
             actions.append(done)
-            return UNNotificationCategory(identifier: category.rawValue, actions: actions, intentIdentifiers: [], options: [])
+            // customDismissAction: clearing a banner counts as "seen", so catch-up does not show it again.
+            return UNNotificationCategory(
+                identifier: category.rawValue,
+                actions: actions,
+                intentIdentifiers: [],
+                options: [.customDismissAction]
+            )
         })
         categories.insert(UNNotificationCategory(
             identifier: NotificationCategory.summaryIdentifier,
@@ -158,10 +174,16 @@ final class NotificationService: NSObject {
         return categories
     }
 
-    fileprivate func handle(action: String, reminderId: String?, text: String?) {
+    /// A banner left from before a done, delete or reschedule must not act on the reminder as it is now.
+    fileprivate func handle(action: String, requestId: String, reminderId: String?, text: String?) {
         let model = AppModel.shared
-        guard let reminderId, let reminder = model.open.first(where: { $0.id == reminderId }) ?? (try? model.store?.get(reminderId)) else {
-            model.openMainWindow?()
+        guard let reminderId, let reminder = try? model.store?.get(reminderId) else {
+            model.showMainWindow()
+            return
+        }
+        guard NotificationPlanner.isCurrent(requestId: requestId, reminder: reminder) else {
+            model.reveal(reminderId)
+            model.showToast(String(localized: "This notification is out of date: the reminder changed since."))
             return
         }
         let targets = LinkTargets(links: model.links(of: reminder))
@@ -199,32 +221,39 @@ extension NotificationService: UNUserNotificationCenterDelegate {
         _: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        let reminderId = notification.request.content.userInfo["reminderId"] as? String
-        await MainActor.run {
-            if let reminderId {
-                try? AppModel.shared.store?.markNotified([reminderId], at: Date())
-            }
-        }
+        let requestId = notification.request.identifier
+        await MainActor.run { NotificationService.recordShown(requestId: requestId) }
         return [.banner, .list, .sound]
     }
 
     nonisolated func userNotificationCenter(_: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         let action = response.actionIdentifier
+        let requestId = response.notification.request.identifier
         let reminderId = response.notification.request.content.userInfo["reminderId"] as? String
         let text = (response as? UNTextInputNotificationResponse)?.userText
         await MainActor.run {
-            if let reminderId {
-                try? AppModel.shared.store?.markNotified([reminderId], at: Date())
-            }
-            if action == UNNotificationDefaultActionIdentifier {
+            NotificationService.recordShown(requestId: requestId)
+            switch action {
+            case UNNotificationDismissActionIdentifier:
+                break
+            case UNNotificationDefaultActionIdentifier:
                 if let reminderId {
                     AppModel.shared.reveal(reminderId)
                 } else {
-                    AppModel.shared.openMainWindow?()
+                    AppModel.shared.showMainWindow()
                 }
-            } else if action != UNNotificationDismissActionIdentifier {
-                AppModel.shared.notifications.handle(action: action, reminderId: reminderId, text: text)
+            default:
+                AppModel.shared.notifications.handle(action: action, requestId: requestId, reminderId: reminderId, text: text)
             }
         }
+    }
+
+    /// Only a banner for the reminder's current time counts: an old one must not hide the next catch-up.
+    @MainActor
+    private static func recordShown(requestId: String) {
+        let reminderId = NotificationPlanner.reminderId(fromRequestId: requestId)
+        guard let store = AppModel.shared.store, let reminder = try? store.get(reminderId),
+              NotificationPlanner.isCurrent(requestId: requestId, reminder: reminder) else { return }
+        try? store.markNotified([reminderId], at: Date())
     }
 }
