@@ -50,7 +50,10 @@ public struct CLIContext: Sendable {
             now: { Date() },
             readStdin: { String(decoding: FileHandle.standardInput.readDataToEndOfFile(), as: UTF8.self) },
             notifyChange: { ChangeNotifier.post() },
-            makeDriver: { WezTermDriver.resolveBinary().map(WezTermDriver.init(binary:)) },
+            makeDriver: {
+                let choice = TerminalChoice(rawValue: ProcessInfo.processInfo.environment["TICKLER_TERMINAL"] ?? "") ?? .auto
+                return choice.driver()
+            },
             fetchAppleReminders: { try AppleRemindersSource.fetch(list: $0) },
             stdout: Output { FileHandle.standardOutput.write(Data($0.utf8)) },
             stderr: Output { FileHandle.standardError.write(Data($0.utf8)) }

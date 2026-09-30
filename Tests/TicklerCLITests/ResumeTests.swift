@@ -12,7 +12,7 @@ struct ResumeTests {
         #expect(result.err == "error: reminder \(id) has no Claude session\n")
     }
 
-    @Test func missingWezTermIsRuntimeError() throws {
+    @Test func missingTerminalIsRuntimeError() throws {
         let cli = CLIHarness()
         let id = try #require(
             cli.run(
@@ -21,7 +21,7 @@ struct ResumeTests {
         )
         let result = cli.run("resume", id)
         #expect(result.code == 1)
-        #expect(result.err.contains("WezTerm not found"))
+        #expect(result.err.contains("no supported terminal found"))
     }
 
     @Test func unknownIdExitsWithThree() {
@@ -35,11 +35,11 @@ struct ResumeTests {
     }
 
     @Test(arguments: [
-        PaneCase(outcome: .focused(paneId: "5"), environment: ["WEZTERM_PANE": "9"], expected: "9"),
-        PaneCase(outcome: .spawned(paneId: "12"), environment: ["WEZTERM_PANE": "9"], expected: "9"),
-        PaneCase(outcome: .focused(paneId: "9"), environment: ["WEZTERM_PANE": "9"], expected: nil),
-        PaneCase(outcome: .focused(paneId: "5"), environment: ["WEZTERM_PANE": "9", "CLAUDECODE": "1"], expected: nil),
-        PaneCase(outcome: .focused(paneId: "5"), environment: [:], expected: nil),
+        PaneCase(outcome: .focused(paneId: "wezterm:5"), environment: ["WEZTERM_PANE": "9"], expected: "wezterm:9"),
+        PaneCase(outcome: .spawned(paneId: "iterm:ABC"), environment: ["WEZTERM_PANE": "9"], expected: "wezterm:9"),
+        PaneCase(outcome: .focused(paneId: "wezterm:9"), environment: ["WEZTERM_PANE": "9"], expected: nil),
+        PaneCase(outcome: .focused(paneId: "wezterm:5"), environment: ["WEZTERM_PANE": "9", "CLAUDECODE": "1"], expected: nil),
+        PaneCase(outcome: .focused(paneId: "wezterm:5"), environment: [:], expected: nil),
         PaneCase(outcome: .startedWindow, environment: ["WEZTERM_PANE": "9"], expected: nil),
     ])
     func closesOnlyAHumanShellInAnotherPane(_ row: PaneCase) {
