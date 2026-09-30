@@ -50,8 +50,9 @@ final class FakeDriver: TerminalDriver, @unchecked Sendable {
         return "42"
     }
 
-    func start(cwd: String, command _: [String]) throws {
+    func start(cwd: String, command _: [String]) throws -> String? {
         calls.append("start \(cwd)")
+        return nil
     }
 
     func bringToFront() {

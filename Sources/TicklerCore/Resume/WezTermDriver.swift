@@ -7,8 +7,9 @@ public protocol TerminalDriver: Sendable {
     func activate(paneId: String) throws
     /// New tab in the running terminal; returns its pane id.
     func spawn(cwd: String, command: [String]) throws -> String
-    /// New window when the terminal is not running; does not wait for it.
-    func start(cwd: String, command: [String]) throws
+    /// New window when the terminal is not running; returns the pane id when the terminal reports one.
+    @discardableResult
+    func start(cwd: String, command: [String]) throws -> String?
     func bringToFront()
     func killPane(_ paneId: String) throws
 }
@@ -49,13 +50,14 @@ public struct WezTermDriver: TerminalDriver {
         try run(["cli", "spawn", "--cwd", cwd, "--"] + command).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    public func start(cwd: String, command: [String]) throws {
+    public func start(cwd: String, command: [String]) throws -> String? {
         let process = Process()
         process.executableURL = binary
         process.arguments = ["start", "--cwd", cwd, "--"] + command
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         do { try process.run() } catch { throw ResumeError.terminal("cannot start WezTerm: \(error.localizedDescription)") }
+        return nil
     }
 
     public func bringToFront() {

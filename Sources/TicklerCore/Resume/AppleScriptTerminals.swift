@@ -9,8 +9,14 @@ public struct OSAScriptRunner: ScriptRunning {
     public init() {}
 
     public func run(_ source: String, arguments: [String]) throws -> String {
-        try WezTermDriver.execute(URL(fileURLWithPath: "/usr/bin/osascript"), ["-e", source] + arguments)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        do {
+            return try WezTermDriver.execute(URL(fileURLWithPath: "/usr/bin/osascript"), ["-e", source] + arguments)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        } catch let ResumeError.terminal(message) {
+            // osascript errors end with "execution error: <text> (<code>)": keep that, not the whole script.
+            let reason = message.components(separatedBy: "execution error: ").last ?? message
+            throw ResumeError.terminal("AppleScript: \(reason)")
+        }
     }
 }
 
@@ -37,8 +43,12 @@ public struct AppleScriptTerminalDriver: TerminalDriver {
         )) == "true"
     }
 
+    /// nil: not in this terminal. Empty string: this terminal cannot say (no `tty` in its dictionary).
     public func paneId(forTTY tty: String) throws -> String? {
         let id = try runner.run(findScript, arguments: [tty])
+        if id == "?" {
+            return ""
+        }
         return id.isEmpty ? nil : id
     }
 
@@ -50,8 +60,8 @@ public struct AppleScriptTerminalDriver: TerminalDriver {
         try runner.run(spawnScript, arguments: [cwd, "cd " + shellJoin([cwd]) + " && " + shellJoin(command)])
     }
 
-    public func start(cwd: String, command: [String]) throws {
-        _ = try spawn(cwd: cwd, command: command)
+    public func start(cwd: String, command: [String]) throws -> String? {
+        try spawn(cwd: cwd, command: command)
     }
 
     /// The scripts above already bring the app forward.
@@ -119,11 +129,16 @@ public struct AppleScriptTerminalDriver: TerminalDriver {
     public static func ghostty(runner: ScriptRunning = OSAScriptRunner()) -> AppleScriptTerminalDriver {
         AppleScriptTerminalDriver(
             bundleIdentifier: "com.mitchellh.ghostty",
+            // Ghostty 1.3.1 has no `tty` on terminals yet: answer "?" (cannot tell) instead of failing.
             findScript: """
             on run argv
               tell application id "com.mitchellh.ghostty"
                 repeat with t in terminals
-                  if tty of t is (item 1 of argv) then return id of t
+                  try
+                    if tty of t is (item 1 of argv) then return id of t
+                  on error
+                    return "?"
+                  end try
                 end repeat
               end tell
               return ""
@@ -139,10 +154,23 @@ public struct AppleScriptTerminalDriver: TerminalDriver {
               return "ok"
             end run
             """,
+            // Started cold, Ghostty opens its own first window: type into it rather than adding a second, empty tab.
             spawnScript: """
             on run argv
+              set wasRunning to application id "com.mitchellh.ghostty" is running
               tell application id "com.mitchellh.ghostty"
                 activate
+                if not wasRunning then
+                  repeat 50 times
+                    if (count of windows) > 0 then exit repeat
+                    delay 0.1
+                  end repeat
+                  if (count of windows) > 0 then
+                    set t to focused terminal of selected tab of front window
+                    input text ((item 2 of argv) & linefeed) to t
+                    return id of t
+                  end if
+                end if
                 set cfg to new surface configuration
                 set initial working directory of cfg to (item 1 of argv)
                 set initial input of cfg to (item 2 of argv) & linefeed
@@ -178,45 +206,54 @@ public struct CompositeTerminalDriver: TerminalDriver {
     }
 
     let members: [Member]
+    let forced: Bool
 
-    /// `members` in order of preference.
-    public init(members: [Member]) {
+    /// `members` in order of preference. `forced`: new tabs open in the first installed member even when another runs.
+    public init(members: [Member], forced: Bool = false) {
         self.members = members
+        self.forced = forced
     }
 
     public func isRunning() -> Bool {
         members.contains { $0.driver.isRunning() }
     }
 
+    /// An exact match wins; failing that, a running terminal that cannot search by tty is the best guess and gets focus.
     public func paneId(forTTY tty: String) throws -> String? {
+        var guess: String?
         for member in members where member.driver.isRunning() {
-            if let pane = try? member.driver.paneId(forTTY: tty) {
+            guard let pane = try? member.driver.paneId(forTTY: tty) else { continue }
+            if !pane.isEmpty {
                 return "\(member.name):\(pane)"
             }
+            guess = guess ?? "\(member.name):"
         }
-        return nil
+        return guess
     }
 
+    /// An empty pane id means a terminal just started without reporting its pane: bringing it forward is all there is to do.
     public func activate(paneId: String) throws {
         let (member, pane) = try resolve(paneId)
-        try member.driver.activate(paneId: pane)
+        if !pane.isEmpty {
+            try member.driver.activate(paneId: pane)
+        }
         member.driver.bringToFront()
     }
 
-    /// The preferred terminal among the running ones, else the preferred installed one.
+    /// The chosen terminal when forced, else the preferred running one, else the preferred installed one.
     public func spawn(cwd: String, command: [String]) throws -> String {
-        guard let member = members.first(where: { $0.driver.isRunning() }) ?? members.first(where: \.installed) else {
+        let chosen = forced ? members.first(where: \.installed) : nil
+        guard let member = chosen ?? members.first(where: { $0.driver.isRunning() }) ?? members.first(where: \.installed) else {
             throw ResumeError.terminal("no supported terminal found (WezTerm, Ghostty or iTerm2)")
         }
         if member.driver.isRunning() {
             return try "\(member.name):" + member.driver.spawn(cwd: cwd, command: command)
         }
-        try member.driver.start(cwd: cwd, command: command)
-        return "\(member.name):"
+        return try "\(member.name):" + (member.driver.start(cwd: cwd, command: command) ?? "")
     }
 
-    public func start(cwd: String, command: [String]) throws {
-        _ = try spawn(cwd: cwd, command: command)
+    public func start(cwd: String, command: [String]) throws -> String? {
+        try spawn(cwd: cwd, command: command)
     }
 
     public func bringToFront() {}
@@ -282,6 +319,6 @@ public enum TerminalChoice: String, CaseIterable, Sendable {
         if let index = members.firstIndex(where: { $0.name == rawValue }) {
             members.insert(members.remove(at: index), at: 0)
         }
-        return CompositeTerminalDriver(members: members)
+        return CompositeTerminalDriver(members: members, forced: self != .auto)
     }
 }

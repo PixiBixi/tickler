@@ -60,7 +60,7 @@ public struct SessionResumer: Sendable {
         }
         let command = Self.resumeCommand(sessionId: sessionId)
         guard driver.isRunning() else {
-            try driver.start(cwd: folder, command: command)
+            _ = try driver.start(cwd: folder, command: command)
             return .startedWindow
         }
         let pane = try driver.spawn(cwd: folder, command: command)

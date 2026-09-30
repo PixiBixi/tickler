@@ -53,6 +53,28 @@ struct TerminalDriverTests {
         #expect(wezterm.calls.isEmpty)
     }
 
+    @Test func aTerminalThatCannotSearchIsOnlyAGuess() throws {
+        let ghostty = FakeDriver()
+        ghostty.panes = ["/dev/ttys001": ""]
+        let iterm = FakeDriver()
+        iterm.panes = ["/dev/ttys001": "S9"]
+        let both = CompositeTerminalDriver(members: [
+            .init(name: "ghostty", driver: ghostty, installed: true),
+            .init(name: "iterm", driver: iterm, installed: true),
+        ])
+        #expect(try both.paneId(forTTY: "/dev/ttys001") == "iterm:S9")
+        let alone = CompositeTerminalDriver(members: [.init(name: "ghostty", driver: ghostty, installed: true)])
+        #expect(try alone.paneId(forTTY: "/dev/ttys001") == "ghostty:")
+        try alone.activate(paneId: "ghostty:")
+        #expect(ghostty.calls == ["front"])
+    }
+
+    @Test func questionMarkMeansCannotTell() throws {
+        let runner = RecordingScriptRunner()
+        runner.reply = "?"
+        #expect(try AppleScriptTerminalDriver.ghostty(runner: runner).paneId(forTTY: "/dev/ttys001") == "")
+    }
+
     @Test func compositeSpawnsInThePreferredRunningTerminal() throws {
         let ghostty = FakeDriver()
         ghostty.running = false
@@ -65,6 +87,19 @@ struct TerminalDriverTests {
         iterm.running = false
         #expect(try composite.spawn(cwd: "/tmp", command: ["x"]) == "ghostty:")
         #expect(ghostty.calls == ["start /tmp"])
+    }
+
+    @Test func aForcedChoiceWinsOverARunningTerminal() throws {
+        let iterm = FakeDriver()
+        iterm.running = false
+        let wezterm = FakeDriver()
+        let composite = CompositeTerminalDriver(members: [
+            .init(name: "iterm", driver: iterm, installed: true),
+            .init(name: "wezterm", driver: wezterm, installed: true),
+        ], forced: true)
+        #expect(try composite.spawn(cwd: "/tmp", command: ["x"]) == "iterm:")
+        #expect(iterm.calls == ["start /tmp"])
+        #expect(wezterm.calls.isEmpty)
     }
 
     @Test func choicePutsTheChosenTerminalFirst() {
