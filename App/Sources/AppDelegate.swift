@@ -23,6 +23,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Opening the app again (Finder, Spotlight, `open`) shows the window: the menu bar icon can be hidden by the notch.
+    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows _: Bool) -> Bool {
+        MainActor.assumeIsolated {
+            AppModel.shared.showMainWindow()
+        }
+        return false
+    }
+
     func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
         false
     }
