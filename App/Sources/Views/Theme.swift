@@ -37,6 +37,8 @@ extension Reminder {
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .lineLimit(1)
+            .fixedSize()
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(Theme.onAccent)
             .padding(.horizontal, 12)
@@ -49,6 +51,8 @@ struct PrimaryButtonStyle: ButtonStyle {
 struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .lineLimit(1)
+            .fixedSize()
             .font(.system(size: 13))
             .padding(.horizontal, 11)
             .frame(height: 30)
