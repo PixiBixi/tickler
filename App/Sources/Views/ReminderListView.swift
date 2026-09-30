@@ -13,6 +13,7 @@ struct ReminderListView: View {
             Divider()
             if model.visibleGroups.isEmpty {
                 ContentUnavailableView(emptyTitle, systemImage: "checkmark.seal", description: Text(emptyDetail))
+                    .frame(maxHeight: .infinity)
             } else {
                 List(selection: $model.selection) {
                     ForEach(model.visibleGroups) { group in
@@ -45,6 +46,7 @@ struct ReminderListView: View {
                 }
             }
         }
+        .frame(maxHeight: .infinity, alignment: .top)
         .navigationTitle(title)
         .searchable(text: $model.search, placement: .toolbar, prompt: "Search")
         .toolbar {
