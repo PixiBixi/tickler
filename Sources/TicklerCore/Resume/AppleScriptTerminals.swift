@@ -242,6 +242,25 @@ public enum TerminalChoice: String, CaseIterable, Sendable {
     case ghostty
     case iterm
 
+    /// What Settings offers: Automatic, then the terminals found on this Mac.
+    public static func available(weztermPath: String? = nil, fileManager: FileManager = .default) -> [TerminalChoice] {
+        [.auto] + [.wezterm, .ghostty, .iterm].filter { $0.isInstalled(weztermPath: weztermPath, fileManager: fileManager) }
+    }
+
+    public func isInstalled(weztermPath: String? = nil, fileManager: FileManager = .default) -> Bool {
+        switch self {
+        case .auto: true
+        case .wezterm: WezTermDriver.resolveBinary(configured: weztermPath, fileManager: fileManager) != nil
+        case .ghostty: Self.appInstalled("Ghostty.app", fileManager: fileManager)
+        case .iterm: Self.appInstalled("iTerm.app", fileManager: fileManager)
+        }
+    }
+
+    static func appInstalled(_ bundle: String, fileManager: FileManager) -> Bool {
+        let home = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Applications/\(bundle)").path
+        return fileManager.fileExists(atPath: "/Applications/\(bundle)") || fileManager.fileExists(atPath: home)
+    }
+
     /// The drivers in preference order: the chosen terminal first, then WezTerm, Ghostty, iTerm2.
     public func driver(weztermPath: String? = nil, fileManager: FileManager = .default) -> CompositeTerminalDriver {
         let wezterm = WezTermDriver.resolveBinary(configured: weztermPath, fileManager: fileManager)
@@ -253,11 +272,11 @@ public enum TerminalChoice: String, CaseIterable, Sendable {
             ),
             CompositeTerminalDriver.Member(
                 name: "ghostty", driver: AppleScriptTerminalDriver.ghostty(),
-                installed: fileManager.fileExists(atPath: "/Applications/Ghostty.app")
+                installed: TerminalChoice.ghostty.isInstalled(fileManager: fileManager)
             ),
             CompositeTerminalDriver.Member(
                 name: "iterm", driver: AppleScriptTerminalDriver.iTerm(),
-                installed: fileManager.fileExists(atPath: "/Applications/iTerm.app")
+                installed: TerminalChoice.iterm.isInstalled(fileManager: fileManager)
             ),
         ]
         if let index = members.firstIndex(where: { $0.name == rawValue }) {

@@ -72,4 +72,10 @@ struct TerminalDriverTests {
         #expect(order == ["iterm", "wezterm", "ghostty"])
         #expect(TerminalChoice.auto.driver().members.map(\.name) == ["wezterm", "ghostty", "iterm"])
     }
+
+    @Test func availableAlwaysOffersAutomaticFirst() {
+        let choices = TerminalChoice.available()
+        #expect(choices.first == .auto)
+        #expect(Set(choices).isSubset(of: Set(TerminalChoice.allCases)))
+    }
 }
