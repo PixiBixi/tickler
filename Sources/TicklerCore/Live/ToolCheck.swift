@@ -40,6 +40,13 @@ public enum ToolCheck {
         AppToolRunner.locate(tool.rawValue, fileManager: fileManager)?.path
     }
 
+    /// The Homebrew version from the Cellar path the binary links to, without running the tool.
+    public static func version(of binary: String, fileManager: FileManager = .default) -> String? {
+        let resolved = URL(fileURLWithPath: binary).resolvingSymlinksInPath().pathComponents
+        guard let cellar = resolved.firstIndex(of: "Cellar"), cellar + 2 < resolved.count else { return nil }
+        return resolved[cellar + 2]
+    }
+
     public static func homebrew(fileManager: FileManager = .default) -> URL? {
         ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"].first { fileManager.isExecutableFile(atPath: $0) }.map(URL.init(fileURLWithPath:))
     }

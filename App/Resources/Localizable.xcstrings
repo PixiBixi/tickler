@@ -1794,6 +1794,16 @@
         }
       }
     },
+    "installed": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "installé"
+          }
+        }
+      }
+    },
     "merged": {
       "localizations": {
         "fr": {

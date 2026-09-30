@@ -145,8 +145,12 @@ struct OnboardingView: View {
                             Text(tool.purpose).foregroundStyle(.secondary)
                             Spacer()
                             if let path = tools[tool] {
-                                Label(path, systemImage: "checkmark.circle.fill").labelStyle(.titleAndIcon).foregroundStyle(.green)
-                                    .lineLimit(1)
+                                Label(
+                                    ToolCheck.version(of: path).map { "v\($0)" } ?? String(localized: "installed"),
+                                    systemImage: "checkmark.circle.fill"
+                                )
+                                .foregroundStyle(.green)
+                                .help(path)
                             } else {
                                 Text("not installed").foregroundStyle(.secondary)
                             }
