@@ -38,11 +38,13 @@ public struct TicklerCommand: ParsableCommand {
 
     public static func run(_ arguments: [String], context: CLIContext) -> Int32 {
         do {
-            guard let command = try parseAsRoot(arguments) as? TicklerSubcommand else {
-                context.stderr.line(helpMessage())
-                return 2
+            var command = try parseAsRoot(arguments)
+            if let subcommand = command as? TicklerSubcommand {
+                try subcommand.execute(context)
+                return 0
             }
-            try command.execute(context)
+            // `tickler help <cmd>` and the bare root: ArgumentParser's own commands print the right help.
+            try command.run()
             return 0
         } catch let error as StoreError {
             context.stderr.line("error: \(error)")
