@@ -17,6 +17,7 @@ struct MainWindow: View {
             if let reminder = model.selectedReminder {
                 ReminderDetailView(reminder: reminder)
                     .id(reminder.id)
+                    .background(Color(nsColor: .windowBackgroundColor))
             } else {
                 ContentUnavailableView(
                     "No Reminder Selected",

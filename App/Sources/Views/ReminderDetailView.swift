@@ -212,6 +212,7 @@ struct ReminderDetailView: View {
                 sectionTitle("Claude Session")
                 HStack(spacing: 10) {
                     Text(sessionId).font(.system(size: 12, design: .monospaced)).textSelection(.enabled)
+                        .lineLimit(1).truncationMode(.middle)
                     Spacer()
                     let running = model.runningSessions.contains(sessionId)
                     Label(
@@ -219,6 +220,7 @@ struct ReminderDetailView: View {
                         systemImage: running ? "circle.fill" : "circle"
                     )
                     .font(.system(size: 11))
+                    .fixedSize()
                     .foregroundStyle(running ? .green : .secondary)
                 }
                 .padding(.horizontal, 10)
