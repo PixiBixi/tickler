@@ -14,7 +14,7 @@ struct MainWindow: View {
                 .frame(width: 232)
             Divider()
             ReminderListView()
-                .frame(minWidth: 360, idealWidth: 440, maxWidth: 520)
+                .frame(minWidth: 360, idealWidth: 440, maxWidth: 560)
             Divider()
             Group {
                 if let reminder = model.selectedReminder {

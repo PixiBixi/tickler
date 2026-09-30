@@ -12,24 +12,53 @@ struct ReminderDetailView: View {
     @State private var loadedNotes = ""
     @State private var dateText = ""
     @State private var editingDate = false
+    @State private var paneSize = CGSize(width: 800, height: 700)
     @FocusState private var dateFocused: Bool
     @FocusState private var notesFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    header
-                    actions
-                    LiveStatusSection(reminder: reminder)
-                    notesEditor
-                    linksSection
-                    sessionSection
+                // Wide windows (full screen): the context rail moves to the right instead of piling up below.
+                if paneSize.width >= Self.twoColumnWidth {
+                    HStack(alignment: .top, spacing: 32) {
+                        VStack(alignment: .leading, spacing: 18) {
+                            header
+                            actions
+                            notesEditor(minHeight: max(260, paneSize.height - 260))
+                        }
+                        .frame(maxWidth: 820, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 18) {
+                            LiveStatusSection(reminder: reminder)
+                            linksSection
+                            sessionSection
+                        }
+                        .frame(width: 400)
+                    }
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 24)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                } else {
+                    VStack(alignment: .leading, spacing: 18) {
+                        header
+                        actions
+                        LiveStatusSection(reminder: reminder)
+                        notesEditor(minHeight: 140)
+                        linksSection
+                        sessionSection
+                    }
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 22)
+                    .frame(maxWidth: 760, alignment: .leading)
                 }
-                .padding(.horizontal, 28)
-                .padding(.vertical, 22)
-                .frame(maxWidth: 720, alignment: .leading)
             }
+            // Fill the pane: sized to its content, the scroller sat mid-pane and the width read here stayed narrow.
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(GeometryReader { proxy in
+                Color.clear
+                    .onAppear { paneSize = proxy.size }
+                    .onChange(of: proxy.size) { _, size in paneSize = size }
+            })
             Divider()
             footer
         }
@@ -159,7 +188,9 @@ struct ReminderDetailView: View {
 
     // MARK: Sections
 
-    private var notesEditor: some View {
+    static let twoColumnWidth: CGFloat = 1000
+
+    private func notesEditor(minHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             sectionTitle("Notes")
             TextEditor(text: $notes)
@@ -167,7 +198,7 @@ struct ReminderDetailView: View {
                 .lineSpacing(3)
                 .scrollContentBackground(.hidden)
                 .focused($notesFocused)
-                .frame(minHeight: 120)
+                .frame(minHeight: minHeight)
                 .padding(8)
                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
         }

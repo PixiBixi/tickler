@@ -6,7 +6,11 @@ enum Theme {
     /// The design's three grounds, system colors so light mode follows.
     static let sidebarBackground = Color(nsColor: .underPageBackgroundColor)
     static let listBackground = Color(nsColor: .windowBackgroundColor)
-    static let detailBackground = Color(nsColor: .textBackgroundColor).opacity(0.35)
+    static let detailBackground = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? NSColor(srgbRed: 0.125, green: 0.125, blue: 0.137, alpha: 1)
+            : NSColor(srgbRed: 0.984, green: 0.984, blue: 0.988, alpha: 1)
+    })
     static let overdue = Color(red: 1.0, green: 0.42, blue: 0.38)
     /// Dark text on the accent fill: white on it fails contrast.
     static let onAccent = Color(red: 0.11, green: 0.07, blue: 0.03)
