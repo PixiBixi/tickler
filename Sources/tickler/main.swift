@@ -1,0 +1,3 @@
+import TicklerCLI
+
+TicklerCommand.main()

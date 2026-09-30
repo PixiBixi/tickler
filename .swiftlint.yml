@@ -1,0 +1,30 @@
+included:
+  - Sources
+  - Tests
+  - App/Sources
+excluded:
+  - .build
+  - build
+disabled_rules:
+  - todo
+  - trailing_comma
+  - opening_brace
+opt_in_rules:
+  - empty_count
+  - first_where
+  - sorted_first_last
+  - contains_over_first_not_nil
+  - redundant_nil_coalescing
+line_length:
+  warning: 140
+  error: 160
+identifier_name:
+  excluded: [id, db, at, to, ok, fr, en, r, i, n, s]
+type_body_length:
+  warning: 400
+file_length:
+  warning: 600
+function_body_length:
+  warning: 60
+nesting:
+  type_level: 2
