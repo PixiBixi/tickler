@@ -7,8 +7,14 @@ struct ToolCheckTests {
         #expect(ToolCheck.installArguments(for: [.glab, .jira, .gh]) == ["install", "glab", "jira-cli", "gh"])
     }
 
-    @Test func locatesAToolThroughTheLoginShell() async {
-        #expect(await ToolCheck.locate(.gh, shell: "/bin/zsh") != nil || !FileManager.default.fileExists(atPath: "/opt/homebrew/bin/gh"))
+    @Test func locatesToolsOnDisk() {
+        #expect((ToolCheck.locate(.gh) != nil) == FileManager.default.isExecutableFile(atPath: "/opt/homebrew/bin/gh"))
+    }
+
+    @Test func onlyJiraNeedsTheShell() {
+        #expect(AppToolRunner.needsShell("jira"))
+        #expect(!AppToolRunner.needsShell("glab"))
+        #expect(!AppToolRunner.needsShell("gh"))
     }
 
     @Test func loginCommands() {

@@ -115,3 +115,52 @@ public struct DirectRunner: CommandRunning {
         }.value
     }
 }
+
+/// The app's runner: glab and gh straight from the usual install folders, with no shell, as their logins live in
+/// ~/.config. jira goes through the login shell because JIRA_API_TOKEN usually exists only in the shell profile.
+public struct AppToolRunner: CommandRunning {
+    public static let searchPath = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"]
+
+    let shell: LoginShellRunner
+
+    public init(shell: LoginShellRunner = LoginShellRunner()) {
+        self.shell = shell
+    }
+
+    public static func needsShell(_ tool: String) -> Bool {
+        tool == ExternalTool.jira.rawValue
+    }
+
+    public static func locate(_ tool: String, fileManager: FileManager = .default) -> URL? {
+        searchPath.map { URL(fileURLWithPath: $0).appendingPathComponent(tool) }.first { fileManager.isExecutableFile(atPath: $0.path) }
+    }
+
+    public func run(_ tool: String, _ arguments: [String]) async throws -> Data {
+        if Self.needsShell(tool) {
+            return try await shell.run(tool, arguments)
+        }
+        guard let binary = Self.locate(tool) else { throw LiveError.toolMissing(tool) }
+        return try await Task.detached {
+            let process = Process()
+            process.executableURL = binary
+            process.arguments = arguments
+            var environment = ProcessInfo.processInfo.environment
+            environment["PATH"] = Self.searchPath.joined(separator: ":")
+            process.environment = environment
+            process.standardInput = FileHandle.nullDevice
+            let out = Pipe()
+            let err = Pipe()
+            process.standardOutput = out
+            process.standardError = err
+            try process.run()
+            let output = out.fileHandleForReading.readDataToEndOfFile()
+            let errors = err.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else {
+                let message = String(decoding: errors, as: UTF8.self).split(whereSeparator: \.isNewline).last.map(String.init) ?? ""
+                throw LiveError.failed(tool: tool, message: message.trimmingCharacters(in: .whitespaces))
+            }
+            return output
+        }.value
+    }
+}

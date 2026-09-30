@@ -35,15 +35,9 @@ public extension LiveTarget {
 }
 
 public enum ToolCheck {
-    /// Where the tool resolves in the user's login shell, or nil. The app itself has no shell PATH.
-    public static func locate(
-        _ tool: ExternalTool,
-        shell: String = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
-    ) async -> String? {
-        let output = try? await LoginShellRunner(shell: shell).run("command", ["-v", tool.rawValue])
-        let path = output.map { String(decoding: $0, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines) } ?? ""
-        // An interactive shell may print a banner first: keep the line that is a path.
-        return path.split(whereSeparator: \.isNewline).map(String.init).last { $0.hasPrefix("/") }
+    /// Where the tool is installed, checked on disk: no shell, so no access to a profile kept in Documents.
+    public static func locate(_ tool: ExternalTool, fileManager: FileManager = .default) -> String? {
+        AppToolRunner.locate(tool.rawValue, fileManager: fileManager)?.path
     }
 
     public static func homebrew(fileManager: FileManager = .default) -> URL? {

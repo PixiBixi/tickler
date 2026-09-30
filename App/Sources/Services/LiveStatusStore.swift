@@ -16,7 +16,7 @@ final class LiveStatusStore {
     static let freshness: TimeInterval = 120
 
     private(set) var entries: [String: Entry] = [:]
-    private let fetcher = LiveStatusFetcher(runner: LoginShellRunner())
+    private let fetcher = LiveStatusFetcher(runner: AppToolRunner())
 
     /// Links whose tool the user enabled.
     func supported(_ links: [ReminderLink]) -> [ReminderLink] {
