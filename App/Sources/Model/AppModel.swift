@@ -54,7 +54,25 @@ final class AppModel {
     var toast: Toast?
 
     /// Set by the first view that appears: AppKit code cannot open a SwiftUI window by itself.
-    var openMainWindow: (() -> Void)?
+    /// A reveal asked for before that (a notification click on a cold launch) waits for it.
+    var openMainWindow: (() -> Void)? {
+        didSet {
+            if pendingWindowOpen, let openMainWindow {
+                pendingWindowOpen = false
+                openMainWindow()
+            }
+        }
+    }
+
+    private var pendingWindowOpen = false
+
+    func showMainWindow() {
+        if let openMainWindow {
+            openMainWindow()
+        } else {
+            pendingWindowOpen = true
+        }
+    }
 
     private var observer: ChangeObserver?
     private var ticker: Timer?
@@ -75,16 +93,19 @@ final class AppModel {
         observer = ChangeObserver {
             Task { @MainActor in AppModel.shared.externalChange() }
         }
-        ticker = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
+        ticker = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
             Task { @MainActor in AppModel.shared.tick() }
         }
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { _ in
-            Task { @MainActor in AppModel.shared.externalChange() }
+            Task { @MainActor in
+                AppModel.shared.reload()
+                AppModel.shared.requestReconcile(catchUp: true)
+            }
         }
         notifications.setUp()
         Task {
             await calendarSync.prepare(calendarId: preferences.calendarId)
-            await reconcile(catchUp: true)
+            requestReconcile(catchUp: true)
         }
     }
 
@@ -105,31 +126,65 @@ final class AppModel {
 
     private func externalChange() {
         reload()
-        Task { await reconcile(catchUp: true) }
+        requestReconcile()
     }
 
-    /// Only moves the clock: relative times and overdue colors follow. Session scans stay on reload, they walk the process table.
+    /// Moves the clock for relative times and overdue colors, and rereads the store in case a change signal was missed.
     private func tick() {
-        now = Date()
+        reload()
     }
 
-    func reconcile(catchUp: Bool = false) async {
+    // MARK: Reconciliation
+
+    private var reconciling = false
+    private var reconcileAgain = false
+    private var catchUpRequested = false
+
+    /// One reconciliation at a time: overlapping runs read the same pending state and add the same notification twice.
+    /// Catch-up runs only at start and on wake, as a CLI write is not a missed notification.
+    func requestReconcile(catchUp: Bool = false) {
+        catchUpRequested = catchUpRequested || catchUp
+        guard !reconciling else {
+            reconcileAgain = true
+            return
+        }
+        reconciling = true
+        Task {
+            repeat {
+                reconcileAgain = false
+                let withCatchUp = catchUpRequested
+                catchUpRequested = false
+                await reconcileOnce(catchUp: withCatchUp)
+            } while reconcileAgain || catchUpRequested
+            reconciling = false
+        }
+    }
+
+    private func reconcileOnce(catchUp: Bool) async {
         guard let store else { return }
-        await notifications.reconcile(reminders: open, links: links)
+        let alreadyDelivered = await notifications.reconcile(reminders: open, links: links)
+        var notified = alreadyDelivered
         if catchUp {
-            let notified = await notifications.catchUp(reminders: open, links: links)
-            if !notified.isEmpty {
-                try? store.markNotified(notified, at: Date())
-                reload()
-            }
+            notified += await notifications.catchUp(reminders: open.filter { !alreadyDelivered.contains($0.id) }, links: links)
+        }
+        if !notified.isEmpty {
+            try? store.markNotified(notified, at: Date())
+            reload()
         }
         calendarSync.reconcile(store: store, calendarId: preferences.calendarId)
     }
 
+    /// Off the main actor: it walks the process table.
     private func refreshSessions() {
-        let resumer = SessionResumer(driver: WezTermDriver(binary: URL(fileURLWithPath: "/usr/bin/false")))
         let ids = Set(open.compactMap(\.sessionId))
-        runningSessions = ids.filter { resumer.isRunning(sessionId: $0) }
+        Task {
+            let running = await Task.detached {
+                SessionResumer(driver: WezTermDriver(binary: URL(fileURLWithPath: "/usr/bin/false"))).runningSessions(ids)
+            }.value
+            if running != runningSessions {
+                runningSessions = running
+            }
+        }
     }
 
     // MARK: Derived state
@@ -202,7 +257,7 @@ final class AppModel {
         }
         filter = reminder.status == .done ? .done : .all
         selection = id
-        openMainWindow?()
+        showMainWindow()
     }
 
     func markDone(_ id: String) {
@@ -319,7 +374,7 @@ final class AppModel {
             do {
                 let message = try await work(store)
                 reload()
-                await reconcile()
+                requestReconcile()
                 if let message {
                     showToast(message)
                 }

@@ -15,7 +15,7 @@ struct SettingsView: View {
                         get: { preferences.calendarId ?? "" },
                         set: { value in
                             preferences.calendarId = value.isEmpty ? nil : value
-                            Task { await model.reconcile() }
+                            model.requestReconcile()
                         }
                     )) {
                         Text("None").tag("")

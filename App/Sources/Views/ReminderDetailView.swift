@@ -7,6 +7,9 @@ struct ReminderDetailView: View {
 
     @State private var title = ""
     @State private var notes = ""
+    /// What the fields started from: only a field the user changed is written back, so a CLI edit meanwhile survives.
+    @State private var loadedTitle = ""
+    @State private var loadedNotes = ""
     @State private var dateText = ""
     @State private var editingDate = false
     @FocusState private var dateFocused: Bool
@@ -32,6 +35,8 @@ struct ReminderDetailView: View {
         .onAppear {
             title = reminder.title
             notes = reminder.notes
+            loadedTitle = reminder.title
+            loadedNotes = reminder.notes
             if model.focusDateField {
                 dateText = model.prefilledDateText ?? ""
                 editingDate = true
@@ -46,6 +51,18 @@ struct ReminderDetailView: View {
             }
         }
         .onDisappear { commitNotes() }
+        .onChange(of: reminder.title) { _, newValue in
+            if title == loadedTitle {
+                title = newValue
+            }
+            loadedTitle = newValue
+        }
+        .onChange(of: reminder.notes) { _, newValue in
+            if notes == loadedNotes {
+                notes = newValue
+            }
+            loadedNotes = newValue
+        }
     }
 
     // MARK: Header
@@ -245,13 +262,15 @@ struct ReminderDetailView: View {
 
     private func commitTitle() {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, trimmed != reminder.title else { return }
+        guard title != loadedTitle, !trimmed.isEmpty, trimmed != reminder.title else { return }
+        loadedTitle = title
         model.update(reminder.id, title: trimmed)
     }
 
     private func commitNotes() {
         commitTitle()
-        guard notes != reminder.notes else { return }
+        guard notes != loadedNotes, notes != reminder.notes else { return }
+        loadedNotes = notes
         model.update(reminder.id, notes: notes)
     }
 

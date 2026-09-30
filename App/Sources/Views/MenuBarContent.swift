@@ -64,10 +64,10 @@ struct MenuBarContent: View {
                 Text(summary).font(.system(size: 12)).foregroundStyle(.secondary)
             }
             Spacer()
-            Button { model.openMainWindow?(); model.showQuickAdd = true } label: { Image(systemName: "plus") }
+            Button { model.showMainWindow(); model.showQuickAdd = true } label: { Image(systemName: "plus") }
                 .buttonStyle(.borderless)
                 .help("New Reminder")
-            Button { model.openMainWindow?() } label: { Image(systemName: "sidebar.left") }
+            Button { model.showMainWindow() } label: { Image(systemName: "sidebar.left") }
                 .buttonStyle(.borderless)
                 .help("Open Window")
         }
@@ -120,7 +120,7 @@ struct MenuBarContent: View {
 
     private var footer: some View {
         HStack {
-            Button("Open Window") { model.openMainWindow?() }
+            Button("Open Window") { model.showMainWindow() }
                 .buttonStyle(.borderless)
                 .keyboardShortcut("o")
             Spacer()

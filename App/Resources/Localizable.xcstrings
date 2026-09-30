@@ -64,6 +64,46 @@
         }
       }
     },
+    "%lld calendar events could not be written: %@": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld calendar event could not be written: %@"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld calendar events could not be written: %@"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld événement n'a pas pu être écrit dans le calendrier : %@"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld événements n'ont pas pu être écrits dans le calendrier : %@"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld links": {
       "localizations": {
         "fr": {
@@ -1000,6 +1040,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cet après-midi"
+          }
+        }
+      }
+    },
+    "This notification is out of date: the reminder changed since.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette notification est périmée : le rappel a changé depuis."
           }
         }
       }
