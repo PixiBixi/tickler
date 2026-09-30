@@ -9,6 +9,8 @@ disabled_rules:
   - todo
   - trailing_comma
   - opening_brace
+  # Lossy UTF-8 decoding of process output is intended: a bad byte must not drop the whole message.
+  - optional_data_string_conversion
 opt_in_rules:
   - empty_count
   - first_where
