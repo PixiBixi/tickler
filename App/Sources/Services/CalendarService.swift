@@ -91,34 +91,55 @@ final class CalendarService {
     private func apply(_ action: CalendarAction, calendar: EKCalendar, links: [String: [ReminderLink]], store: ReminderStore) throws {
         switch action {
         case let .create(reminder, hash):
-            let event = EKEvent(eventStore: eventStore)
-            event.calendar = calendar
-            fill(event, reminder: reminder, links: links[reminder.id] ?? [])
-            try eventStore.save(event, span: .thisEvent, commit: true)
-            try store.saveMapping(CalendarMapping(
-                reminderId: reminder.id,
-                eventIdentifier: event.eventIdentifier,
-                calendarId: calendar.calendarIdentifier,
-                syncedHash: hash
-            ))
+            // A previous run may have saved the event and failed before recording it: reuse it rather than duplicate it.
+            let event = findEvent(reminderId: reminder.id, in: calendar) ?? EKEvent(eventStore: eventStore)
+            if event.calendar == nil {
+                event.calendar = calendar
+            }
+            try write(event, reminder: reminder, links: links[reminder.id] ?? [], hash: hash, store: store)
         case let .update(reminder, eventIdentifier, hash):
-            // Saved one by one: the event identifier is only reliable once committed. An event deleted by hand comes back
-            // only because the reminder itself changed.
-            let event = eventStore.event(withIdentifier: eventIdentifier) ?? EKEvent(eventStore: eventStore)
-            event.calendar = event.calendar ?? calendar
-            fill(event, reminder: reminder, links: links[reminder.id] ?? [])
-            try eventStore.save(event, span: .thisEvent, commit: true)
-            try store.saveMapping(CalendarMapping(
-                reminderId: reminder.id,
-                eventIdentifier: event.eventIdentifier,
-                calendarId: calendar.calendarIdentifier,
-                syncedHash: hash
-            ))
+            // An event deleted by hand comes back only because the reminder itself changed.
+            let event = eventStore.event(withIdentifier: eventIdentifier)
+                ?? findEvent(reminderId: reminder.id, in: calendar)
+                ?? EKEvent(eventStore: eventStore)
+            if event.calendar == nil {
+                event.calendar = calendar
+            }
+            try write(event, reminder: reminder, links: links[reminder.id] ?? [], hash: hash, store: store)
         case let .delete(eventIdentifier, reminderId):
-            if let event = eventStore.event(withIdentifier: eventIdentifier) {
+            let owner = eventStore.calendars(for: .event)
+            if let event = eventStore.event(withIdentifier: eventIdentifier) ?? owner.lazy.compactMap({ self.findEvent(
+                reminderId: reminderId,
+                in: $0
+            ) }).first {
                 try eventStore.remove(event, span: .thisEvent, commit: true)
             }
             try store.deleteMapping(reminderId: reminderId)
+        }
+    }
+
+    /// Saved one by one: the event identifier is only reliable once committed.
+    private func write(_ event: EKEvent, reminder: Reminder, links: [ReminderLink], hash: String, store: ReminderStore) throws {
+        fill(event, reminder: reminder, links: links)
+        try eventStore.save(event, span: .thisEvent, commit: true)
+        try store.saveMapping(CalendarMapping(
+            reminderId: reminder.id,
+            eventIdentifier: event.eventIdentifier,
+            calendarId: event.calendar.calendarIdentifier,
+            syncedHash: hash
+        ))
+    }
+
+    /// The event carrying this reminder's marker, for when its stored identifier went stale.
+    private func findEvent(reminderId: String, in calendar: EKCalendar) -> EKEvent? {
+        let now = Date()
+        let predicate = eventStore.predicateForEvents(
+            withStart: now.addingTimeInterval(-CalendarPlanner.pastWindow - 86400),
+            end: now.addingTimeInterval(CalendarPlanner.futureWindow + 86400),
+            calendars: [calendar]
+        )
+        return eventStore.events(matching: predicate).first {
+            CalendarMarker.reminderId(url: $0.url, notes: $0.notes) == reminderId
         }
     }
 
@@ -143,9 +164,7 @@ final class CalendarService {
         event.endDate = reminder.dueAt.addingTimeInterval(15 * 60)
         event.availability = .free
         event.alarms = nil
-        event.url = URL(string: "\(Tickler.urlScheme)://open/\(reminder.id)")
-        let linkLines = links.map { "\($0.label): \($0.url)" }
-        event.notes = ([reminder.notes] + (linkLines.isEmpty ? [] : ["", linkLines.joined(separator: "\n")]))
-            .joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        event.url = URL(string: CalendarMarker.link(for: reminder.id))
+        event.notes = CalendarMarker.notes(for: reminder, links: links)
     }
 }
