@@ -40,6 +40,16 @@
           }
         }
       }
+    },
+    "NSAppleEventsUsageDescription": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tickler demande à iTerm2 ou Ghostty d'afficher ou de rouvrir la session Claude d'un rappel."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -1,5 +1,6 @@
 import Foundation
 import ServiceManagement
+import TicklerCore
 
 /// User settings, stored in the app's defaults.
 @MainActor
@@ -25,6 +26,10 @@ final class Preferences {
         didSet { defaults.set(weztermPath, forKey: "weztermPath") }
     }
 
+    var terminal: TerminalChoice {
+        didSet { defaults.set(terminal.rawValue, forKey: "terminal") }
+    }
+
     var language: Language {
         didSet { applyLanguage() }
     }
@@ -47,6 +52,7 @@ final class Preferences {
     init() {
         calendarId = defaults.string(forKey: "calendarId")
         weztermPath = defaults.string(forKey: "weztermPath") ?? ""
+        terminal = TerminalChoice(rawValue: defaults.string(forKey: "terminal") ?? "") ?? .auto
         language = Language(rawValue: defaults.string(forKey: "language") ?? "") ?? .system
     }
 

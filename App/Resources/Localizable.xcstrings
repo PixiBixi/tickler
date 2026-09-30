@@ -404,6 +404,16 @@
         }
       }
     },
+    "Automatic": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatique"
+          }
+        }
+      }
+    },
     "Calendar": {
       "localizations": {
         "fr": {
@@ -1094,7 +1104,17 @@
         }
       }
     },
-    "Running, Resume focuses its pane": {
+    "Running sessions are found in any terminal; new tabs open in this one. Automatic uses the first one running.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les sessions en cours sont retrouvées dans n'importe quel terminal ; les nouveaux onglets s'ouvrent dans celui-ci. Automatique prend le premier lancé."
+          }
+        }
+      }
+    },
+    "Running, Resume focuses its tab": {
       "localizations": {
         "fr": {
           "stringUnit": {
@@ -1124,12 +1144,12 @@
         }
       }
     },
-    "Session reopened in WezTerm": {
+    "Session reopened in the terminal": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Session rouverte dans WezTerm"
+            "value": "Session rouverte dans le terminal"
           }
         }
       }
@@ -1190,6 +1210,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prend effet après un redémarrage de l'app."
+          }
+        }
+      }
+    },
+    "Terminal": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminal"
           }
         }
       }
@@ -1370,16 +1400,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Binaire WezTerm"
-          }
-        }
-      }
-    },
-    "WezTerm was not found. Set its path in Settings.": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WezTerm introuvable. Indique son chemin dans les réglages."
           }
         }
       }

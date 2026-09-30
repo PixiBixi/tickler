@@ -322,20 +322,17 @@ final class AppModel {
 
     func resume(_ reminder: Reminder) {
         guard let sessionId = reminder.sessionId else { return }
-        guard let binary = WezTermDriver.resolveBinary(configured: preferences.weztermPath) else {
-            showError(String(localized: "WezTerm was not found. Set its path in Settings."))
-            return
-        }
+        let driver = preferences.terminal.driver(weztermPath: preferences.weztermPath)
         let cwd = reminder.cwd
         Task {
             let result = await Task.detached {
-                Result { try SessionResumer(driver: WezTermDriver(binary: binary)).resume(sessionId: sessionId, fallbackCwd: cwd) }
+                Result { try SessionResumer(driver: driver).resume(sessionId: sessionId, fallbackCwd: cwd) }
             }.value
             switch result {
             case .success(.focused):
                 showToast(String(localized: "Session brought to the front"))
             case .success:
-                showToast(String(localized: "Session reopened in WezTerm"))
+                showToast(String(localized: "Session reopened in the terminal"))
             case let .failure(error):
                 showError(String(describing: error))
             }

@@ -216,7 +216,7 @@ struct ReminderDetailView: View {
                     Spacer()
                     let running = model.runningSessions.contains(sessionId)
                     Label(
-                        running ? "Running, Resume focuses its pane" : "Ended, Resume opens a new tab",
+                        running ? "Running, Resume focuses its tab" : "Ended, Resume opens a new tab",
                         systemImage: running ? "circle.fill" : "circle"
                     )
                     .font(.system(size: 11))

@@ -39,6 +39,7 @@ targets:
         LSUIElement: true
         NSCalendarsFullAccessUsageDescription: Tickler copies your reminders into the calendar you choose, so they show up next to your meetings.
         NSHumanReadableCopyright: MIT License
+        NSAppleEventsUsageDescription: Tickler asks iTerm2 or Ghostty to show or reopen the Claude session of a reminder.
         CFBundleURLTypes:
           - CFBundleURLName: io.github.pixibixi.tickler
             CFBundleURLSchemes: [tickler]
