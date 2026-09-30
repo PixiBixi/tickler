@@ -49,6 +49,8 @@ targets:
         # Not sandboxed: resume reads ~/.claude/sessions, inspects processes and runs wezterm.
         com.apple.security.app-sandbox: false
         com.apple.security.personal-information.calendars: true
+        # Hardened runtime blocks Apple Events without it: resume drives iTerm2 and Ghostty through AppleScript.
+        com.apple.security.automation.apple-events: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.pixibixi.tickler
