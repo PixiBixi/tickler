@@ -41,10 +41,15 @@ struct SettingsView: View {
 
             Section("Resume") {
                 Picker("Terminal", selection: $preferences.terminal) {
-                    Text("Automatic").tag(TerminalChoice.auto)
-                    Text(verbatim: "WezTerm").tag(TerminalChoice.wezterm)
-                    Text(verbatim: "Ghostty").tag(TerminalChoice.ghostty)
-                    Text(verbatim: "iTerm2").tag(TerminalChoice.iterm)
+                    // Only what is installed, plus the current choice so a removed app does not blank the picker.
+                    ForEach(terminalChoices(current: preferences.terminal), id: \.self) { choice in
+                        switch choice {
+                        case .auto: Text("Automatic").tag(choice)
+                        case .wezterm: Text(verbatim: "WezTerm").tag(choice)
+                        case .ghostty: Text(verbatim: "Ghostty").tag(choice)
+                        case .iterm: Text(verbatim: "iTerm2").tag(choice)
+                        }
+                    }
                 }
                 Text(
                     "Running sessions are found in any terminal; new tabs open in this one. Automatic uses the first one running."
@@ -86,6 +91,11 @@ struct SettingsView: View {
             launchAtLogin = preferences.launchAtLogin
             model.calendarSync.loadCalendars()
         }
+    }
+
+    private func terminalChoices(current: TerminalChoice) -> [TerminalChoice] {
+        let available = TerminalChoice.available(weztermPath: model.preferences.weztermPath)
+        return available.contains(current) ? available : available + [current]
     }
 
     private func relaunch() {
