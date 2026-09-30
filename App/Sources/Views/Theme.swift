@@ -40,29 +40,43 @@ extension Reminder {
 
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .lineLimit(1)
-            .fixedSize()
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(Theme.onAccent)
-            .padding(.horizontal, 12)
-            .frame(height: 30)
-            .background(Theme.accent.opacity(configuration.isPressed ? 0.8 : 1), in: RoundedRectangle(cornerRadius: 7))
-            .contentShape(Rectangle())
+        StyledButton(configuration: configuration, primary: true)
     }
 }
 
 struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        StyledButton(configuration: configuration, primary: false)
+    }
+}
+
+/// The design's two buttons: accent fill with dark text, or an outlined one. Dimmed when disabled.
+private struct StyledButton: View {
+    @Environment(\.isEnabled) private var isEnabled
+    let configuration: ButtonStyleConfiguration
+    let primary: Bool
+
+    var body: some View {
+        let label = configuration.label
             .lineLimit(1)
             .fixedSize()
-            .font(.system(size: 13))
-            .padding(.horizontal, 11)
-            .frame(height: 30)
-            .background(Color.primary.opacity(configuration.isPressed ? 0.12 : 0.06), in: RoundedRectangle(cornerRadius: 7))
-            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color.primary.opacity(0.12)))
+            .padding(.horizontal, primary ? 14 : 12)
+            .frame(minHeight: 30)
             .contentShape(Rectangle())
+        Group {
+            if primary {
+                label
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.onAccent)
+                    .background(Theme.accent.opacity(configuration.isPressed ? 0.8 : 1), in: RoundedRectangle(cornerRadius: 8))
+            } else {
+                label
+                    .font(.system(size: 13))
+                    .background(Color.primary.opacity(configuration.isPressed ? 0.1 : 0.0001), in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.primary.opacity(0.2)))
+            }
+        }
+        .opacity(isEnabled ? 1 : 0.45)
     }
 }
 

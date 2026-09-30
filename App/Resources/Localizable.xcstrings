@@ -314,6 +314,16 @@
         }
       }
     },
+    "Access was refused, and macOS only asks once: switch Tickler on in Privacy & Security > Calendars.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'accès a été refusé, et macOS ne demande qu'une fois : active Tickler dans Confidentialité et sécurité > Calendriers."
+          }
+        }
+      }
+    },
     "Add": {
       "localizations": {
         "fr": {
@@ -370,6 +380,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Autoriser les notifications"
+          }
+        }
+      }
+    },
+    "Allow in System Settings": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autoriser dans les Réglages Système"
           }
         }
       }
@@ -680,16 +700,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Merge requests GitLab"
-          }
-        }
-      }
-    },
-    "Give Tickler full access in System Settings > Privacy & Security > Calendars, then come back.": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Donne l'accès complet à Tickler dans Réglages Système > Confidentialité et sécurité > Calendriers, puis reviens."
           }
         }
       }

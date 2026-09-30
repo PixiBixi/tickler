@@ -29,8 +29,13 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Button(model.calendarSync.isRefused ? "Open System Settings" : "Allow Calendar Access") {
+                    Button(model.calendarSync.isRefused ? "Allow in System Settings" : "Allow Calendar Access") {
                         Task { await model.calendarSync.requestOrOpenSettings() }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    if model.calendarSync.isRefused {
+                        Text("Access was refused, and macOS only asks once: switch Tickler on in Privacy & Security > Calendars.")
+                            .font(.caption).foregroundStyle(.orange)
                     }
                     Text("Tickler only writes to the calendar you pick.").font(.caption).foregroundStyle(.secondary)
                 }
@@ -94,7 +99,7 @@ struct SettingsView: View {
                 if languageChanged {
                     HStack {
                         Text("Takes effect after a relaunch.").font(.caption).foregroundStyle(.secondary)
-                        Button("Relaunch Now", action: relaunch)
+                        Button("Relaunch Now", action: relaunch).buttonStyle(SecondaryButtonStyle())
                     }
                 }
                 LabeledContent {
@@ -102,6 +107,7 @@ struct SettingsView: View {
                         model.showOnboarding = true
                         model.showMainWindow()
                     }
+                    .buttonStyle(SecondaryButtonStyle())
                 } label: {
                     Text("Setup assistant")
                     Text("Permissions, terminal and live status tools, as on first launch.")

@@ -38,6 +38,7 @@ struct OnboardingView: View {
                     preferences.onboardingDone = true
                     dismiss()
                 }
+                .buttonStyle(PrimaryButtonStyle())
                 .keyboardShortcut(.defaultAction)
             }
             .padding(16)
@@ -61,8 +62,9 @@ struct OnboardingView: View {
             if model.notifications.authorized {
                 Text("Choose the Alerts style so reminders stay on screen until you act.").foregroundStyle(.secondary)
                 Button("Open Notification Settings") { openSystemSettings("com.apple.Notifications-Settings.extension") }
+                    .buttonStyle(SecondaryButtonStyle())
             } else {
-                Button(model.notifications.status == .denied ? "Open System Settings" : "Allow Notifications") {
+                Button(model.notifications.status == .denied ? "Allow in System Settings" : "Allow Notifications") {
                     Task { await model.notifications.requestOrOpenSettings() }
                 }
                 .buttonStyle(PrimaryButtonStyle())
@@ -96,12 +98,12 @@ struct OnboardingView: View {
                 Text("Tip: create a \"Claude\" calendar in Google Calendar with default notifications set to none.")
                     .foregroundStyle(.secondary)
             } else {
-                Button(model.calendarSync.isRefused ? "Open System Settings" : "Allow Calendar Access") {
+                Button(model.calendarSync.isRefused ? "Allow in System Settings" : "Allow Calendar Access") {
                     Task { await model.calendarSync.requestOrOpenSettings() }
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 if model.calendarSync.isRefused {
-                    Text("Give Tickler full access in System Settings > Privacy & Security > Calendars, then come back.")
+                    Text("Access was refused, and macOS only asks once: switch Tickler on in Privacy & Security > Calendars.")
                         .foregroundStyle(.secondary)
                 }
             }

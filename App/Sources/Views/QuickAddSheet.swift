@@ -38,6 +38,7 @@ struct QuickAddSheet: View {
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }
+                    .buttonStyle(SecondaryButtonStyle())
                     .keyboardShortcut(.cancelAction)
                 Button("Add") {
                     if let parsed {
@@ -45,6 +46,7 @@ struct QuickAddSheet: View {
                         dismiss()
                     }
                 }
+                .buttonStyle(PrimaryButtonStyle())
                 .keyboardShortcut(.defaultAction)
                 .disabled(parsed == nil || title.trimmingCharacters(in: .whitespaces).isEmpty)
             }
