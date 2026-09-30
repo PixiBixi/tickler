@@ -1044,6 +1044,16 @@
         }
       }
     },
+    "Open Assistant…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir l'assistant…"
+          }
+        }
+      }
+    },
     "Open Link": {
       "localizations": {
         "fr": {
@@ -1130,6 +1140,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "En retard"
+          }
+        }
+      }
+    },
+    "Permissions, terminal and live status tools, as on first launch.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorisations, terminal et outils du statut en direct, comme au premier lancement."
           }
         }
       }
@@ -1314,12 +1334,12 @@
         }
       }
     },
-    "Run Setup Again": {
+    "Resuming Claude Sessions": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Relancer la configuration"
+            "value": "Reprise des sessions Claude"
           }
         }
       }
@@ -1400,6 +1420,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Réglages (⌘,)"
+          }
+        }
+      }
+    },
+    "Setup assistant": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assistant de configuration"
           }
         }
       }

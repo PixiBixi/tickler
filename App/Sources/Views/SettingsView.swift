@@ -37,7 +37,7 @@ struct SettingsView: View {
                 CalendarStatusLabel()
             }
 
-            Section("Resume") {
+            Section("Resuming Claude Sessions") {
                 Picker("Terminal", selection: $preferences.terminal) {
                     // Only what is installed, plus the current choice so a removed app does not blank the picker.
                     ForEach(terminalChoices(current: preferences.terminal), id: \.self) { choice in
@@ -53,12 +53,15 @@ struct SettingsView: View {
                     "Running sessions are found in any terminal; new tabs open in this one. Automatic uses the first one running."
                 )
                 .font(.caption).foregroundStyle(.secondary)
-                TextField(
-                    "WezTerm binary",
-                    text: $preferences.weztermPath,
-                    prompt: Text(WezTermDriver.resolveBinary()?.path ?? "/opt/homebrew/bin/wezterm")
-                )
-                Text("Leave empty to use the one found automatically.").font(.caption).foregroundStyle(.secondary)
+                // Only WezTerm is driven through its binary; Ghostty and iTerm2 go through AppleScript.
+                if preferences.terminal == .wezterm || preferences.terminal == .auto {
+                    TextField(
+                        "WezTerm binary",
+                        text: $preferences.weztermPath,
+                        prompt: Text(WezTermDriver.resolveBinary()?.path ?? "/opt/homebrew/bin/wezterm")
+                    )
+                    Text("Leave empty to use the one found automatically.").font(.caption).foregroundStyle(.secondary)
+                }
             }
 
             Section("Live Status") {
@@ -94,9 +97,14 @@ struct SettingsView: View {
                         Button("Relaunch Now", action: relaunch)
                     }
                 }
-                Button("Run Setup Again") {
-                    model.showOnboarding = true
-                    model.showMainWindow()
+                LabeledContent {
+                    Button("Open Assistant…") {
+                        model.showOnboarding = true
+                        model.showMainWindow()
+                    }
+                } label: {
+                    Text("Setup assistant")
+                    Text("Permissions, terminal and live status tools, as on first launch.")
                 }
                 Toggle("Open at login", isOn: Binding(
                     get: { launchAtLogin },
