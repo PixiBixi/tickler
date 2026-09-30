@@ -1,0 +1,55 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # renovate: datasource=github-releases depName=realm/SwiftLint
+  SWIFTLINT_VERSION: 0.65.1
+  # renovate: datasource=github-releases depName=nicklockwood/SwiftFormat
+  SWIFTFORMAT_VERSION: 0.63.1
+
+jobs:
+  swift:
+    name: SwiftLint and SwiftFormat
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install SwiftLint and SwiftFormat
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          base=https://github.com
+          curl -fsSL -o swiftlint.zip "$base/realm/SwiftLint/releases/download/${SWIFTLINT_VERSION}/swiftlint_linux_amd64.zip"
+          curl -fsSL -o swiftformat.zip "$base/nicklockwood/SwiftFormat/releases/download/${SWIFTFORMAT_VERSION}/swiftformat_linux.zip"
+          unzip -q -o swiftlint.zip swiftlint-static -d swiftlint-dist
+          unzip -q -o swiftformat.zip swiftformat_linux -d swiftformat-dist
+          install -m 0755 swiftlint-dist/swiftlint-static "$HOME/.local/bin/swiftlint"
+          install -m 0755 swiftformat-dist/swiftformat_linux "$HOME/.local/bin/swiftformat"
+          rm -rf swiftlint.zip swiftformat.zip swiftlint-dist swiftformat-dist
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: SwiftLint
+        run: swiftlint lint --strict --reporter github-actions-logging
+
+      - name: SwiftFormat
+        run: swiftformat --lint .
