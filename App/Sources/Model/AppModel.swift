@@ -50,6 +50,7 @@ final class AppModel {
     var selection: String?
     var search = ""
     var showQuickAdd = false
+    var showOnboarding = false
     var focusDateField = false
     var prefilledDateText: String?
     var toast: Toast?
@@ -101,6 +102,13 @@ final class AppModel {
             Task { @MainActor in
                 AppModel.shared.reload()
                 AppModel.shared.requestReconcile(catchUp: true)
+            }
+        }
+        // Permissions granted in System Settings take effect when the user comes back.
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
+            Task { @MainActor in
+                await AppModel.shared.notifications.refreshSettings()
+                AppModel.shared.calendarSync.loadCalendars()
             }
         }
         notifications.setUp()

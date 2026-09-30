@@ -18,8 +18,10 @@ final class LiveStatusStore {
     private(set) var entries: [String: Entry] = [:]
     private let fetcher = LiveStatusFetcher(runner: LoginShellRunner())
 
+    /// Links whose tool the user enabled.
     func supported(_ links: [ReminderLink]) -> [ReminderLink] {
-        links.filter { LiveTarget(link: $0) != nil }
+        let enabled = AppModel.shared.preferences.enabledTools
+        return links.filter { LiveTarget(link: $0).map { enabled.contains($0.tool) } ?? false }
     }
 
     func refresh(_ links: [ReminderLink], force: Bool = false) {

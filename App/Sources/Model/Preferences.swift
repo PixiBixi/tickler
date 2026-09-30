@@ -26,6 +26,15 @@ final class Preferences {
         didSet { defaults.set(weztermPath, forKey: "weztermPath") }
     }
 
+    /// Which CLIs live status may call. Never set: all of them, so an upgrade keeps working.
+    var enabledTools: Set<ExternalTool> {
+        didSet { defaults.set(enabledTools.map(\.rawValue).sorted(), forKey: "enabledTools") }
+    }
+
+    var onboardingDone: Bool {
+        didSet { defaults.set(onboardingDone, forKey: "onboardingDone") }
+    }
+
     var terminal: TerminalChoice {
         didSet { defaults.set(terminal.rawValue, forKey: "terminal") }
     }
@@ -52,6 +61,9 @@ final class Preferences {
     init() {
         calendarId = defaults.string(forKey: "calendarId")
         weztermPath = defaults.string(forKey: "weztermPath") ?? ""
+        onboardingDone = defaults.bool(forKey: "onboardingDone")
+        enabledTools = defaults.stringArray(forKey: "enabledTools")
+            .map { Set($0.compactMap(ExternalTool.init(rawValue:))) } ?? Set(ExternalTool.allCases)
         terminal = TerminalChoice(rawValue: defaults.string(forKey: "terminal") ?? "") ?? .auto
         language = Language(rawValue: defaults.string(forKey: "language") ?? "") ?? .system
     }

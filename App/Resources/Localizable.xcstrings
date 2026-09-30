@@ -304,6 +304,16 @@
         }
       }
     },
+    "A notification at the due time, with Resume, Snooze and Done on it.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une notification à l'heure prévue, avec Reprendre, Snooze et Fait."
+          }
+        }
+      }
+    },
     "Add": {
       "localizations": {
         "fr": {
@@ -350,6 +360,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Autoriser l'accès au calendrier"
+          }
+        }
+      }
+    },
+    "Allow Notifications": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autoriser les notifications"
           }
         }
       }
@@ -414,6 +434,16 @@
         }
       }
     },
+    "Automatic (the first one running)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatique (le premier lancé)"
+          }
+        }
+      }
+    },
     "Calendar": {
       "localizations": {
         "fr": {
@@ -470,6 +500,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Changer la date"
+          }
+        }
+      }
+    },
+    "Choose the Alerts style so reminders stay on screen until you act.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisis le style Alertes pour que les rappels restent à l'écran jusqu'à ton action."
           }
         }
       }
@@ -564,6 +604,16 @@
         }
       }
     },
+    "Each reminder also appears as a 15 minute event, marked Free, in a calendar you pick.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chaque rappel apparaît aussi comme un événement de 15 minutes, marqué Disponible, dans le calendrier que tu choisis."
+          }
+        }
+      }
+    },
     "Ended, Resume opens a new tab": {
       "localizations": {
         "fr": {
@@ -594,6 +644,16 @@
         }
       }
     },
+    "Four quick steps. You can change all of it later in Settings.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quatre étapes rapides. Tout se modifie ensuite dans les réglages."
+          }
+        }
+      }
+    },
     "General": {
       "localizations": {
         "fr": {
@@ -604,12 +664,102 @@
         }
       }
     },
+    "GitHub pull requests": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pull requests GitHub"
+          }
+        }
+      }
+    },
+    "GitLab merge requests": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merge requests GitLab"
+          }
+        }
+      }
+    },
+    "Give Tickler full access in System Settings > Privacy & Security > Calendars, then come back.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Donne l'accès complet à Tickler dans Réglages Système > Confidentialité et sécurité > Calendriers, puis reviens."
+          }
+        }
+      }
+    },
+    "Homebrew is not installed: install the missing tools yourself.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew n'est pas installé : installe les outils manquants toi-même."
+          }
+        }
+      }
+    },
     "In Google Calendar, set this calendar's default notifications to none to avoid double alerts.": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Dans Google Calendar, mets les notifications par défaut de ce calendrier à aucune pour éviter les doubles alertes."
+          }
+        }
+      }
+    },
+    "Install": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installer"
+          }
+        }
+      }
+    },
+    "Install with Homebrew": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installer avec Homebrew"
+          }
+        }
+      }
+    },
+    "Install with Homebrew?": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installer avec Homebrew ?"
+          }
+        }
+      }
+    },
+    "Installing…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installation…"
+          }
+        }
+      }
+    },
+    "Jira issues": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tickets Jira"
           }
         }
       }
@@ -670,6 +820,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Statut en direct"
+          }
+        }
+      }
+    },
+    "Live status tools": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outils du statut en direct"
           }
         }
       }
@@ -844,6 +1004,26 @@
         }
       }
     },
+    "Notifications": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
+          }
+        }
+      }
+    },
+    "Notifications were turned off for Tickler: switch them on in System Settings, then come back.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les notifications de Tickler sont désactivées : active-les dans les Réglages Système, puis reviens."
+          }
+        }
+      }
+    },
     "Open": {
       "localizations": {
         "fr": {
@@ -874,12 +1054,32 @@
         }
       }
     },
+    "Open Notification Settings": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir les réglages des notifications"
+          }
+        }
+      }
+    },
     "Open Slack Thread": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Ouvrir le thread Slack"
+          }
+        }
+      }
+    },
+    "Open System Settings": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir les Réglages Système"
           }
         }
       }
@@ -1104,6 +1304,26 @@
         }
       }
     },
+    "Resume reopens the Claude session of a reminder. New tabs open in:": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reprendre rouvre la session Claude d'un rappel. Les nouveaux onglets s'ouvrent dans :"
+          }
+        }
+      }
+    },
+    "Run Setup Again": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relancer la configuration"
+          }
+        }
+      }
+    },
     "Running sessions are found in any terminal; new tabs open in this one. Automatic uses the first one running.": {
       "localizations": {
         "fr": {
@@ -1164,12 +1384,32 @@
         }
       }
     },
+    "Set up Tickler": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configurer Tickler"
+          }
+        }
+      }
+    },
     "Settings (⌘,)": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Réglages (⌘,)"
+          }
+        }
+      }
+    },
+    "Shows pipelines, approvals and ticket status next to reminders. Pick the tools you use.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Affiche pipelines, approbations et statut des tickets à côté des rappels. Coche les outils que tu utilises."
           }
         }
       }
@@ -1254,6 +1494,16 @@
         }
       }
     },
+    "Then log in once in a terminal:": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puis connecte-toi une fois dans un terminal :"
+          }
+        }
+      }
+    },
     "This afternoon": {
       "localizations": {
         "fr": {
@@ -1290,6 +1540,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tickler n'écrit que dans le calendrier que tu choisis."
+          }
+        }
+      }
+    },
+    "Tickler will run: brew %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tickler va lancer : brew %@"
+          }
+        }
+      }
+    },
+    "Tip: create a \"Claude\" calendar in Google Calendar with default notifications set to none.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Astuce : crée un calendrier « Claude » dans Google Calendar, avec les notifications par défaut sur aucune."
           }
         }
       }
@@ -1500,6 +1770,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "mergée"
+          }
+        }
+      }
+    },
+    "not installed": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "non installé"
           }
         }
       }

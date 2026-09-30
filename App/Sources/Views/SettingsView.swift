@@ -29,10 +29,8 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Button("Allow Calendar Access") {
-                        Task {
-                            _ = await model.calendarSync.requestAccess()
-                        }
+                    Button(model.calendarSync.isRefused ? "Open System Settings" : "Allow Calendar Access") {
+                        Task { await model.calendarSync.requestOrOpenSettings() }
                     }
                     Text("Tickler only writes to the calendar you pick.").font(.caption).foregroundStyle(.secondary)
                 }
@@ -63,6 +61,24 @@ struct SettingsView: View {
                 Text("Leave empty to use the one found automatically.").font(.caption).foregroundStyle(.secondary)
             }
 
+            Section("Live Status") {
+                ForEach(ExternalTool.allCases, id: \.self) { tool in
+                    Toggle(isOn: Binding(
+                        get: { preferences.enabledTools.contains(tool) },
+                        set: { enabled in
+                            if enabled {
+                                preferences.enabledTools.insert(tool)
+                            } else {
+                                preferences.enabledTools.remove(tool)
+                            }
+                        }
+                    )) {
+                        Text(verbatim: tool.rawValue).font(.system(.body, design: .monospaced)) + Text(verbatim: "  ") + Text(tool.purpose)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
             Section("General") {
                 Picker("Language", selection: Binding(
                     get: { preferences.language },
@@ -77,6 +93,10 @@ struct SettingsView: View {
                         Text("Takes effect after a relaunch.").font(.caption).foregroundStyle(.secondary)
                         Button("Relaunch Now", action: relaunch)
                     }
+                }
+                Button("Run Setup Again") {
+                    model.showOnboarding = true
+                    model.showMainWindow()
                 }
                 Toggle("Open at login", isOn: Binding(
                     get: { launchAtLogin },

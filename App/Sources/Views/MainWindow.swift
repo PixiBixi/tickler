@@ -35,6 +35,7 @@ struct MainWindow: View {
         .ignoresSafeArea(.container, edges: .top)
         .overlay(alignment: .bottom) { ToastOverlay(toast: model.toast) }
         .sheet(isPresented: $model.showQuickAdd) { QuickAddSheet() }
+        .sheet(isPresented: $model.showOnboarding) { OnboardingView() }
         .onAppear {
             model.openMainWindow = {
                 openWindow(id: WindowID.main)
@@ -42,6 +43,9 @@ struct MainWindow: View {
             }
             NSApp.setActivationPolicy(.regular)
             NSApp.activate(ignoringOtherApps: true)
+            if !model.preferences.onboardingDone {
+                model.showOnboarding = true
+            }
         }
         .onDisappear {
             // Back to a menu bar only app once the window is closed.
