@@ -21,7 +21,7 @@ line_length:
   warning: 140
   error: 160
 identifier_name:
-  excluded: [id, db, at, to, ok, fr, en, r, i, n, s, mr, pr]
+  excluded: [id, db, at, to, ok, fr, en, r, i, n, s, mr, pr, gh]
 type_body_length:
   warning: 400
 file_length:
