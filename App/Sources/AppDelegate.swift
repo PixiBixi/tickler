@@ -5,6 +5,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_: Notification) {
         MainActor.assumeIsolated {
             AppModel.shared.start()
+            #if DEBUG
+                DebugSnapshot.scheduleIfRequested()
+            #endif
         }
     }
 
