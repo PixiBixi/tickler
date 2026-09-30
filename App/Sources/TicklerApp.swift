@@ -19,8 +19,10 @@ struct TicklerApp: App {
         Window("Tickler", id: WindowID.main) {
             MainWindow()
                 .environment(model)
-                .frame(minWidth: 900, minHeight: 560)
+                .frame(minWidth: 960, minHeight: 560)
         }
+        // The traffic lights sit on the sidebar, as in the design: no title bar, no toolbar.
+        .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1120, height: 720)
         .commands {
             CommandGroup(replacing: .newItem) {

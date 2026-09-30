@@ -7,9 +7,10 @@ struct ReminderListView: View {
     var body: some View {
         @Bindable var model = model
         VStack(spacing: 0) {
+            header
             DayStrip()
                 .padding(.horizontal, 12)
-                .padding(.vertical, 10)
+                .padding(.bottom, 12)
             Divider()
             if model.visibleGroups.isEmpty {
                 ContentUnavailableView(emptyTitle, systemImage: "checkmark.seal", description: Text(emptyDetail))
@@ -47,14 +48,34 @@ struct ReminderListView: View {
             }
         }
         .frame(maxHeight: .infinity, alignment: .top)
-        .navigationTitle(title)
-        .searchable(text: $model.search, placement: .toolbar, prompt: "Search")
-        .toolbar {
-            ToolbarItem {
-                Button { model.showQuickAdd = true } label: { Label("New Reminder", systemImage: "plus") }
-                    .help("New Reminder (⌘N)")
+    }
+
+    /// Title, search and add sit in the column itself, level with the traffic lights.
+    private var header: some View {
+        @Bindable var model = model
+        return HStack(spacing: 10) {
+            Text(title)
+                .font(.system(size: 17, weight: .bold))
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass").font(.system(size: 12)).foregroundStyle(.secondary)
+                TextField("Search", text: $model.search)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12))
             }
+            .padding(.horizontal, 8)
+            .frame(width: 160, height: 28)
+            .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))
+            Button { model.showQuickAdd = true } label: {
+                Image(systemName: "plus").font(.system(size: 13, weight: .medium)).frame(width: 28, height: 28)
+            }
+            .buttonStyle(.plain)
+            .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))
+            .help("New Reminder (⌘N)")
         }
+        .padding(.horizontal, 16)
+        .frame(height: 52)
     }
 
     private var title: String {

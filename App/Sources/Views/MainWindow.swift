@@ -1,31 +1,38 @@
 import SwiftUI
 import TicklerCore
 
+/// Three fixed columns as in the design: a flush sidebar, the list, the detail. No NavigationSplitView:
+/// on macOS 26 it draws a floating glass sidebar the design does not have.
 struct MainWindow: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         @Bindable var model = model
-        NavigationSplitView {
+        HStack(spacing: 0) {
             SidebarView()
-                .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 280)
-        } content: {
+                .frame(width: 232)
+            Divider()
             ReminderListView()
-                .navigationSplitViewColumnWidth(min: 340, ideal: 420, max: 560)
-        } detail: {
-            if let reminder = model.selectedReminder {
-                ReminderDetailView(reminder: reminder)
-                    .id(reminder.id)
-                    .background(Color(nsColor: .windowBackgroundColor))
-            } else {
-                ContentUnavailableView(
-                    "No Reminder Selected",
-                    systemImage: "checklist",
-                    description: Text("Pick a reminder to see its notes and actions.")
-                )
+                .frame(minWidth: 360, idealWidth: 440, maxWidth: 520)
+            Divider()
+            Group {
+                if let reminder = model.selectedReminder {
+                    ReminderDetailView(reminder: reminder)
+                        .id(reminder.id)
+                } else {
+                    ContentUnavailableView(
+                        "No Reminder Selected",
+                        systemImage: "checklist",
+                        description: Text("Pick a reminder to see its notes and actions.")
+                    )
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Theme.detailBackground)
         }
+        .background(Theme.listBackground)
+        .ignoresSafeArea(.container, edges: .top)
         .overlay(alignment: .bottom) { ToastOverlay(toast: model.toast) }
         .sheet(isPresented: $model.showQuickAdd) { QuickAddSheet() }
         .onAppear {
@@ -53,34 +60,27 @@ struct SidebarView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        @Bindable var model = model
-        List(selection: $model.filter) {
-            Section("Views") {
-                row(.today, "Today", "sun.max")
-                row(.week, "Next 7 Days", "calendar")
-                row(.overdue, "Overdue", "exclamationmark.circle")
-                row(.all, "All", "tray.full")
-                row(.done, "Done", "checkmark.circle")
-            }
-            if !model.projects.isEmpty {
-                Section("Projects") {
-                    ForEach(model.projects, id: \.name) { project in
-                        Label {
-                            HStack {
-                                Text(project.name).font(.system(size: 12, design: .monospaced)).lineLimit(1)
-                                Spacer()
-                                Text("\(project.count)").foregroundStyle(.secondary).monospacedDigit()
-                            }
-                        } icon: {
-                            Image(systemName: "folder")
+        VStack(alignment: .leading, spacing: 0) {
+            // Room for the traffic lights.
+            Color.clear.frame(height: 52)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 1) {
+                    sectionTitle("Views")
+                    row(.today, "Today")
+                    row(.week, "Next 7 Days")
+                    row(.overdue, "Overdue", countColor: Theme.overdue)
+                    row(.all, "All")
+                    row(.done, "Done")
+                    if !model.projects.isEmpty {
+                        sectionTitle("Projects").padding(.top, 14)
+                        ForEach(model.projects, id: \.name) { project in
+                            row(.project(project.name), LocalizedStringKey(project.name), monospaced: true, verbatim: project.name)
                         }
-                        .tag(SidebarFilter.project(project.name))
                     }
                 }
+                .padding(.horizontal, 8)
             }
-        }
-        .listStyle(.sidebar)
-        .safeAreaInset(edge: .bottom) {
+            Divider()
             VStack(alignment: .leading, spacing: 6) {
                 if model.notifications.usesBanners {
                     Label(
@@ -89,29 +89,60 @@ struct SidebarView: View {
                     )
                     .font(.system(size: 11))
                     .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
                 }
                 CalendarStatusLabel()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
         }
+        .background(Theme.sidebarBackground)
     }
 
-    private func row(_ filter: SidebarFilter, _ title: LocalizedStringKey, _ symbol: String) -> some View {
+    private func sectionTitle(_ title: LocalizedStringKey) -> some View {
+        Text(title)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 4)
+    }
+
+    private func row(
+        _ filter: SidebarFilter,
+        _ title: LocalizedStringKey,
+        countColor: Color = .secondary,
+        monospaced: Bool = false,
+        verbatim: String? = nil
+    ) -> some View {
         let count = model.count(for: filter)
-        return Label {
+        let selected = model.filter == filter
+        return Button {
+            model.filter = filter
+        } label: {
             HStack {
-                Text(title)
+                Group {
+                    if let verbatim {
+                        Text(verbatim)
+                    } else {
+                        Text(title)
+                    }
+                }
+                .font(monospaced ? .system(size: 12, design: .monospaced) : .system(size: 13))
+                .lineLimit(1)
                 Spacer()
                 if count > 0 {
                     Text("\(count)")
-                        .foregroundStyle(filter == .overdue ? Theme.overdue : .secondary)
+                        .font(.system(size: 12))
+                        .foregroundStyle(selected ? Color.primary.opacity(0.8) : countColor)
                         .monospacedDigit()
                 }
             }
-        } icon: {
-            Image(systemName: symbol)
+            .padding(.horizontal, 10)
+            .frame(height: 30)
+            .background(selected ? Color.primary.opacity(0.1) : .clear, in: RoundedRectangle(cornerRadius: 6))
+            .contentShape(Rectangle())
         }
-        .tag(filter)
+        .buttonStyle(.plain)
     }
 }

@@ -3,6 +3,10 @@ import TicklerCore
 
 enum Theme {
     static let accent = Color.accentColor
+    /// The design's three grounds, system colors so light mode follows.
+    static let sidebarBackground = Color(nsColor: .underPageBackgroundColor)
+    static let listBackground = Color(nsColor: .windowBackgroundColor)
+    static let detailBackground = Color(nsColor: .textBackgroundColor).opacity(0.35)
     static let overdue = Color(red: 1.0, green: 0.42, blue: 0.38)
     /// Dark text on the accent fill: white on it fails contrast.
     static let onAccent = Color(red: 0.11, green: 0.07, blue: 0.03)
