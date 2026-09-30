@@ -36,6 +36,7 @@ final class AppModel {
     let preferences = Preferences()
     let notifications = NotificationService()
     let calendarSync = CalendarService()
+    let liveStatus = LiveStatusStore()
     private(set) var store: ReminderStore?
     private(set) var loadError: String?
 

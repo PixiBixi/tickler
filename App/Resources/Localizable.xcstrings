@@ -104,6 +104,86 @@
         }
       }
     },
+    "%lld checks failed": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld check failed"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld checks failed"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld check en échec"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld checks en échec"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld checks running": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld check running"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld checks running"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld check en cours"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld checks en cours"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld links": {
       "localizations": {
         "fr": {
@@ -280,6 +360,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aussi dans ton calendrier, de %@ à %@"
+          }
+        }
+      }
+    },
+    "Approve": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approuver"
+          }
+        }
+      }
+    },
+    "Approve %@?": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approuver %@ ?"
+          }
+        }
+      }
+    },
+    "Approved %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ approuvée"
+          }
+        }
+      }
+    },
+    "Approve…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approuver…"
           }
         }
       }
@@ -534,6 +654,16 @@
         }
       }
     },
+    "Live Status": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Statut en direct"
+          }
+        }
+      }
+    },
     "Mark Done": {
       "localizations": {
         "fr": {
@@ -704,6 +834,16 @@
         }
       }
     },
+    "Open": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir"
+          }
+        }
+      }
+    },
     "Open %@": {
       "localizations": {
         "fr": {
@@ -764,6 +904,16 @@
         }
       }
     },
+    "Open in GitLab": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir dans GitLab"
+          }
+        }
+      }
+    },
     "Overdue": {
       "localizations": {
         "fr": {
@@ -784,12 +934,32 @@
         }
       }
     },
+    "Pipeline": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pipeline"
+          }
+        }
+      }
+    },
     "Projects": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Projets"
+          }
+        }
+      }
+    },
+    "Refresh": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rafraîchir"
           }
         }
       }
@@ -1024,6 +1194,16 @@
         }
       }
     },
+    "The approval is sent to GitLab in your name and notifies the author. %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'approbation part sur GitLab en ton nom et notifie l'auteur. %@"
+          }
+        }
+      }
+    },
     "The chosen calendar no longer exists. Pick another one in Settings.": {
       "localizations": {
         "fr": {
@@ -1164,6 +1344,16 @@
         }
       }
     },
+    "Unassigned": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non assigné"
+          }
+        }
+      }
+    },
     "Views": {
       "localizations": {
         "fr": {
@@ -1214,12 +1404,112 @@
         }
       }
     },
+    "approvals %lld/%lld": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "approbations %lld/%lld"
+          }
+        }
+      }
+    },
+    "approved by you": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "approuvée par toi"
+          }
+        }
+      }
+    },
+    "checks passed": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "checks OK"
+          }
+        }
+      }
+    },
+    "closed": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "fermée"
+          }
+        }
+      }
+    },
+    "conflicts": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "conflits"
+          }
+        }
+      }
+    },
+    "draft": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brouillon"
+          }
+        }
+      }
+    },
+    "merged": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mergée"
+          }
+        }
+      }
+    },
     "now": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "maintenant"
+          }
+        }
+      }
+    },
+    "open": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ouverte"
+          }
+        }
+      }
+    },
+    "open threads": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "threads ouverts"
+          }
+        }
+      }
+    },
+    "pipeline %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pipeline %@"
           }
         }
       }
@@ -1250,6 +1540,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "demain 14h, lundi 10h, dans 3h"
+          }
+        }
+      }
+    },
+    "updated %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mis à jour %@"
           }
         }
       }

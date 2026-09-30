@@ -21,6 +21,7 @@ struct ReminderDetailView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     header
                     actions
+                    LiveStatusSection(reminder: reminder)
                     notesEditor
                     linksSection
                     sessionSection
