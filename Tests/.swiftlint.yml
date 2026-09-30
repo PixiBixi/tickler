@@ -1,0 +1,3 @@
+# JSON fixtures are pasted as single lines, as the CLIs print them.
+disabled_rules:
+  - line_length

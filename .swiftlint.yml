@@ -21,14 +21,17 @@ line_length:
   warning: 140
   error: 160
 identifier_name:
-  excluded: [id, db, at, to, ok, fr, en, r, i, n, s]
+  excluded: [id, db, at, to, ok, fr, en, r, i, n, s, mr, pr]
 type_body_length:
   warning: 400
 file_length:
   warning: 600
 function_body_length:
   warning: 60
+# Decoding DTOs live inside the function that decodes them.
 nesting:
-  type_level: 2
+  type_level: 4
+type_name:
+  excluded: [MR, PR]
 cyclomatic_complexity:
   warning: 15
