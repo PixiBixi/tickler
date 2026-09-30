@@ -10,7 +10,7 @@ DERIVED := build/DerivedData
 # Ad-hoc signed unless DEVELOPMENT_TEAM is set: macOS may then ask for permissions again after a rebuild.
 SIGN_FLAGS := $(if $(DEVELOPMENT_TEAM),DEVELOPMENT_TEAM=$(DEVELOPMENT_TEAM) CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates,CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual)
 
-.PHONY: build test lint format project app install uninstall clean
+.PHONY: build test lint format project app install dev uninstall clean
 
 build:
 	swift build
@@ -25,8 +25,11 @@ lint:
 format:
 	swiftformat .
 
-project:
+# Regenerated only when project.yml changes: a fresh project costs xcodebuild its incremental state.
+Tickler.xcodeproj/project.pbxproj: project.yml
 	xcodegen generate --quiet
+
+project: Tickler.xcodeproj/project.pbxproj
 
 app: project
 	xcodebuild -project Tickler.xcodeproj -scheme Tickler -configuration $(CONFIGURATION) \
@@ -41,6 +44,15 @@ install: app
 	rm -rf "$(APP_DIR)/Tickler.app"
 	cp -R "$(DERIVED)/Build/Products/$(CONFIGURATION)/Tickler.app" "$(APP_DIR)/Tickler.app"
 	@echo "Installed $(PREFIX)/bin/tickler and $(APP_DIR)/Tickler.app"
+
+# Fast loop: incremental Debug build, replace the installed app, relaunch it.
+dev: CONFIGURATION = Debug
+dev: app
+	install -d "$(APP_DIR)"
+	pkill -x Tickler || true
+	rm -rf "$(APP_DIR)/Tickler.app"
+	cp -R "$(DERIVED)/Build/Products/Debug/Tickler.app" "$(APP_DIR)/Tickler.app"
+	open "$(APP_DIR)/Tickler.app"
 
 uninstall:
 	rm -f "$(PREFIX)/bin/tickler"

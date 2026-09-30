@@ -104,7 +104,8 @@ For notifications to stay on screen until you act, set Tickler to **Alerts** in 
 | `make lint` | SwiftLint (strict) and SwiftFormat check |
 | `make format` | Applies SwiftFormat |
 | `make app` | Generates `Tickler.xcodeproj` with XcodeGen and builds the app |
-| `make install` / `make uninstall` | Installs or removes the CLI and the app |
+| `make dev` | Incremental Debug build of the app, installed and relaunched (about 10 s) |
+| `make install` / `make uninstall` | Installs or removes the CLI and the app (Release) |
 
 `lefthook install` sets up the pre-commit (format, lint, gitleaks, markdownlint, actionlint) and commit-msg (Conventional Commits) hooks. Debug builds write PNGs of their windows when started with `TICKLER_SNAPSHOT=<dir>`.
 
