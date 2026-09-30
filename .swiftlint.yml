@@ -28,3 +28,5 @@ function_body_length:
   warning: 60
 nesting:
   type_level: 2
+cyclomatic_complexity:
+  warning: 15
