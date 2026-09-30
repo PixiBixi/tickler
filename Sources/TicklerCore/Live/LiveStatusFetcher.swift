@@ -85,3 +85,33 @@ public struct LiveStatusFetcher: Sendable {
         return "projects/\(encoded)/merge_requests/\(iid)"
     }
 }
+
+/// Runs tools with the caller's own environment: right for the CLI, which already runs in the user's shell.
+public struct DirectRunner: CommandRunning {
+    public init() {}
+
+    public func run(_ tool: String, _ arguments: [String]) async throws -> Data {
+        try await Task.detached {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+            process.arguments = [tool] + arguments
+            process.standardInput = FileHandle.nullDevice
+            let out = Pipe()
+            let err = Pipe()
+            process.standardOutput = out
+            process.standardError = err
+            try process.run()
+            let output = out.fileHandleForReading.readDataToEndOfFile()
+            let errors = err.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            let message = String(decoding: errors, as: UTF8.self).split(whereSeparator: \.isNewline).last.map(String.init) ?? ""
+            if process.terminationStatus == 127 {
+                throw LiveError.toolMissing(tool)
+            }
+            guard process.terminationStatus == 0 else {
+                throw LiveError.failed(tool: tool, message: message.trimmingCharacters(in: .whitespaces))
+            }
+            return output
+        }.value
+    }
+}
