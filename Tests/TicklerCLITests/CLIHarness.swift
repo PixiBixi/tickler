@@ -31,14 +31,16 @@ struct CLIHarness {
         .appendingPathComponent("tickler-cli-\(UUID().uuidString)/tickler.sqlite").path
     var environment: [String: String] = [:]
     var stdin = ""
+    var fetchApple: @Sendable (String) throws -> Data = { _ in Data("[]".utf8) }
 
     func run(_ arguments: String...) -> CLIResult {
         let out = Output()
         let err = Output()
         let input = stdin
+        let apple = fetchApple
         let context = CLIContext(
             environment: environment, currentDirectory: "/work/current", calendar: Self.calendar, now: { Self.now },
-            readStdin: { input }, notifyChange: {}, makeDriver: { nil }, stdout: out, stderr: err
+            readStdin: { input }, notifyChange: {}, makeDriver: { nil }, fetchAppleReminders: apple, stdout: out, stderr: err
         )
         let code = TicklerCommand.run(arguments + ["--db", database], context: context)
         return CLIResult(code: code, out: out.captured, err: err.captured)

@@ -37,6 +37,7 @@ public struct CLIContext: Sendable {
     public var readStdin: @Sendable () -> String
     public var notifyChange: @Sendable () -> Void
     public var makeDriver: @Sendable () -> TerminalDriver?
+    public var fetchAppleReminders: @Sendable (String) throws -> Data
     public var stdout: Output
     public var stderr: Output
 
@@ -49,6 +50,7 @@ public struct CLIContext: Sendable {
             readStdin: { String(decoding: FileHandle.standardInput.readDataToEndOfFile(), as: UTF8.self) },
             notifyChange: { ChangeNotifier.post() },
             makeDriver: { WezTermDriver.resolveBinary().map(WezTermDriver.init(binary:)) },
+            fetchAppleReminders: { try AppleRemindersSource.fetch(list: $0) },
             stdout: Output { FileHandle.standardOutput.write(Data($0.utf8)) },
             stderr: Output { FileHandle.standardError.write(Data($0.utf8)) }
         )
