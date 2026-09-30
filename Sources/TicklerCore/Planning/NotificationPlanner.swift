@@ -91,11 +91,29 @@ public enum NotificationPlanner {
             .sorted { $0.dueAt < $1.dueAt }
             .prefix(limit)
             .map { PlannedNotification(id: requestId(for: $0), reminder: $0, category: .for(links: links[$0.id] ?? [])) }
-        let wantedIds = Set(wanted.map(\.id))
+        // A pending request already past due is about to fire (Mac waking up): keep it while it still matches its reminder.
+        let current = Set(reminders.filter { $0.status == .open }.map(requestId(for:)))
+        let keep = Set(wanted.map(\.id)).union(pendingIds.filter { current.contains($0) && !isFuture($0, now: now) })
         return (
             add: wanted.filter { !pendingIds.contains($0.id) },
-            remove: pendingIds.subtracting(wantedIds).sorted()
+            remove: pendingIds.subtracting(keep).sorted()
         )
+    }
+
+    /// Delivered banners that no longer match an open reminder at its current time: done, deleted or rescheduled.
+    public static func staleDelivered(deliveredIds: [String], reminders: [Reminder]) -> [String] {
+        let current = Set(reminders.filter { $0.status == .open }.map(requestId(for:)))
+        return deliveredIds.filter { !$0.hasPrefix(NotificationCategory.summaryIdentifier) && !current.contains($0) }
+    }
+
+    /// Whether a notification response still speaks for the reminder as it is now.
+    public static func isCurrent(requestId: String, reminder: Reminder) -> Bool {
+        reminder.status == .open && requestId == self.requestId(for: reminder)
+    }
+
+    private static func isFuture(_ requestId: String, now: Date) -> Bool {
+        guard let epoch = requestId.split(separator: "@").last.flatMap({ Double($0) }) else { return false }
+        return epoch > now.timeIntervalSince1970
     }
 
     /// Overdue reminders nobody was told about (Mac asleep or app not running at due time).

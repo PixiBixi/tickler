@@ -195,3 +195,39 @@ struct CalendarPlannerTests {
         #expect(withLink != CalendarPlanner.contentHash(base, links: []))
     }
 }
+
+struct NotificationPlannerReviewTests {
+    @Test func keepsAPendingRequestThatIsAboutToFire() {
+        let due = reminder("wake01", at: "2026-10-01 10:44")
+        let id = NotificationPlanner.requestId(for: due)
+        let plan = NotificationPlanner.plan(reminders: [due], links: [:], pendingIds: [id], now: Fixture.now)
+        #expect(plan.remove.isEmpty)
+        #expect(plan.add.isEmpty)
+    }
+
+    @Test func dropsAPastPendingRequestOnceTheReminderIsDone() {
+        let due = reminder("wake02", at: "2026-10-01 10:44", status: .done)
+        let plan = NotificationPlanner.plan(
+            reminders: [due],
+            links: [:],
+            pendingIds: [NotificationPlanner.requestId(for: due)],
+            now: Fixture.now
+        )
+        #expect(plan.remove == [NotificationPlanner.requestId(for: due)])
+    }
+
+    @Test func staleDeliveredBanners() {
+        let open = reminder("open01", at: "2026-10-01 10:00")
+        var moved = reminder("move01", at: "2026-10-01 10:00")
+        let oldId = NotificationPlanner.requestId(for: moved)
+        moved.dueAt = Fixture.date("2026-10-01 12:00")
+        let done = reminder("done01", at: "2026-10-01 09:00", status: .done)
+        let delivered = [NotificationPlanner.requestId(for: open), oldId, NotificationPlanner.requestId(for: done), "reminder.summary@1"]
+        #expect(NotificationPlanner.staleDelivered(deliveredIds: delivered, reminders: [open, moved, done]) == [
+            oldId,
+            NotificationPlanner.requestId(for: done),
+        ])
+        #expect(!NotificationPlanner.isCurrent(requestId: oldId, reminder: moved))
+        #expect(NotificationPlanner.isCurrent(requestId: NotificationPlanner.requestId(for: open), reminder: open))
+    }
+}
