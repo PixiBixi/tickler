@@ -17,9 +17,8 @@ final class CalendarService {
     private(set) var status: Status = .disabled
     private(set) var calendars: [EKCalendar] = []
 
-    var hasAccess: Bool {
-        EKEventStore.authorizationStatus(for: .event) == .fullAccess
-    }
+    /// Stored rather than computed: EventKit's status is not observable, and Settings must switch once access is granted.
+    private(set) var hasAccess = EKEventStore.authorizationStatus(for: .event) == .fullAccess
 
     func prepare(calendarId: String?) async {
         guard calendarId != nil else {
@@ -39,6 +38,7 @@ final class CalendarService {
     }
 
     func loadCalendars() {
+        hasAccess = EKEventStore.authorizationStatus(for: .event) == .fullAccess
         guard hasAccess else {
             calendars = []
             return
@@ -68,10 +68,20 @@ final class CalendarService {
             let actions = try CalendarPlanner.plan(
                 reminders: reminders, links: links, mappings: store.calendarMappings(), calendarId: calendarId, now: Date()
             )
+            // One event that cannot be written must not block the others; its mapping stays and it is retried next time.
+            var failures: [String] = []
             for action in actions {
-                try apply(action, calendar: calendar, links: links, store: store)
+                do {
+                    try apply(action, calendar: calendar, links: links, store: store)
+                } catch {
+                    failures.append(error.localizedDescription)
+                }
             }
-            status = .synced(Date())
+            if let first = failures.first {
+                status = .failed(String(localized: "\(failures.count) calendar events could not be written: \(first)"))
+            } else {
+                status = .synced(Date())
+            }
         } catch {
             eventStore.reset()
             status = .failed(error.localizedDescription)
