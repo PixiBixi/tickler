@@ -88,7 +88,7 @@ The date fields accept French and English: `demain 9h30`, `lundi 10h`, `dans 2h`
 | Setting | Default |
 |---|---|
 | Calendar | None. Pick a writable calendar, for instance a "Claude" calendar created in Google Calendar with its default notifications set to none |
-| Terminal | Automatic: a running session is found in WezTerm, Ghostty or iTerm2; new tabs open in the first one running. Or force one |
+| Terminal | Automatic: a running session is found in WezTerm, Ghostty or iTerm2; new tabs open in the first one running. Or pick one of those installed, which then always gets the new tabs. Ghostty 1.3 cannot tell which tab holds a session: Tickler brings Ghostty forward instead of the exact tab |
 | WezTerm binary | Found automatically in `/opt/homebrew/bin`, `/usr/local/bin`, then the app bundle |
 | Language | System, or force English or French (after a relaunch) |
 | Open at login | Off |
