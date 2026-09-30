@@ -25,11 +25,16 @@ lint:
 format:
 	swiftformat .
 
-# Regenerated only when project.yml changes: a fresh project costs xcodebuild its incremental state.
-Tickler.xcodeproj/project.pbxproj: project.yml
-	xcodegen generate --quiet
+# Regenerated only when project.yml or the list of app files changes: XcodeGen lists files at generation time.
+SOURCES_STAMP := build/app-files.txt
 
-project: Tickler.xcodeproj/project.pbxproj
+project:
+	@mkdir -p build
+	@find App -type f -not -name '.DS_Store' | sort > $(SOURCES_STAMP).new
+	@if [ ! -f Tickler.xcodeproj/project.pbxproj ] || [ project.yml -nt Tickler.xcodeproj/project.pbxproj ] \
+		|| ! cmp -s $(SOURCES_STAMP).new $(SOURCES_STAMP); then \
+		xcodegen generate --quiet && mv $(SOURCES_STAMP).new $(SOURCES_STAMP); \
+	else rm -f $(SOURCES_STAMP).new; fi
 
 app: project
 	xcodebuild -project Tickler.xcodeproj -scheme Tickler -configuration $(CONFIGURATION) \
