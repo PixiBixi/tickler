@@ -1,0 +1,69 @@
+# XcodeGen spec for Tickler.app: `make project` writes Tickler.xcodeproj (not versioned).
+name: Tickler
+options:
+  bundleIdPrefix: io.github.pixibixi
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+packages:
+  Tickler:
+    path: .
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Tickler:
+    type: application
+    platform: macOS
+    sources:
+      - path: App/Sources
+      - path: App/Resources
+    dependencies:
+      - package: Tickler
+        product: TicklerCore
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Tickler
+        CFBundleName: Tickler
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations: [en, fr]
+        LSApplicationCategoryType: public.app-category.productivity
+        LSMinimumSystemVersion: "14.0"
+        # Menu bar app: no Dock icon until the window opens.
+        LSUIElement: true
+        NSCalendarsFullAccessUsageDescription: Tickler copies your reminders into the calendar you choose, so they show up next to your meetings.
+        NSHumanReadableCopyright: MIT License
+        CFBundleURLTypes:
+          - CFBundleURLName: io.github.pixibixi.tickler
+            CFBundleURLSchemes: [tickler]
+    entitlements:
+      path: App/Tickler.entitlements
+      properties:
+        # Not sandboxed: resume reads ~/.claude/sessions, inspects processes and runs wezterm.
+        com.apple.security.app-sandbox: false
+        com.apple.security.personal-information.calendars: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.pixibixi.tickler
+        PRODUCT_NAME: Tickler
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+        COMBINE_HIDPI_IMAGES: YES
+        DEAD_CODE_STRIPPING: YES
+schemes:
+  Tickler:
+    build:
+      targets:
+        Tickler: all
+    run:
+      config: Debug
+    archive:
+      config: Release
