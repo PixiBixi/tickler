@@ -5,10 +5,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_: Notification) {
         MainActor.assumeIsolated {
             AppModel.shared.start()
+            // Opened by the user: show the window. Started at login: stay in the menu bar.
+            if !Self.launchedAtLogin() {
+                AppModel.shared.showMainWindow()
+            }
             #if DEBUG
                 DebugSnapshot.scheduleIfRequested()
             #endif
         }
+    }
+
+    private static func launchedAtLogin() -> Bool {
+        let event = NSAppleEventManager.shared().currentAppleEvent
+        return event?.eventID == kAEOpenApplication
+            && event?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
     }
 
     /// `tickler://open/<id>`, from calendar events and the future web UI.
