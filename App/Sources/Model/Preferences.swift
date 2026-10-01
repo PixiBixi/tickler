@@ -31,6 +31,10 @@ final class Preferences {
         didSet { defaults.set(enabledTools.map(\.rawValue).sorted(), forKey: "enabledTools") }
     }
 
+    var announceNewReminders: Bool {
+        didSet { defaults.set(announceNewReminders, forKey: "announceNewReminders") }
+    }
+
     var onboardingDone: Bool {
         didSet { defaults.set(onboardingDone, forKey: "onboardingDone") }
     }
@@ -62,6 +66,7 @@ final class Preferences {
         calendarId = defaults.string(forKey: "calendarId")
         weztermPath = defaults.string(forKey: "weztermPath") ?? ""
         onboardingDone = defaults.bool(forKey: "onboardingDone")
+        announceNewReminders = defaults.object(forKey: "announceNewReminders") as? Bool ?? true
         enabledTools = defaults.stringArray(forKey: "enabledTools")
             .map { Set($0.compactMap(ExternalTool.init(rawValue:))) } ?? Set(ExternalTool.allCases)
         terminal = TerminalChoice(rawValue: defaults.string(forKey: "terminal") ?? "") ?? .auto

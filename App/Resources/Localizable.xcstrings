@@ -274,6 +274,46 @@
         }
       }
     },
+    "%lld new reminders from Claude": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld new reminder from Claude"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld new reminders from Claude"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld nouveau rappel de Claude"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld nouveaux rappels de Claude"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld overdue reminders": {
       "localizations": {
         "fr": {
@@ -1057,6 +1097,16 @@
         }
       }
     },
+    "New reminder: %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveau rappel : %@"
+          }
+        }
+      }
+    },
     "Next 7 Days": {
       "localizations": {
         "fr": {
@@ -1213,6 +1263,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Les notifications de Tickler sont désactivées : active-les dans les Réglages Système, puis reviens."
+          }
+        }
+      }
+    },
+    "Notify when Claude adds a reminder": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Me notifier quand Claude ajoute un rappel"
           }
         }
       }

@@ -116,6 +116,38 @@ final class NotificationService: NSObject {
         }
     }
 
+    /// "Claude added a reminder": one banner each, a single summary beyond three (an import, a burst of follow-ups).
+    func announce(_ added: [Reminder]) async {
+        guard !added.isEmpty else { return }
+        let content = UNMutableNotificationContent()
+        content.threadIdentifier = NotificationCategory.announcementPrefix
+        if added.count <= 3 {
+            for reminder in added {
+                let content = UNMutableNotificationContent()
+                content.title = String(localized: "New reminder: \(reminder.title)")
+                content.subtitle = [Format.dueLabel(reminder.dueAt, now: Date()), reminder.project].compactMap(\.self)
+                    .joined(separator: " · ")
+                content.body = Format.preview(reminder.notes)
+                content.threadIdentifier = NotificationCategory.announcementPrefix
+                content.userInfo = ["reminderId": reminder.id]
+                let request = UNNotificationRequest(
+                    identifier: "\(NotificationCategory.announcementPrefix)@\(reminder.id)",
+                    content: content,
+                    trigger: nil
+                )
+                try? await center.add(request)
+            }
+            return
+        }
+        content.title = String(localized: "\(added.count) new reminders from Claude")
+        content.body = added.prefix(4).map(\.title).joined(separator: "\n")
+        let request = UNNotificationRequest(
+            identifier: "\(NotificationCategory.announcementPrefix)@batch-\(Int(Date().timeIntervalSince1970))", content: content,
+            trigger: nil
+        )
+        try? await center.add(request)
+    }
+
     func removeDelivered(reminderId: String) async {
         let ids = await center.deliveredNotifications().map(\.request.identifier)
             .filter { NotificationPlanner.reminderId(fromRequestId: $0) == reminderId }

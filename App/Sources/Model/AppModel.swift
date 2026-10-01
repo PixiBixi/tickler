@@ -148,8 +148,14 @@ final class AppModel {
         }
     }
 
+    /// A write from the CLI: Claude may have added reminders, announced if the user wants it.
     private func externalChange() {
+        let before = Set((open + done).map(\.id))
         reload()
+        if preferences.announceNewReminders {
+            let added = NotificationPlanner.newFromClaude(previousIds: before, reminders: open)
+            Task { await notifications.announce(added) }
+        }
         requestReconcile()
     }
 
