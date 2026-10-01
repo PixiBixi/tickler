@@ -7,8 +7,17 @@ APP_DIR ?= $(HOME)/Applications
 CONFIGURATION ?= Release
 DEVELOPMENT_TEAM ?=
 DERIVED := build/DerivedData
-# Ad-hoc signed unless DEVELOPMENT_TEAM is set: macOS may then ask for permissions again after a rebuild.
-SIGN_FLAGS := $(if $(DEVELOPMENT_TEAM),DEVELOPMENT_TEAM=$(DEVELOPMENT_TEAM) CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates,CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual)
+# Signing, first match wins: DEVELOPMENT_TEAM, then the local identity from scripts/create-local-signing-identity.sh,
+# then ad hoc. Ad hoc changes with every build, and macOS then forgets the Calendar and Automation permissions.
+LOCAL_IDENTITY := Tickler Local Signing
+HAS_LOCAL_IDENTITY := $(shell security find-identity -v -p codesigning 2>/dev/null | grep -c '"$(LOCAL_IDENTITY)"')
+ifneq ($(DEVELOPMENT_TEAM),)
+SIGN_FLAGS := DEVELOPMENT_TEAM=$(DEVELOPMENT_TEAM) CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates
+else ifneq ($(HAS_LOCAL_IDENTITY),0)
+SIGN_FLAGS := CODE_SIGN_IDENTITY="$(LOCAL_IDENTITY)" CODE_SIGN_STYLE=Manual
+else
+SIGN_FLAGS := CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual
+endif
 
 .PHONY: build test lint format project app install dev uninstall clean
 

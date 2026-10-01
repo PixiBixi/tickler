@@ -18,7 +18,13 @@ make install
 open ~/Applications/Tickler.app
 ```
 
-The app is ad-hoc signed by default, so macOS may ask for the calendar and notification permissions again after a rebuild. With an Apple Development certificate (Xcode, Settings, Accounts, your Apple ID, Manage Certificates), sign with your team to keep them:
+The app is ad-hoc signed by default, so macOS asks for the calendar and automation permissions again after every rebuild. To keep them, create a local signing identity once (it asks for your password to trust the certificate); `make` then uses it automatically:
+
+```bash
+scripts/create-local-signing-identity.sh
+```
+
+Or, with an Apple Development certificate (Xcode, Settings, Accounts, your Apple ID, Manage Certificates), sign with your team:
 
 ```bash
 make install DEVELOPMENT_TEAM=XXXXXXXXXX
