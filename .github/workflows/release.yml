@@ -1,0 +1,91 @@
+name: Release
+
+# A v* tag builds the universal app and CLI, signs them with the release certificate, publishes the zip,
+# then asks the Homebrew tap to bump its cask.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  XCODE_VERSION: "16.4"
+  # renovate: datasource=github-releases depName=yonaskolb/XcodeGen
+  XCODEGEN_VERSION: 2.46.0
+  SIGN_IDENTITY: Tickler Release Signing
+  TAP_REPOSITORY: PixiBixi/homebrew-tap
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: macos-15
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select Xcode
+        run: sudo xcode-select --switch "/Applications/Xcode_${XCODE_VERSION}.app"
+
+      - name: Install XcodeGen
+        run: |
+          set -euo pipefail
+          curl -fsSL -o xcodegen.zip "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          unzip -q xcodegen.zip -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+          rm xcodegen.zip
+
+      - name: Import the signing certificate
+        env:
+          P12: ${{ secrets.RELEASE_SIGNING_P12 }}
+          P12_PASSWORD: ${{ secrets.RELEASE_SIGNING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          keychain="$RUNNER_TEMP/release.keychain-db"
+          keychain_password="$(openssl rand -base64 24)"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          printf '%s' "$P12" | base64 --decode > "$RUNNER_TEMP/identity.p12"
+          security import "$RUNNER_TEMP/identity.p12" -k "$keychain" -P "$P12_PASSWORD" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/identity.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$keychain_password" "$keychain" > /dev/null
+          # Prepends the release keychain, keeping the existing ones searchable (word splitting intended).
+          # shellcheck disable=SC2046
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          # Self-signed: codesign accepts it once trusted for code signing in this keychain.
+          security find-certificate -c "$SIGN_IDENTITY" -p "$keychain" > "$RUNNER_TEMP/cert.pem"
+          security add-trusted-cert -r trustRoot -p codeSign -k "$keychain" "$RUNNER_TEMP/cert.pem"
+
+      - name: Build the release zip
+        run: make release VERSION="${GITHUB_REF_NAME#v}" SIGN_IDENTITY="$SIGN_IDENTITY"
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" "dist/tickler-${version}.zip" --title "$GITHUB_REF_NAME" --generate-notes
+
+      - name: Bump the Homebrew cask
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_DISPATCH_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          sha256="$(shasum -a 256 "dist/tickler-${version}.zip" | cut -d' ' -f1)"
+          gh api "repos/${TAP_REPOSITORY}/dispatches" \
+            -f event_type=bump-cask \
+            -f "client_payload[cask]=tickler" \
+            -f "client_payload[version]=${version}" \
+            -f "client_payload[sha256]=${sha256}"
