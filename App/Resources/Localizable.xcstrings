@@ -657,6 +657,16 @@
         }
       }
     },
+    "Context, command, links (MR, ticket, Slack thread)…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contexte, commande, liens (MR, ticket, thread Slack)…"
+          }
+        }
+      }
+    },
     "Copy reminders to": {
       "localizations": {
         "fr": {
@@ -717,6 +727,16 @@
         }
       }
     },
+    "Detected:": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Détectés :"
+          }
+        }
+      }
+    },
     "Done": {
       "localizations": {
         "fr": {
@@ -773,6 +793,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Profite."
+          }
+        }
+      }
+    },
+    "Esc to close": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Échap pour fermer"
           }
         }
       }
@@ -853,6 +883,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Homebrew n'est pas installé : installe les outils manquants toi-même."
+          }
+        }
+      }
+    },
+    "In 1 hour": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dans 1 h"
+          }
+        }
+      }
+    },
+    "In 15 min": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dans 15 min"
           }
         }
       }
@@ -1067,6 +1117,16 @@
         }
       }
     },
+    "Monday 9:30": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lundi 9h30"
+          }
+        }
+      }
+    },
     "Moved to %@": {
       "localizations": {
         "fr": {
@@ -1197,12 +1257,12 @@
         }
       }
     },
-    "Not understood yet.": {
+    "Not understood yet": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pas encore compris."
+            "value": "Pas encore compris"
           }
         }
       }
@@ -1937,6 +1997,16 @@
         }
       }
     },
+    "Tomorrow 9:30": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demain 9h30"
+          }
+        }
+      }
+    },
     "Tomorrow morning": {
       "localizations": {
         "fr": {
@@ -1953,16 +2023,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Essaie d'autres mots."
-          }
-        }
-      }
-    },
-    "Type a day and a time.": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tape un jour et une heure."
           }
         }
       }
@@ -1997,22 +2057,22 @@
         }
       }
     },
-    "What needs doing": {
+    "What needs doing?": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ce qu'il faut faire"
+            "value": "Que faut-il faire ?"
           }
         }
       }
     },
-    "When: tomorrow 9:30, lundi 10h, in 2h": {
+    "When": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Quand : demain 9h30, lundi 10h, dans 2h"
+            "value": "Quand"
           }
         }
       }
@@ -2177,6 +2237,16 @@
         }
       }
     },
+    "tomorrow 9:30, lundi 10h, in 2h": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "demain 9h30, lundi 10h, dans 2h"
+          }
+        }
+      }
+    },
     "updated %@": {
       "localizations": {
         "fr": {
@@ -2195,6 +2265,16 @@
     },
     "⌘↩": {
       "shouldTranslate": false
+    },
+    "⌘↩ to add": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘↩ pour ajouter"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

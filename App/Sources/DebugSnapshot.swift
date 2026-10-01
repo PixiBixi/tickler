@@ -6,6 +6,9 @@
         @MainActor
         static func scheduleIfRequested() {
             guard let directory = ProcessInfo.processInfo.environment["TICKLER_SNAPSHOT"] else { return }
+            if ProcessInfo.processInfo.environment["TICKLER_QUICKADD"] != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { AppModel.shared.showQuickAdd = true }
+            }
             if let id = ProcessInfo.processInfo.environment["TICKLER_SELECT"] {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) { AppModel.shared.reveal(id) }
             }
