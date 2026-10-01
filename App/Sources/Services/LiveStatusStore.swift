@@ -16,7 +16,30 @@ final class LiveStatusStore {
     static let freshness: TimeInterval = 120
 
     private(set) var entries: [String: Entry] = [:]
-    private let fetcher = LiveStatusFetcher(runner: AppToolRunner())
+    private let runner = AppToolRunner(environment: JiraToken.environment(for:))
+    private var fetcher: LiveStatusFetcher {
+        LiveStatusFetcher(runner: runner)
+    }
+
+    /// Checks the Jira login with `jira me`: the account name on success.
+    func testJira() async -> Result<String, Error> {
+        do {
+            let output = try await runner.run("jira", ["me"])
+            return .success(String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    /// A new token must not wait for the 2 minute freshness: drop what Jira answered so far.
+    func forgetTickets() {
+        entries = entries.filter { _, entry in
+            if case .ticket = entry.status {
+                return false
+            }
+            return entry.error == nil
+        }
+    }
 
     /// Links whose tool the user enabled.
     func supported(_ links: [ReminderLink]) -> [ReminderLink] {

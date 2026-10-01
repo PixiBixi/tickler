@@ -777,6 +777,16 @@
         }
       }
     },
+    "Connected as %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecté en tant que %@"
+          }
+        }
+      }
+    },
     "Context, command, links (MR, ticket, Slack thread)…": {
       "localizations": {
         "fr": {
@@ -813,6 +823,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Date « %@ » non comprise."
+          }
+        }
+      }
+    },
+    "Create a token at id.atlassian.com": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Créer un token sur id.atlassian.com"
           }
         }
       }
@@ -1097,6 +1117,16 @@
         }
       }
     },
+    "Jira API Token": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token API Jira"
+          }
+        }
+      }
+    },
     "Jira issues": {
       "localizations": {
         "fr": {
@@ -1243,6 +1273,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Merger…"
+          }
+        }
+      }
+    },
+    "Missing": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manquant"
           }
         }
       }
@@ -1627,6 +1667,26 @@
         }
       }
     },
+    "Paste a new token to replace it": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colle un nouveau token pour le remplacer"
+          }
+        }
+      }
+    },
+    "Paste your token": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colle ton token"
+          }
+        }
+      }
+    },
     "Permissions, terminal and live status tools, as on first launch.": {
       "localizations": {
         "fr": {
@@ -1753,6 +1813,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Les rappels disparaissent au bout de quelques secondes"
+          }
+        }
+      }
+    },
+    "Remove": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer"
           }
         }
       }
@@ -1903,6 +1973,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Les sessions en cours sont retrouvées dans n'importe quel terminal ; les nouveaux onglets s'ouvrent dans celui-ci. Automatique prend le premier lancé."
+          }
+        }
+      }
+    },
+    "Save": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer"
+          }
+        }
+      }
+    },
+    "Saved in the keychain": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistré dans le trousseau"
           }
         }
       }
@@ -2093,6 +2183,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Terminal"
+          }
+        }
+      }
+    },
+    "Test": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tester"
           }
         }
       }

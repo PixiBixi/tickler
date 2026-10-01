@@ -85,6 +85,9 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                if preferences.enabledTools.contains(.jira) {
+                    JiraTokenRow()
+                }
             }
 
             Section("General") {
