@@ -49,6 +49,7 @@ make install DEVELOPMENT_TEAM=XXXXXXXXXX
 - Completion: add `source <(tickler completion zsh)` to `~/.zshrc`; `tickler rm <Tab>` then lists open reminders as `id -- date title`.
 - `--session` defaults to `CLAUDE_CODE_SESSION_ID`, and `--cwd` to the current directory when a session is known.
 - Dates on the CLI take only the strict local format `YYYY-MM-DD HH:MM`.
+- In a terminal, `list` prints a table grouped by Overdue, Today, Tomorrow, Later, and each id is a link that opens the reminder in the app (⌘-click in WezTerm, Ghostty or iTerm2). Piped, or with `NO_COLOR`, it prints one plain line per reminder.
 - Exit codes: `0` ok, `1` runtime error, `2` usage error, `3` unknown id.
 - `TICKLER_DB=<path>` (or the hidden `--db <path>`) points everything at another database.
 

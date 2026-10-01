@@ -41,6 +41,8 @@ public struct CLIContext: Sendable {
     public var stdout: Output
     public var stderr: Output
     public var liveRunner: CommandRunning = DirectRunner()
+    /// A terminal gets the table; a pipe, a test or Claude gets one plain line per reminder.
+    public var terminalWidth: Int? = Terminal.isInteractive ? Terminal.width : nil
 
     public static var live: CLIContext {
         CLIContext(
