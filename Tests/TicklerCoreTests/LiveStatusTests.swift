@@ -192,3 +192,14 @@ struct LiveStatusFetcherTests {
         #expect(command == ["/bin/zsh", "-lic", #"exec "$0" "$@""#, "jira", "issue", "view", "OPS-1; rm -rf ~"])
     }
 }
+
+struct LiveStatusFinishedTests {
+    @Test func finishedFollowsEachKind() throws {
+        let merged = #"{"iid":1,"title":"t","state":"merged","web_url":"u"}"#
+        let open = #"{"iid":2,"title":"t","state":"opened","web_url":"u"}"#
+        #expect(try LiveStatus.mergeRequest(LiveStatusParser.mergeRequest(mr: Data(merged.utf8), approvals: Data("{}".utf8))).isFinished)
+        #expect(try !LiveStatus.mergeRequest(LiveStatusParser.mergeRequest(mr: Data(open.utf8), approvals: Data("{}".utf8))).isFinished)
+        let done = #"{"key":"OPS-1","fields":{"summary":"s","status":{"name":"Done","statusCategory":{"key":"done"}}}}"#
+        #expect(try LiveStatus.ticket(LiveStatusParser.ticket(Data(done.utf8))).isFinished)
+    }
+}

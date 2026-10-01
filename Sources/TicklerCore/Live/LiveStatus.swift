@@ -117,6 +117,36 @@ public enum LiveStatus: Hashable, Sendable {
     case pullRequest(PullRequestStatus)
 }
 
+public extension LiveStatus {
+    /// Nothing left to do on it: merged or closed MR and PR, ticket in a done status.
+    var isFinished: Bool {
+        switch self {
+        case let .mergeRequest(mr): mr.state != "opened"
+        case let .ticket(ticket): ticket.category == .done
+        case let .pullRequest(pr): pr.state != "OPEN"
+        }
+    }
+
+    /// What the "everything is finished" banner counts.
+    static func finishedSummary(_ statuses: [LiveStatus]) -> FinishedCounts {
+        statuses.reduce(into: FinishedCounts()) { counts, status in
+            switch status {
+            case .mergeRequest: counts.mergeRequests += 1
+            case .ticket: counts.tickets += 1
+            case .pullRequest: counts.pullRequests += 1
+            }
+        }
+    }
+}
+
+public struct FinishedCounts: Equatable, Sendable {
+    public var mergeRequests = 0
+    public var tickets = 0
+    public var pullRequests = 0
+
+    public init() {}
+}
+
 public enum LiveError: Error, Equatable, CustomStringConvertible {
     case toolMissing(String)
     case failed(tool: String, message: String)
