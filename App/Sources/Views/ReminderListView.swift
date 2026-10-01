@@ -99,29 +99,42 @@ struct ReminderListView: View {
     }
 }
 
-/// Seven days from today; a click filters the list on that day.
-/// Seven days from today; a click filters the list on that day, a second click goes back to Today.
+/// Seven days from today, moved a week at a time; a click filters the list on a day, a second click goes back to Today.
 struct DayStrip: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
         let calendar = Calendar.current
-        let start = calendar.startOfDay(for: model.now)
+        let start = calendar.date(byAdding: .day, value: model.stripWeek * 7, to: calendar.startOfDay(for: model.now))!
         HStack(spacing: 4) {
+            weekButton("chevron.left", step: -1, help: "Previous week")
             ForEach(0 ..< 7, id: \.self) { offset in
                 let day = calendar.date(byAdding: .day, value: offset, to: start)!
+                let items = model.reminders(for: .day(day))
+                let isToday = calendar.isDateInToday(day)
                 DayTile(
                     day: day,
-                    isToday: offset == 0,
-                    total: model.reminders(for: .day(day)).count + (offset == 0 ? model.overdueCount - overdueToday(day) : 0),
-                    hasOverdue: offset == 0 && model.overdueCount > 0,
+                    isToday: isToday,
+                    total: items.count { $0.status == .open } + (isToday ? model.overdueCount - overdueToday(day) : 0),
+                    finished: items.count { $0.status == .done },
+                    hasOverdue: (isToday && model.overdueCount > 0) || items.contains { $0.status == .open && $0.dueAt < model.now },
                     isWeekend: calendar.isDateInWeekend(day),
                     isSelected: model.filter == .day(day)
                 ) {
                     model.filter = model.filter == .day(day) ? .today : .day(day)
                 }
             }
+            weekButton("chevron.right", step: 1, help: "Next week")
         }
+    }
+
+    private func weekButton(_ symbol: String, step: Int, help: LocalizedStringKey) -> some View {
+        Button { withAnimation(.easeOut(duration: 0.15)) { model.stripWeek += step } } label: {
+            Image(systemName: symbol).font(.system(size: 11, weight: .semibold)).frame(width: 18, height: 64)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .help(help)
     }
 
     /// Overdue reminders from today are already counted on today's tile.
@@ -134,6 +147,7 @@ private struct DayTile: View {
     let day: Date
     let isToday: Bool
     let total: Int
+    let finished: Int
     let hasOverdue: Bool
     let isWeekend: Bool
     let isSelected: Bool

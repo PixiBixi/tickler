@@ -1067,6 +1067,16 @@
         }
       }
     },
+    "Next week": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Semaine suivante"
+          }
+        }
+      }
+    },
     "Next, %@": {
       "localizations": {
         "fr": {
@@ -1363,6 +1373,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pipeline"
+          }
+        }
+      }
+    },
+    "Previous week": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Semaine précédente"
           }
         }
       }

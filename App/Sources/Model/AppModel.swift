@@ -46,7 +46,16 @@ final class AppModel {
     private(set) var runningSessions: Set<String> = []
     private(set) var now = Date()
 
-    var filter: SidebarFilter = .today
+    var filter: SidebarFilter = .today {
+        didSet {
+            if filter == .today {
+                stripWeek = 0
+            }
+        }
+    }
+
+    /// Weeks the day strip is moved by, negative for the past. Going back to Today resets it.
+    var stripWeek = 0
     var selection: String?
     var search = ""
     var showQuickAdd = false
@@ -241,7 +250,7 @@ final class AppModel {
         case .overdue: open.filter { $0.dueAt < now }
         case .all: open
         case .done: done
-        case let .day(day): open.filter { calendar.isDate($0.dueAt, inSameDayAs: day) }
+        case let .day(day): (open + done).filter { calendar.isDate($0.dueAt, inSameDayAs: day) }
         case let .project(name): open.filter { $0.project == name }
         }
     }
@@ -255,8 +264,11 @@ final class AppModel {
         if filter == .done {
             return items.isEmpty ? [] : [ReminderGroup(bucket: nil, reminders: items)]
         }
-        let grouped = Dictionary(grouping: items) { DueBucket.of($0.dueAt, now: now, calendar: calendar) }
-        return DueBucket.allCases.compactMap { bucket in grouped[bucket].map { ReminderGroup(bucket: bucket, reminders: $0) } }
+        // A day view also lists what was done that day, after what is still open.
+        let finished = items.filter { $0.status == .done }
+        let grouped = Dictionary(grouping: items.filter { $0.status == .open }) { DueBucket.of($0.dueAt, now: now, calendar: calendar) }
+        let openGroups = DueBucket.allCases.compactMap { bucket in grouped[bucket].map { ReminderGroup(bucket: bucket, reminders: $0) } }
+        return openGroups + (finished.isEmpty ? [] : [ReminderGroup(bucket: nil, reminders: finished)])
     }
 
     func links(of reminder: Reminder) -> [ReminderLink] {
