@@ -150,9 +150,8 @@ private struct DayTile: View {
                 Text(Format.dayNumber(day))
                     .font(.system(size: 15, weight: .semibold))
                     .monospacedDigit()
-                    .foregroundStyle(isToday ? Theme.onAccent : (isWeekend ? Color.secondary : Color.primary))
-                    .frame(width: 28, height: 28)
-                    .background(isToday ? Theme.accent : .clear, in: Circle())
+                    .foregroundStyle(isToday ? Theme.accent : (isWeekend ? Color.secondary : Color.primary))
+                    .frame(height: 28)
                 dots
             }
             .frame(maxWidth: .infinity, minHeight: 64)
@@ -183,8 +182,11 @@ private struct DayTile: View {
     }
 
     private var background: Color {
+        if isToday {
+            return Theme.accent.opacity(isSelected || hovering ? 0.3 : 0.22)
+        }
         if isSelected {
-            return Theme.accent.opacity(0.14)
+            return Theme.accent.opacity(0.12)
         }
         return Color.primary.opacity(hovering ? 0.08 : (isWeekend ? 0.025 : 0.045))
     }
