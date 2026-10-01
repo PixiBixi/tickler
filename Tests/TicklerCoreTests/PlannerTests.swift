@@ -233,13 +233,14 @@ struct NotificationPlannerReviewTests {
 }
 
 struct AnnouncementTests {
-    @Test func announcesOnlyNewClaudeReminders() {
+    @Test func announcesEveryNewOpenReminder() {
         let old = reminder("old001", at: "2026-10-02 09:00")
         let fresh = reminder("new001", at: "2026-10-02 10:00")
-        var mine = reminder("mine01", at: "2026-10-02 11:00")
-        mine.source = .human
-        let found = NotificationPlanner.newFromClaude(previousIds: ["old001"], reminders: [old, fresh, mine])
-        #expect(found.map(\.id) == ["new001"])
+        var typed = reminder("cli001", at: "2026-10-02 11:00")
+        typed.source = .human
+        let done = reminder("done01", at: "2026-10-02 12:00", status: .done)
+        let found = NotificationPlanner.newlyAdded(previousIds: ["old001"], reminders: [old, fresh, typed, done])
+        #expect(found.map(\.id) == ["new001", "cli001"])
     }
 
     @Test func announcementsAreNeverStale() {

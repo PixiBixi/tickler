@@ -111,9 +111,9 @@ public enum NotificationPlanner {
         }
     }
 
-    /// Reminders that appeared since the last look and came from Claude: what the "new reminder" banner announces.
-    public static func newFromClaude(previousIds: Set<String>, reminders: [Reminder]) -> [Reminder] {
-        reminders.filter { $0.status == .open && $0.source == .claude && !previousIds.contains($0.id) }
+    /// Reminders that appeared since the last look, added outside the app (Claude or the CLI): what the banner announces.
+    public static func newlyAdded(previousIds: Set<String>, reminders: [Reminder]) -> [Reminder] {
+        reminders.filter { $0.status == .open && !previousIds.contains($0.id) }
     }
 
     /// Whether a notification response still speaks for the reminder as it is now.
