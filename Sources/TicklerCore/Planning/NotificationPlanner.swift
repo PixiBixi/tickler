@@ -11,6 +11,8 @@ public enum NotificationCategory: String, CaseIterable, Sendable {
     case ticketLink = "reminder.ticket.link"
 
     public static let summaryIdentifier = "reminder.summary"
+    /// "Claude added a reminder" banners: informational, never tied to a due time.
+    public static let announcementPrefix = "tickler.new"
 
     public var hasTicket: Bool {
         self == .ticket || self == .ticketSlack || self == .ticketLink
@@ -103,7 +105,15 @@ public enum NotificationPlanner {
     /// Delivered banners that no longer match an open reminder at its current time: done, deleted or rescheduled.
     public static func staleDelivered(deliveredIds: [String], reminders: [Reminder]) -> [String] {
         let current = Set(reminders.filter { $0.status == .open }.map(requestId(for:)))
-        return deliveredIds.filter { !$0.hasPrefix(NotificationCategory.summaryIdentifier) && !current.contains($0) }
+        return deliveredIds.filter {
+            !$0.hasPrefix(NotificationCategory.summaryIdentifier) && !$0.hasPrefix(NotificationCategory.announcementPrefix) && !current
+                .contains($0)
+        }
+    }
+
+    /// Reminders that appeared since the last look and came from Claude: what the "new reminder" banner announces.
+    public static func newFromClaude(previousIds: Set<String>, reminders: [Reminder]) -> [Reminder] {
+        reminders.filter { $0.status == .open && $0.source == .claude && !previousIds.contains($0.id) }
     }
 
     /// Whether a notification response still speaks for the reminder as it is now.

@@ -231,3 +231,18 @@ struct NotificationPlannerReviewTests {
         #expect(NotificationPlanner.isCurrent(requestId: NotificationPlanner.requestId(for: open), reminder: open))
     }
 }
+
+struct AnnouncementTests {
+    @Test func announcesOnlyNewClaudeReminders() {
+        let old = reminder("old001", at: "2026-10-02 09:00")
+        let fresh = reminder("new001", at: "2026-10-02 10:00")
+        var mine = reminder("mine01", at: "2026-10-02 11:00")
+        mine.source = .human
+        let found = NotificationPlanner.newFromClaude(previousIds: ["old001"], reminders: [old, fresh, mine])
+        #expect(found.map(\.id) == ["new001"])
+    }
+
+    @Test func announcementsAreNeverStale() {
+        #expect(NotificationPlanner.staleDelivered(deliveredIds: ["tickler.new@abc"], reminders: []).isEmpty)
+    }
+}
