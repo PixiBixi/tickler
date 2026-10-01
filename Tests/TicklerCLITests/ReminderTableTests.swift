@@ -42,3 +42,22 @@ struct ReminderTableTests {
         #expect(!cli.run("list").out.contains("\u{1B}"))
     }
 }
+
+struct ReminderCardTests {
+    @Test func rendersMarkdownLinksAndTheResumeCommand() throws {
+        let date = try #require(StrictDate.parse("2026-10-01 11:00", calendar: CLIHarness.calendar))
+        let reminder = Reminder(
+            id: "abc234", title: "Check the dashboard",
+            notes: "1) Run `glab mr view 221` **first**\nSee https://acme.atlassian.net/browse/OPS-1",
+            dueAt: date, originalDueAt: date, rescheduleCount: 0, status: .open, sessionId: "5b26f281-1806-47aa-8842-0e264f7b9d35",
+            cwd: "/src/platform", source: .claude, externalRef: nil, notifiedAt: nil, doneAt: nil, createdAt: date, updatedAt: date
+        )
+        let card = ReminderCard(now: CLIHarness.now, calendar: CLIHarness.calendar, width: 100, sessionRunning: false)
+        let output = card.render(reminder, links: LinkExtractor.links(reminderId: "abc234", notes: reminder.notes, explicit: []))
+        #expect(output.contains("\u{1B}[36mglab mr view 221\u{1B}[0m"))
+        #expect(output.contains("\u{1B}[1mfirst\u{1B}[0m"))
+        #expect(output.contains("\u{1B}]8;;https://acme.atlassian.net/browse/OPS-1\u{1B}\\"))
+        #expect(output.contains("tickler resume abc234"))
+        #expect(!output.contains("**"))
+    }
+}

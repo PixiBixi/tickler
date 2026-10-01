@@ -28,7 +28,7 @@ struct ReminderTable {
             lines.append(style("\(title(bucket)) (\(items.count))", bucket == .overdue ? .redBold : .bold))
             for reminder in items {
                 let dueText = pad(due(reminder), dueWidth)
-                let dueStyle: Style = bucket == .overdue ? .red : (bucket == .later || bucket == nil ? .dim : .plain)
+                let dueStyle: Ansi.Style = bucket == .overdue ? .red : (bucket == .later || bucket == nil ? .dim : .plain)
                 let titleText = pad(truncate(reminder.title, titleWidth), titleWidth)
                 lines.append([
                     link(style(reminder.id, .accent), to: CalendarMarker.link(for: reminder.id)),
@@ -79,30 +79,12 @@ struct ReminderTable {
 
     // MARK: Terminal escapes
 
-    enum Style {
-        case plain, bold, dim, red, redBold, accent, strike
-
-        var code: String {
-            switch self {
-            case .plain: ""
-            case .bold: "1"
-            case .dim: "2"
-            case .red: "31"
-            case .redBold: "1;31"
-            case .accent: "38;5;173"
-            case .strike: "2;9"
-            }
-        }
-    }
-
-    private func style(_ text: String, _ style: Style) -> String {
-        guard color, !style.code.isEmpty, !text.isEmpty else { return text }
-        return "\u{1B}[\(style.code)m\(text)\u{1B}[0m"
+    private func style(_ text: String, _ style: Ansi.Style) -> String {
+        color ? Ansi.style(text, style) : text
     }
 
     private func link(_ text: String, to url: String) -> String {
-        guard color else { return text }
-        return "\u{1B}]8;;\(url)\u{1B}\\\(text)\u{1B}]8;;\u{1B}\\"
+        color ? Ansi.link(text, to: url) : text
     }
 }
 
