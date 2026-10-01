@@ -24,7 +24,11 @@ enum StatusOption: String, ExpressibleByArgument, CaseIterable {
 }
 
 struct ListCommand: TicklerSubcommand {
-    static let configuration = CommandConfiguration(commandName: "list", abstract: "List reminders; today includes overdue.")
+    static let configuration = CommandConfiguration(
+        commandName: "list",
+        abstract: "List reminders; today includes overdue.",
+        aliases: ["ls"]
+    )
 
     @OptionGroup var options: GlobalOptions
     @Option(help: "today (default, overdue included), week, overdue or all.") var due: DueOption = .today

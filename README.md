@@ -35,7 +35,7 @@ make install DEVELOPMENT_TEAM=XXXXXXXXXX
 | Command | Does |
 |---|---|
 | `tickler add <title> --at "YYYY-MM-DD HH:MM"` | Creates a reminder. `--notes <text>` or `--notes -` (stdin), `--link <url>` (repeatable), `--session <uuid>`, `--cwd <dir>`, `--json` |
-| `tickler list` | Open reminders. `--due today` (default, overdue included), `week`, `overdue`, `all`; `--project <name>`; `--status done`; `--json` |
+| `tickler list` (alias `ls`) | Open reminders. `--due today` (default, overdue included), `week`, `overdue`, `all`; `--project <name>`; `--status done`; `--json` |
 | `tickler show <id>` | One reminder with notes, links and session. `--json` |
 | `tickler done <id>` | Marks it done |
 | `tickler snooze <id> --for 1h` | Pushes it back from now: `15m`, `1h`, `2d`. Or `--to "YYYY-MM-DD HH:MM"` |

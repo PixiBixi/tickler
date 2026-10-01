@@ -24,4 +24,10 @@ struct CompletionTests {
     @Test func zshScriptIsPrinted() {
         #expect(TicklerCommand.completionScript(for: .zsh).contains("compdef _tickler tickler"))
     }
+
+    @Test func lsIsAnAliasOfList() {
+        let cli = CLIHarness()
+        _ = cli.run("add", "aliased", "--at", "2026-10-01 12:00")
+        #expect(cli.run("ls").out == cli.run("list").out)
+    }
 }
