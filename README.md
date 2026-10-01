@@ -12,6 +12,15 @@ Requirements: macOS 14 or later, Xcode 16 or later, [XcodeGen](https://github.co
 ## Install
 
 ```bash
+brew install --cask pixibixi/tap/tickler
+# Installs /Applications/Tickler.app and the tickler CLI, then open Tickler once to set it up
+```
+
+The release is signed with a self-signed certificate, not notarized: the cask removes the quarantine flag so macOS opens it. Permissions granted to Tickler survive upgrades, as every release uses the same certificate.
+
+From source:
+
+```bash
 brew install xcodegen
 make install
 # Installs ~/.local/bin/tickler and ~/Applications/Tickler.app
@@ -115,6 +124,8 @@ For notifications to stay on screen until you act, set Tickler's alert style to 
 | `make app` | Generates `Tickler.xcodeproj` with XcodeGen and builds the app |
 | `make dev` | Incremental Debug build of the app, installed and relaunched (about 10 s) |
 | `make install` / `make uninstall` | Installs or removes the CLI and the app (Release) |
+| `make release VERSION=x.y.z SIGN_IDENTITY=<name>` | Universal signed zip in `dist/`, as the release workflow publishes on a `v*` tag |
+| `scripts/create-release-signing-certificate.sh <owner/repo>` | Once: creates the release certificate and stores it as the repository's secrets |
 
 `lefthook install` sets up the pre-commit (format, lint, gitleaks, markdownlint, actionlint) and commit-msg (Conventional Commits) hooks. Debug builds write PNGs of their windows when started with `TICKLER_SNAPSHOT=<dir>`.
 
