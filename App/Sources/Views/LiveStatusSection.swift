@@ -94,6 +94,9 @@ private struct LiveCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.primary.opacity(hovering ? 0.07 : 0.04), in: RoundedRectangle(cornerRadius: 9))
         .opacity(finished ? 0.65 : 1)
+        // The whole card opens the item; the buttons inside keep their own action.
+        .contentShape(RoundedRectangle(cornerRadius: 9))
+        .onTapGesture { openURL(webURL) }
         .onHover { hovering = $0 }
         .modifier(MergeDialogs(link: link, status: entry?.status, confirmApproval: $confirmApproval, confirmMerge: $confirmMerge))
     }
