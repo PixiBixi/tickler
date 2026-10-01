@@ -111,6 +111,9 @@ struct ReminderDetailView: View {
                 Text(abbreviate(cwd))
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .help(cwd)
                     .textSelection(.enabled)
             }
         }
@@ -161,7 +164,7 @@ struct ReminderDetailView: View {
 
     private var actions: some View {
         let targets = LinkTargets(links: model.links(of: reminder))
-        return HStack(spacing: 8) {
+        return FlowLayout(spacing: 8) {
             if reminder.sessionId != nil {
                 Button { model.resume(reminder) } label: {
                     Label("Resume Session", systemImage: "terminal")

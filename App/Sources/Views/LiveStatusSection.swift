@@ -142,7 +142,7 @@ private struct LiveCard: View {
     // MARK: Merge request
 
     private func mergeRequest(_ mr: MergeRequestStatus) -> some View {
-        HStack(spacing: 14) {
+        FlowLayout(spacing: 14, lineSpacing: 8) {
             if let pipeline = mr.pipeline {
                 Button { mr.pipelineURL.map(openURL) } label: {
                     fact(icon(for: pipeline), String(localized: "Pipeline"), color(for: pipeline))
@@ -162,7 +162,6 @@ private struct LiveCard: View {
             if mr.hasConflicts {
                 fact("exclamationmark.triangle", String(localized: "Conflicts"), Theme.overdue)
             }
-            Spacer(minLength: 0)
             if mr.canMergeNow || mr.canMergeWhenPipelinePasses {
                 Button { confirmMerge = true } label: {
                     Label(mr.canMergeNow ? "Merge…" : "Merge When Pipeline Passes…", systemImage: "arrow.triangle.merge")
