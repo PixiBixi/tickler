@@ -42,6 +42,10 @@ final class Preferences {
         didSet { defaults.set(announceNewReminders, forKey: "announceNewReminders") }
     }
 
+    var bannerHintDismissed: Bool {
+        didSet { defaults.set(bannerHintDismissed, forKey: "bannerHintDismissed") }
+    }
+
     var onboardingDone: Bool {
         didSet { defaults.set(onboardingDone, forKey: "onboardingDone") }
     }
@@ -73,6 +77,7 @@ final class Preferences {
         calendarId = defaults.string(forKey: "calendarId")
         weztermPath = defaults.string(forKey: "weztermPath") ?? ""
         onboardingDone = defaults.bool(forKey: "onboardingDone")
+        bannerHintDismissed = defaults.bool(forKey: "bannerHintDismissed")
         announceNewReminders = defaults.object(forKey: "announceNewReminders") as? Bool ?? true
         globalShortcut = defaults.object(forKey: "globalShortcut") as? Bool ?? true
         enabledTools = defaults.stringArray(forKey: "enabledTools")

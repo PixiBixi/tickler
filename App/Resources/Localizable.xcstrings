@@ -707,6 +707,16 @@
         }
       }
     },
+    "Calendar settings": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réglages du calendrier"
+          }
+        }
+      }
+    },
     "Calendar sync off": {
       "localizations": {
         "fr": {
@@ -993,6 +1003,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "GitLab la merge en ton nom, avec les options de la merge request (squash, suppression de la branche). %@"
+          }
+        }
+      }
+    },
+    "Hide": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masquer"
           }
         }
       }
@@ -1727,6 +1747,16 @@
         }
       }
     },
+    "Reminders vanish after a few seconds": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les rappels disparaissent au bout de quelques secondes"
+          }
+        }
+      }
+    },
     "Reopen": {
       "localizations": {
         "fr": {
@@ -1887,16 +1917,6 @@
         }
       }
     },
-    "Set Tickler to Alerts in System Settings > Notifications, so reminders stay on screen.": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Passe Tickler en style Alertes dans Réglages Système > Notifications pour que les rappels restent à l'écran."
-          }
-        }
-      }
-    },
     "Set up Tickler": {
       "localizations": {
         "fr": {
@@ -1973,6 +1993,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Snooze 15 min"
+          }
+        }
+      }
+    },
+    "Switch to Alerts ›": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passer en style Alertes ›"
           }
         }
       }

@@ -86,17 +86,13 @@ struct SidebarView: View {
             }
             Divider()
             VStack(alignment: .leading, spacing: 6) {
-                if model.notifications.usesBanners {
-                    Label(
-                        "Set Tickler to Alerts in System Settings > Notifications, so reminders stay on screen.",
-                        systemImage: "bell.badge"
-                    )
-                    .font(.system(size: 11))
-                    .foregroundStyle(.orange)
-                    .fixedSize(horizontal: false, vertical: true)
+                if model.notifications.usesBanners, !model.preferences.bannerHintDismissed {
+                    AlertsHint()
                 }
                 HStack {
-                    CalendarStatusLabel()
+                    SettingsLink { CalendarStatusLabel() }
+                        .buttonStyle(.plain)
+                        .help("Calendar settings")
                     Spacer()
                     SettingsLink {
                         Image(systemName: "gearshape").font(.system(size: 13))
@@ -156,5 +152,41 @@ struct SidebarView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Banner-style notifications vanish after a few seconds: one click to the Tickler pane of System Settings.
+private struct AlertsHint: View {
+    @Environment(AppModel.self) private var model
+    @State private var hovering = false
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "bell.badge").font(.system(size: 12)).foregroundStyle(.orange)
+            Button {
+                let pane = "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=\(Tickler.bundleIdentifier)"
+                if let url = URL(string: pane) {
+                    NSWorkspace.shared.open(url)
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Reminders vanish after a few seconds").foregroundStyle(.primary)
+                    Text("Switch to Alerts ›").foregroundStyle(.orange).underline(hovering)
+                }
+                .font(.system(size: 11))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .onHover { hovering = $0 }
+            Button { model.preferences.bannerHintDismissed = true } label: {
+                Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(.secondary)
+            .help("Hide")
+        }
+        .padding(8)
+        .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
     }
 }
