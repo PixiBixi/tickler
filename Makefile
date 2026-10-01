@@ -11,7 +11,11 @@ DERIVED := build/DerivedData
 # then ad hoc. Ad hoc changes with every build, and macOS then forgets the Calendar and Automation permissions.
 LOCAL_IDENTITY := Tickler Local Signing
 HAS_LOCAL_IDENTITY := $(shell security find-identity -v -p codesigning 2>/dev/null | grep -c '"$(LOCAL_IDENTITY)"')
-ifneq ($(DEVELOPMENT_TEAM),)
+# SIGN_IDENTITY: an explicit identity, as the release workflow passes its imported certificate.
+SIGN_IDENTITY ?=
+ifneq ($(SIGN_IDENTITY),)
+SIGN_FLAGS := CODE_SIGN_IDENTITY="$(SIGN_IDENTITY)" CODE_SIGN_STYLE=Manual
+else ifneq ($(DEVELOPMENT_TEAM),)
 SIGN_FLAGS := DEVELOPMENT_TEAM=$(DEVELOPMENT_TEAM) CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates
 else ifneq ($(HAS_LOCAL_IDENTITY),0)
 SIGN_FLAGS := CODE_SIGN_IDENTITY="$(LOCAL_IDENTITY)" CODE_SIGN_STYLE=Manual
@@ -19,7 +23,7 @@ else
 SIGN_FLAGS := CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual
 endif
 
-.PHONY: build test lint format project app install dev uninstall clean
+.PHONY: build test lint format project app install dev uninstall clean release
 
 build:
 	swift build
@@ -48,7 +52,7 @@ project:
 app: project
 	xcodebuild -project Tickler.xcodeproj -scheme Tickler -configuration $(CONFIGURATION) \
 		-derivedDataPath $(DERIVED) \
-		$(SIGN_FLAGS) \
+		$(SIGN_FLAGS) $(XCODEBUILD_EXTRA) \
 		-quiet build
 
 install: app
@@ -74,3 +78,20 @@ uninstall:
 
 clean:
 	rm -rf .build build Tickler.xcodeproj
+
+# Release zip for the Homebrew cask: universal Tickler.app and tickler CLI, both signed with SIGN_IDENTITY.
+# The same certificate on every release keeps the permissions macOS granted across upgrades.
+DIST := dist
+release:
+	@test -n "$(VERSION)" || { echo "usage: make release VERSION=x.y.z SIGN_IDENTITY=<name>"; exit 1; }
+	@test -n "$(SIGN_IDENTITY)" || { echo "SIGN_IDENTITY is required: an ad hoc release would reset permissions on upgrade"; exit 1; }
+	$(MAKE) app CONFIGURATION=Release XCODEBUILD_EXTRA='ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO MARKETING_VERSION=$(VERSION)'
+	swift build -c release --product tickler --arch arm64 --arch x86_64
+	rm -rf "$(DIST)/tickler-$(VERSION)" && mkdir -p "$(DIST)/tickler-$(VERSION)"
+	cp -R "$(DERIVED)/Build/Products/Release/Tickler.app" "$(DIST)/tickler-$(VERSION)/"
+	cp .build/apple/Products/Release/tickler "$(DIST)/tickler-$(VERSION)/tickler"
+	codesign --force --options runtime --timestamp=none --identifier io.github.pixibixi.tickler.cli \
+		--sign "$(SIGN_IDENTITY)" "$(DIST)/tickler-$(VERSION)/tickler"
+	codesign --verify --strict "$(DIST)/tickler-$(VERSION)/Tickler.app" "$(DIST)/tickler-$(VERSION)/tickler"
+	ditto -c -k --sequesterRsrc "$(DIST)/tickler-$(VERSION)" "$(DIST)/tickler-$(VERSION).zip"
+	shasum -a 256 "$(DIST)/tickler-$(VERSION).zip"

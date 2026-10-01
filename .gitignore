@@ -24,3 +24,6 @@ App/Info.plist
 App/Tickler.entitlements
 # Third-party logo-design skill: its library is 14 MB of trademarked logos, kept out of the repo.
 .claude/skills/logo-design/
+
+# Release zips (make release)
+dist/
