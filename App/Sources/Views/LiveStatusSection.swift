@@ -66,13 +66,7 @@ private struct LiveCard: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            let tag = Theme.tag(for: link.kind)
-            Text(tag.text)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(tag.color)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(tag.color.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
+            LinkBadge(kind: link.kind)
             Text(link.label).font(.system(size: 13, weight: .semibold))
             if let title = statusTitle {
                 Text(title).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)

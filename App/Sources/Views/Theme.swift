@@ -25,13 +25,48 @@ enum Theme {
 
     static func tag(for kind: LinkKind) -> (text: String, color: Color) {
         switch kind {
-        case .gitlabMR: ("MR", Color(red: 1.0, green: 0.6, blue: 0.4))
-        case .githubPR: ("PR", Color(red: 0.6, green: 0.75, blue: 1.0))
-        case .jira: ("Jira", Color(red: 0.49, green: 0.71, blue: 1.0))
-        case .grafana: ("Grafana", Color(red: 0.96, green: 0.72, blue: 0.3))
-        case .slack: ("Slack", Color(red: 0.37, green: 0.84, blue: 0.71))
+        case .gitlabMR: ("MR", Color(red: 0.99, green: 0.43, blue: 0.15))
+        case .githubPR: ("PR", Color.primary)
+        case .jira: ("Jira", Color(red: 0.3, green: 0.6, blue: 1.0))
+        case .grafana: ("Grafana", Color(red: 0.96, green: 0.45, blue: 0.1))
+        case .slack: ("Slack", Color(red: 0.18, green: 0.71, blue: 0.49))
         case .other: (String(localized: "Link"), Color.secondary)
         }
+    }
+
+    /// The service's logo (Simple Icons, CC0); Slack withdrew its icon from there, so it gets a plain "#".
+    static func logo(for kind: LinkKind) -> Image {
+        switch kind {
+        case .gitlabMR: Image("Brand-gitlab")
+        case .githubPR: Image("Brand-github")
+        case .jira: Image("Brand-jira")
+        case .grafana: Image("Brand-grafana")
+        case .slack: Image(systemName: "number")
+        case .other: Image(systemName: "link")
+        }
+    }
+}
+
+/// Logo plus a short kind ("MR", "PR") where the logo alone does not say what the link is.
+struct LinkBadge: View {
+    let kind: LinkKind
+
+    var body: some View {
+        let tag = Theme.tag(for: kind)
+        HStack(spacing: 4) {
+            Theme.logo(for: kind)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 12, height: 12)
+            if kind == .gitlabMR || kind == .githubPR {
+                Text(tag.text).font(.system(size: 10, weight: .bold))
+            }
+        }
+        .foregroundStyle(tag.color)
+        .frame(minWidth: 40, minHeight: 20)
+        .padding(.horizontal, 4)
+        .background(tag.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 5))
+        .help(tag.text)
     }
 }
 

@@ -205,13 +205,7 @@ struct ReminderDetailView: View {
                 ForEach(links, id: \.position) { link in
                     Button { model.open(link) } label: {
                         HStack(spacing: 10) {
-                            let tag = Theme.tag(for: link.kind)
-                            Text(tag.text)
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(tag.color)
-                                .frame(minWidth: 44)
-                                .padding(.vertical, 2)
-                                .background(tag.color.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
+                            LinkBadge(kind: link.kind)
                             Text(link.label).font(.system(size: 13))
                             Spacer()
                             Image(systemName: "arrow.up.right").font(.system(size: 11)).foregroundStyle(.secondary)
