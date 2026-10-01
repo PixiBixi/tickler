@@ -215,3 +215,30 @@ struct LiveStatusFinishedTests {
         #expect(try LiveStatus.ticket(LiveStatusParser.ticket(Data(done.utf8))).isFinished)
     }
 }
+
+struct JiraTokenDiscoveryTests {
+    @Test func readsLiteralExportsOnly() {
+        #expect(JiraTokenDiscovery.token(in: "# x\nexport JIRA_API_TOKEN=abc123\n") == "abc123")
+        #expect(JiraTokenDiscovery.token(in: #"JIRA_API_TOKEN="ATATT3x-y_z=" # jira"#) == "ATATT3x-y_z=")
+        #expect(JiraTokenDiscovery.token(in: "export JIRA_API_TOKEN=$(security find-generic-password -w)") == nil)
+        #expect(JiraTokenDiscovery.token(in: "export JIRA_API_TOKEN=\"$TOKEN\"") == nil)
+    }
+
+    @Test func scansShellFilesAndSkipsProtectedFolders() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent("home-\(UUID().uuidString)")
+        let documents = home.appendingPathComponent("Documents")
+        try FileManager.default.createDirectory(at: documents, withIntermediateDirectories: true)
+        try "export JIRA_API_TOKEN=from-documents\n".write(to: documents.appendingPathComponent("zshrc"), atomically: true, encoding: .utf8)
+        try FileManager.default.createSymbolicLink(
+            at: home.appendingPathComponent(".zshrc"),
+            withDestinationURL: documents.appendingPathComponent("zshrc")
+        )
+        try "export JIRA_API_TOKEN=old\n".write(to: home.appendingPathComponent(".zsh_secrets.bak-1"), atomically: true, encoding: .utf8)
+        try "export JIRA_API_TOKEN=secret-file\n".write(
+            to: home.appendingPathComponent(".zsh_work_secrets"),
+            atomically: true,
+            encoding: .utf8
+        )
+        #expect(JiraTokenDiscovery.find(home: home) == .init(token: "secret-file", path: "~/.zsh_work_secrets"))
+    }
+}
