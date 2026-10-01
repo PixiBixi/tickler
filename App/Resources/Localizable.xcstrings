@@ -274,7 +274,7 @@
         }
       }
     },
-    "%lld new reminders from Claude": {
+    "%lld new reminders": {
       "localizations": {
         "en": {
           "variations": {
@@ -282,13 +282,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld new reminder from Claude"
+                  "value": "%lld new reminder"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld new reminders from Claude"
+                  "value": "%lld new reminders"
                 }
               }
             }
@@ -300,13 +300,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld nouveau rappel de Claude"
+                  "value": "%lld nouveau rappel"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld nouveaux rappels de Claude"
+                  "value": "%lld nouveaux rappels"
                 }
               }
             }
@@ -1267,12 +1267,12 @@
         }
       }
     },
-    "Notify when Claude adds a reminder": {
+    "Notify when a reminder is added from outside the app": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Me notifier quand Claude ajoute un rappel"
+            "value": "Me notifier quand un rappel est ajouté hors de l'app (Claude, CLI)"
           }
         }
       }

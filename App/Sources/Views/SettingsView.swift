@@ -112,7 +112,7 @@ struct SettingsView: View {
                     Text("Setup assistant")
                     Text("Permissions, terminal and live status tools, as on first launch.")
                 }
-                Toggle("Notify when Claude adds a reminder", isOn: $preferences.announceNewReminders)
+                Toggle("Notify when a reminder is added from outside the app", isOn: $preferences.announceNewReminders)
                 Toggle("Open at login", isOn: Binding(
                     get: { launchAtLogin },
                     set: { preferences.launchAtLogin = $0; launchAtLogin = preferences.launchAtLogin }

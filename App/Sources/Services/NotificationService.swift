@@ -139,7 +139,7 @@ final class NotificationService: NSObject {
             }
             return
         }
-        content.title = String(localized: "\(added.count) new reminders from Claude")
+        content.title = String(localized: "\(added.count) new reminders")
         content.body = added.prefix(4).map(\.title).joined(separator: "\n")
         let request = UNNotificationRequest(
             identifier: "\(NotificationCategory.announcementPrefix)@batch-\(Int(Date().timeIntervalSince1970))", content: content,
