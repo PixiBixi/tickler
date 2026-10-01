@@ -82,6 +82,9 @@ struct StatusCommand: TicklerSubcommand {
             if mr.canApproveNow {
                 parts.append("you can approve")
             }
+            if mr.canMergeNow {
+                parts.append("you can merge")
+            }
             parts.append(mr.mergeStatus)
             return "\(head)  " + parts.joined(separator: ", ")
         }
