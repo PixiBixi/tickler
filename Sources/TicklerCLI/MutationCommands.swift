@@ -83,7 +83,8 @@ struct RemoveCommand: TicklerSubcommand {
 
     func execute(_ context: CLIContext) throws {
         let store = try context.openStore(options)
-        _ = try context.loadReminder(id, from: store)
+        let reminder = try context.loadReminder(id, from: store)
         try store.delete(id)
+        context.stdout.line("deleted\t" + context.summaryLine(reminder))
     }
 }

@@ -71,7 +71,9 @@ struct MutationTests {
     @Test func rmHidesTheReminder() throws {
         let cli = CLIHarness()
         let id = try addReminder(cli)
-        #expect(cli.run("rm", id).code == 0)
+        let removed = cli.run("rm", id)
+        #expect(removed.code == 0)
+        #expect(removed.out.hasPrefix("deleted\t\(id)\t"))
         #expect(cli.run("list", "--due", "all").out.isEmpty)
         #expect(cli.run("show", id).code == 3)
         #expect(cli.run("rm", id).code == 3)
