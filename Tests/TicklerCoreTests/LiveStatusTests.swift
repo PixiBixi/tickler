@@ -192,6 +192,12 @@ struct LiveStatusFetcherTests {
         #expect(command == ["/bin/zsh", "-lic", #"exec "$0" "$@""#, "jira", "issue", "view", "OPS-1; rm -rf ~"])
     }
 
+    @Test func appRunnerHandsTheToolItsExtraEnvironment() async throws {
+        let runner = AppToolRunner { tool in tool == "env" ? ["TICKLER_PROBE": "token-value"] : [:] }
+        let output = try await String(decoding: runner.run("env", []), as: UTF8.self)
+        #expect(output.contains("TICKLER_PROBE=token-value"))
+    }
+
     @Test func failureMessageDropsColorCodesAndTrailingResets() {
         let stderr = "\u{1B}[31m\u{1B}[1mError:\u{1B}[0m 401 Unauthorized\n\u{1B}[0m\n"
         #expect(LiveError.failureMessage(Data(stderr.utf8)) == "Error: 401 Unauthorized")

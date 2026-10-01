@@ -133,9 +133,14 @@ public struct AppToolRunner: CommandRunning {
     public static let searchPath = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"]
 
     let shell: LoginShellRunner
+    /// Extra variables for one tool, read on every run: the app hands jira the token it keeps in its keychain.
+    let environment: @Sendable (String) -> [String: String]
 
-    public init(shell: LoginShellRunner = LoginShellRunner()) {
+    public init(shell: LoginShellRunner = LoginShellRunner(), environment: @escaping @Sendable (String) -> [String: String] = { _ in
+        [:]
+    }) {
         self.shell = shell
+        self.environment = environment
     }
 
     public static func needsShell(_ tool: String) -> Bool {
@@ -147,15 +152,16 @@ public struct AppToolRunner: CommandRunning {
     }
 
     public func run(_ tool: String, _ arguments: [String]) async throws -> Data {
-        guard Self.needsShell(tool) else { return try await direct(tool, arguments) }
+        let extra = environment(tool)
+        guard Self.needsShell(tool), extra["JIRA_API_TOKEN"] == nil else { return try await direct(tool, arguments, extra) }
         do {
-            return try await direct(tool, arguments)
+            return try await direct(tool, arguments, extra)
         } catch LiveError.failed {
             return try await shell.run(tool, arguments)
         }
     }
 
-    private func direct(_ tool: String, _ arguments: [String]) async throws -> Data {
+    private func direct(_ tool: String, _ arguments: [String], _ extra: [String: String]) async throws -> Data {
         guard let binary = Self.locate(tool) else { throw LiveError.toolMissing(tool) }
         return try await Task.detached {
             let process = Process()
@@ -163,6 +169,7 @@ public struct AppToolRunner: CommandRunning {
             process.arguments = arguments
             var environment = ProcessInfo.processInfo.environment
             environment["PATH"] = Self.searchPath.joined(separator: ":")
+            environment.merge(extra) { _, new in new }
             process.environment = environment
             process.standardInput = FileHandle.nullDevice
             let out = Pipe()
