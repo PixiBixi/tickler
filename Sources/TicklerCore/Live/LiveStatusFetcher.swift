@@ -126,8 +126,9 @@ public struct DirectRunner: CommandRunning {
     }
 }
 
-/// The app's runner: glab and gh straight from the usual install folders, with no shell, as their logins live in
-/// ~/.config. jira goes through the login shell because JIRA_API_TOKEN usually exists only in the shell profile.
+/// The app's runner: tools straight from the usual install folders, with no shell, as glab and gh logins live in
+/// ~/.config and jira finds its token in the keychain. jira retries through the login shell for a JIRA_API_TOKEN
+/// exported by the shell profile; a profile that defers its loading (zsh-defer) never exports it there.
 public struct AppToolRunner: CommandRunning {
     public static let searchPath = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"]
 
@@ -146,9 +147,15 @@ public struct AppToolRunner: CommandRunning {
     }
 
     public func run(_ tool: String, _ arguments: [String]) async throws -> Data {
-        if Self.needsShell(tool) {
+        guard Self.needsShell(tool) else { return try await direct(tool, arguments) }
+        do {
+            return try await direct(tool, arguments)
+        } catch LiveError.failed {
             return try await shell.run(tool, arguments)
         }
+    }
+
+    private func direct(_ tool: String, _ arguments: [String]) async throws -> Data {
         guard let binary = Self.locate(tool) else { throw LiveError.toolMissing(tool) }
         return try await Task.detached {
             let process = Process()
