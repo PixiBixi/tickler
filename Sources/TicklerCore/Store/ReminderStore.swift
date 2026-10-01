@@ -91,7 +91,8 @@ public final class ReminderStore: Sendable {
             }
             let reminder = Reminder(
                 id: id, title: draft.title, notes: draft.notes, dueAt: draft.dueAt, originalDueAt: draft.dueAt,
-                rescheduleCount: 0, status: .open, sessionId: draft.sessionId, cwd: draft.cwd, source: draft.source,
+                rescheduleCount: 0, status: .open, sessionId: draft.sessionId, cwd: draft.cwd,
+                resumePrompt: Self.normalized(draft.resumePrompt), source: draft.source,
                 externalRef: draft.externalRef, notifiedAt: nil, doneAt: nil, createdAt: stamp, updatedAt: stamp
             )
             try reminder.insert(db)
@@ -126,13 +127,23 @@ public final class ReminderStore: Sendable {
     }
 
     /// Edits title and notes; a changed date goes through `reschedule`. Notes rebuild the links, explicit ones stay.
+    /// `resumePrompt`: nil leaves it, an empty string clears it.
     @discardableResult
-    public func update(_ id: String, title: String? = nil, notes: String? = nil, dueAt: Date? = nil) throws -> Reminder {
+    public func update(
+        _ id: String,
+        title: String? = nil,
+        notes: String? = nil,
+        dueAt: Date? = nil,
+        resumePrompt: String? = nil
+    ) throws -> Reminder {
         if let dueAt, try require(id).dueAt != dueAt {
             try reschedule(id, to: dueAt)
         }
-        guard title != nil || notes != nil else { return try require(id) }
+        guard title != nil || notes != nil || resumePrompt != nil else { return try require(id) }
         return try mutate(id) { reminder, _ in
+            if let resumePrompt {
+                reminder.resumePrompt = Self.normalized(resumePrompt)
+            }
             if let title {
                 reminder.title = title
             }
@@ -149,6 +160,12 @@ public final class ReminderStore: Sendable {
                 try link.insert(db)
             }
         }
+    }
+
+    /// One line, trimmed; nothing left means no prompt.
+    static func normalized(_ prompt: String?) -> String? {
+        let line = (prompt ?? "").split(whereSeparator: \.isNewline).joined(separator: " ").trimmingCharacters(in: .whitespaces)
+        return line.isEmpty ? nil : line
     }
 
     /// Soft delete: the row stays for the calendar sync to clean up its event.

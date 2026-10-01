@@ -60,6 +60,11 @@ public final class TicklerDatabase: Sendable {
                 table.column("syncedHash", .text).notNull()
             }
         }
+        migrator.registerMigration("v2-resume-prompt") { db in
+            try db.alter(table: "reminder") { table in
+                table.add(column: "resumePrompt", .text)
+            }
+        }
         return migrator
     }
 }

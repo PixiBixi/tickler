@@ -34,6 +34,8 @@ public struct AppleScriptTerminalDriver: TerminalDriver {
     let findScript: String
     let activateScript: String
     let spawnScript: String
+    /// Types item 2 of argv into the session whose id is item 1, without Return; nil when the terminal cannot.
+    var typeScript: String?
     let runner: ScriptRunning
 
     public func isRunning() -> Bool {
@@ -68,6 +70,31 @@ public struct AppleScriptTerminalDriver: TerminalDriver {
     public func bringToFront() {}
 
     public func killPane(_: String) throws {}
+
+    public func type(_ text: String, intoPane paneId: String) throws -> Bool {
+        guard let typeScript, !paneId.isEmpty else { return false }
+        _ = try runner.run(typeScript, arguments: [paneId, text])
+        return true
+    }
+
+    /// Types without Return (`newline NO`) into the session whose id is item 1.
+    static let iTermTypeScript = """
+    on run argv
+      tell application id "com.googlecode.iterm2"
+        repeat with w in windows
+          repeat with t in tabs of w
+            repeat with s in sessions of t
+              if id of s is (item 1 of argv) then
+                tell s to write text (item 2 of argv) newline NO
+                return "ok"
+              end if
+            end repeat
+          end repeat
+        end repeat
+      end tell
+      error "iTerm2 session not found"
+    end run
+    """
 
     public static func iTerm(runner: ScriptRunning = OSAScriptRunner()) -> AppleScriptTerminalDriver {
         AppleScriptTerminalDriver(
@@ -122,6 +149,7 @@ public struct AppleScriptTerminalDriver: TerminalDriver {
               end tell
             end run
             """,
+            typeScript: iTermTypeScript,
             runner: runner
         )
     }
@@ -261,6 +289,11 @@ public struct CompositeTerminalDriver: TerminalDriver {
     public func killPane(_ paneId: String) throws {
         let (member, pane) = try resolve(paneId)
         try member.driver.killPane(pane)
+    }
+
+    public func type(_ text: String, intoPane paneId: String) throws -> Bool {
+        let (member, pane) = try resolve(paneId)
+        return try member.driver.type(text, intoPane: pane)
     }
 
     private func resolve(_ paneId: String) throws -> (Member, String) {

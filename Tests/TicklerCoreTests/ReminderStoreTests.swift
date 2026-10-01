@@ -56,6 +56,17 @@ struct ReminderStoreTests {
         #expect(try store.links(for: added.id).map(\.label) == ["OPS-2204", "rollout-readiness"])
     }
 
+    @Test func resumePromptIsOneLineAndClearsWhenEmpty() throws {
+        let store = try Fixture.store()
+        var draft = Fixture.draft("Compare", at: "2026-10-02 09:30")
+        draft.resumePrompt = "  compare\nws-ports "
+        let reminder = try store.add(draft)
+        #expect(reminder.resumePrompt == "compare ws-ports")
+        #expect(try store.get(reminder.id)?.resumePrompt == "compare ws-ports")
+        #expect(try store.update(reminder.id, title: "Other").resumePrompt == "compare ws-ports")
+        #expect(try store.update(reminder.id, resumePrompt: "").resumePrompt == nil)
+    }
+
     @Test func findsByExternalRef() throws {
         let store = try Fixture.store()
         var draft = Fixture.draft("Imported", at: "2026-10-02 09:00")

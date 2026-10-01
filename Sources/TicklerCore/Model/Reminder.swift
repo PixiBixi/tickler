@@ -24,6 +24,8 @@ public struct Reminder: Codable, Hashable, Sendable, Identifiable, FetchableReco
     public var status: Status
     public var sessionId: String?
     public var cwd: String?
+    /// Sent to Claude when the session is resumed, as its first message.
+    public var resumePrompt: String?
     public var source: Source
     public var externalRef: String?
     public var notifiedAt: Date?
@@ -50,6 +52,7 @@ public struct ReminderDraft: Sendable {
     public var links: [String]
     public var sessionId: String?
     public var cwd: String?
+    public var resumePrompt: String?
     public var source: Reminder.Source
     public var externalRef: String?
 
@@ -60,6 +63,7 @@ public struct ReminderDraft: Sendable {
         links: [String] = [],
         sessionId: String? = nil,
         cwd: String? = nil,
+        resumePrompt: String? = nil,
         source: Reminder.Source = .claude,
         externalRef: String? = nil
     ) {
@@ -69,6 +73,7 @@ public struct ReminderDraft: Sendable {
         self.links = links
         self.sessionId = sessionId
         self.cwd = cwd
+        self.resumePrompt = resumePrompt
         self.source = source
         self.externalRef = externalRef
     }

@@ -1,7 +1,8 @@
 import Foundation
 
 public enum ResumeOutcome: Equatable, Sendable {
-    case focused(paneId: String)
+    /// `typedPrompt`: the prompt was typed into the running session's input, not sent.
+    case focused(paneId: String, typedPrompt: Bool = false)
     case spawned(paneId: String)
     case startedWindow
 }
@@ -40,7 +41,8 @@ public struct SessionResumer: Sendable {
         self.driver = driver
     }
 
-    public func resume(sessionId: String, fallbackCwd: String?) throws -> ResumeOutcome {
+    /// `prompt` becomes the first message of a reopened session; a running one gets it typed, never sent.
+    public func resume(sessionId: String, fallbackCwd: String?, prompt: String? = nil) throws -> ResumeOutcome {
         guard sessionId.wholeMatch(of: /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/) != nil else {
             throw ResumeError.invalidSessionId(sessionId)
         }
@@ -50,7 +52,8 @@ public struct SessionResumer: Sendable {
             }
             try driver.activate(paneId: pane)
             driver.bringToFront()
-            return .focused(paneId: pane)
+            guard let prompt, !prompt.isEmpty else { return .focused(paneId: pane) }
+            return .focused(paneId: pane, typedPrompt: (try? driver.type(prompt, intoPane: pane)) == true)
         }
 
         guard let folder = fallbackCwd, !folder.isEmpty else { throw ResumeError.noFolder }
@@ -58,7 +61,7 @@ public struct SessionResumer: Sendable {
         guard FileManager.default.fileExists(atPath: folder, isDirectory: &isDirectory), isDirectory.boolValue else {
             throw ResumeError.folderMissing(folder)
         }
-        let command = Self.resumeCommand(sessionId: sessionId)
+        let command = Self.resumeCommand(sessionId: sessionId, prompt: prompt)
         guard driver.isRunning() else {
             _ = try driver.start(cwd: folder, command: command)
             return .startedWindow
@@ -92,13 +95,14 @@ public struct SessionResumer: Sendable {
 
     /// Scrubs the calling session's markers: an inherited CLAUDE_CODE_CHILD_SESSION turns transcript saving off.
     /// Login and interactive shell, so PATH and the environment match a normal terminal tab.
-    public static func resumeCommand(sessionId: String) -> [String] {
+    public static func resumeCommand(sessionId: String, prompt: String? = nil) -> [String] {
         let scrubbed = [
             "CLAUDECODE", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CODE_SESSION_ATTENDED",
             "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_EXECPATH", "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN",
             "CLAUDE_PID", "CLAUDE_EFFORT",
         ]
-        return ["env"] + scrubbed.flatMap { ["-u", $0] } + ["zsh", "-lic", "claude --resume \(sessionId)"]
+        let message = prompt.flatMap { $0.isEmpty ? nil : " -- " + shellJoin([$0]) } ?? ""
+        return ["env"] + scrubbed.flatMap { ["-u", $0] } + ["zsh", "-lic", "claude --resume \(sessionId)\(message)"]
     }
 }
 

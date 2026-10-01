@@ -12,6 +12,14 @@ public protocol TerminalDriver: Sendable {
     func start(cwd: String, command: [String]) throws -> String?
     func bringToFront()
     func killPane(_ paneId: String) throws
+    /// Types `text` into a pane's input without pressing Return; false when the terminal cannot.
+    func type(_ text: String, intoPane paneId: String) throws -> Bool
+}
+
+public extension TerminalDriver {
+    func type(_: String, intoPane _: String) throws -> Bool {
+        false
+    }
 }
 
 /// Drives WezTerm through its official `wezterm cli`, called by absolute path: an app started from Finder has no shell PATH.
@@ -66,6 +74,11 @@ public struct WezTermDriver: TerminalDriver {
 
     public func killPane(_ paneId: String) throws {
         _ = try run(["cli", "kill-pane", "--pane-id", paneId])
+    }
+
+    public func type(_ text: String, intoPane paneId: String) throws -> Bool {
+        _ = try run(["cli", "send-text", "--pane-id", paneId, "--", text])
+        return true
     }
 
     /// tty path to pane id, from `wezterm cli list --format json`.

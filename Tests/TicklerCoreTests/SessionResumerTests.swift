@@ -32,6 +32,8 @@ final class FakeDriver: TerminalDriver, @unchecked Sendable {
     var running = true
     var panes: [String: String] = [:]
     var calls: [String] = []
+    var canType = true
+    var lastCommand: [String] = []
 
     func isRunning() -> Bool {
         running
@@ -45,7 +47,8 @@ final class FakeDriver: TerminalDriver, @unchecked Sendable {
         calls.append("activate \(paneId)")
     }
 
-    func spawn(cwd: String, command _: [String]) throws -> String {
+    func spawn(cwd: String, command: [String]) throws -> String {
+        lastCommand = command
         calls.append("spawn \(cwd)")
         return "42"
     }
@@ -61,6 +64,12 @@ final class FakeDriver: TerminalDriver, @unchecked Sendable {
 
     func killPane(_ paneId: String) throws {
         calls.append("kill \(paneId)")
+    }
+
+    func type(_ text: String, intoPane paneId: String) throws -> Bool {
+        guard canType else { return false }
+        calls.append("type \(paneId) \(text)")
+        return true
     }
 }
 
@@ -155,6 +164,27 @@ struct SessionResumerTests {
         #expect(throws: ResumeError.notInWezTerm(pid: 300)) {
             try resumer(inspector, driver).resume(sessionId: sessionId, fallbackCwd: folder)
         }
+    }
+
+    @Test func runningSessionGetsThePromptTypedNotSent() throws {
+        try writeRecord(pid: 100)
+        let inspector = FakeInspector()
+        inspector.alive = [100]
+        inspector.ttys = [100: "/dev/ttys003"]
+        let driver = FakeDriver()
+        driver.panes = ["/dev/ttys003": "3"]
+
+        #expect(try resumer(inspector, driver).resume(sessionId: sessionId, fallbackCwd: nil, prompt: "compare ws-ports")
+            == .focused(paneId: "3", typedPrompt: true))
+        #expect(driver.calls.contains("type 3 compare ws-ports"))
+        driver.canType = false
+        #expect(try resumer(inspector, driver).resume(sessionId: sessionId, fallbackCwd: nil, prompt: "x") == .focused(paneId: "3"))
+    }
+
+    @Test func reopenedSessionGetsThePromptAsItsFirstMessage() throws {
+        let driver = FakeDriver()
+        _ = try resumer(FakeInspector(), driver).resume(sessionId: sessionId, fallbackCwd: folder, prompt: "it's $(rm -rf ~)")
+        #expect(driver.lastCommand.last == #"claude --resume \#(sessionId) -- 'it'\''s $(rm -rf ~)'"#)
     }
 
     @Test func resumeCommandScrubsTheCallingSession() {
