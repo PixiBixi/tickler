@@ -517,6 +517,16 @@
         }
       }
     },
+    "A few quick steps. You can change all of it later in Settings.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quelques étapes rapides. Tout se change ensuite dans les Réglages."
+          }
+        }
+      }
+    },
     "A notification at the due time, with Resume, Snooze and Done on it.": {
       "localizations": {
         "fr": {
@@ -967,6 +977,16 @@
         }
       }
     },
+    "Found a token in %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token trouvé dans %@"
+          }
+        }
+      }
+    },
     "Four quick steps. You can change all of it later in Settings.": {
       "localizations": {
         "fr": {
@@ -1043,6 +1063,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Homebrew n'est pas installé : installe les outils manquants toi-même."
+          }
+        }
+      }
+    },
+    "Import It": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'importer"
           }
         }
       }
@@ -1133,6 +1163,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tickets Jira"
+          }
+        }
+      }
+    },
+    "Jira token (optional)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token Jira (facultatif)"
           }
         }
       }
@@ -2503,6 +2543,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "installé"
+          }
+        }
+      }
+    },
+    "jira-cli keeps no token itself: save it here and Tickler hands it to jira. Skip if jira already works from the app.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "jira-cli ne garde aucun token lui-même : enregistre-le ici et Tickler le passe à jira. Passe si jira marche déjà depuis l'app."
           }
         }
       }

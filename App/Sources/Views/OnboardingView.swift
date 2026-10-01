@@ -11,13 +11,14 @@ struct OnboardingView: View {
     @State private var installing = false
     @State private var installOutput: String?
     @State private var confirmInstall = false
+    @State private var jiraTokenSaved = JiraToken.isSet
 
     var body: some View {
         @Bindable var preferences = model.preferences
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Set up Tickler").font(.system(size: 20, weight: .bold))
-                Text("Four quick steps. You can change all of it later in Settings.")
+                Text("A few quick steps. You can change all of it later in Settings.")
                     .font(.system(size: 13)).foregroundStyle(.secondary)
             }
             .padding(24)
@@ -28,6 +29,9 @@ struct OnboardingView: View {
                     step(2, "Calendar", done: model.calendarSync.hasAccess && preferences.calendarId != nil) { calendarStep }
                     step(3, "Terminal", done: true) { terminalStep }
                     step(4, "Live status tools", done: checkedTools && toInstall.isEmpty) { toolsStep }
+                    if preferences.enabledTools.contains(.jira) {
+                        step(5, "Jira token (optional)", done: jiraTokenSaved) { jiraStep }
+                    }
                 }
                 .padding(24)
             }
@@ -188,6 +192,14 @@ struct OnboardingView: View {
                         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
                 }
             }
+        }
+    }
+
+    private var jiraStep: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("jira-cli keeps no token itself: save it here and Tickler hands it to jira. Skip if jira already works from the app.")
+                .foregroundStyle(.secondary)
+            JiraTokenRow(onChange: { jiraTokenSaved = JiraToken.isSet })
         }
     }
 
