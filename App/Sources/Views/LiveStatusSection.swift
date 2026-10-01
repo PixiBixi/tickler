@@ -40,6 +40,7 @@ private struct LiveCard: View {
     let link: ReminderLink
     let entry: LiveStatusStore.Entry?
     @State private var confirmApproval = false
+    @State private var confirmMerge = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -116,6 +117,12 @@ private struct LiveCard: View {
                 }
             }
             HStack(spacing: 8) {
+                if mr.canMergeNow || mr.canMergeWhenPipelinePasses {
+                    Button { confirmMerge = true } label: {
+                        Label(mr.canMergeNow ? "Merge…" : "Merge When Pipeline Passes…", systemImage: "arrow.triangle.merge")
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                }
                 if mr.canApproveNow {
                     Button { confirmApproval = true } label: { Label("Approve…", systemImage: "checkmark.seal") }
                         .buttonStyle(PrimaryButtonStyle())
@@ -128,11 +135,30 @@ private struct LiveCard: View {
                 }
             }
         }
+        .confirmationDialog(Text("Merge \(link.label)?"), isPresented: $confirmMerge, titleVisibility: .visible) {
+            Button(mr.canMergeNow ? "Merge" : "Merge When Pipeline Passes") { merge(whenPipelinePasses: !mr.canMergeNow) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("GitLab merges it in your name, with the merge request's own options (squash, source branch removal). \(mr.title)")
+        }
         .confirmationDialog(Text("Approve \(link.label)?"), isPresented: $confirmApproval, titleVisibility: .visible) {
             Button("Approve") { approve() }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("The approval is sent to GitLab in your name and notifies the author. \(mr.title)")
+        }
+    }
+
+    private func merge(whenPipelinePasses: Bool) {
+        Task {
+            switch await model.liveStatus.merge(link, whenPipelinePasses: whenPipelinePasses) {
+            case .success:
+                model
+                    .showToast(whenPipelinePasses ? String(localized: "\(link.label) will merge when the pipeline passes") :
+                        String(localized: "Merged \(link.label)"))
+            case let .failure(error):
+                model.showError(String(describing: error))
+            }
         }
     }
 

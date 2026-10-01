@@ -50,6 +50,18 @@ final class LiveStatusStore {
         }
     }
 
+    func merge(_ link: ReminderLink, whenPipelinePasses: Bool) async -> Result<Void, Error> {
+        guard let target = LiveTarget(link: link) else { return .failure(LiveError.unsupported) }
+        do {
+            try await fetcher.merge(target, whenPipelinePasses: whenPipelinePasses)
+            load(link)
+            return .success(())
+        } catch {
+            load(link)
+            return .failure(error)
+        }
+    }
+
     private func load(_ link: ReminderLink) {
         guard let target = LiveTarget(link: link) else { return }
         entries[link.url, default: Entry()].loading = true

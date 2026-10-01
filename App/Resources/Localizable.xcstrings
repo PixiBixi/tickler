@@ -14,6 +14,16 @@
         }
       }
     },
+    "%@ will merge when the pipeline passes": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ sera mergée quand le pipeline passera"
+          }
+        }
+      }
+    },
     "%@, %lld reminders": {
       "localizations": {
         "fr": {
@@ -727,6 +737,16 @@
         }
       }
     },
+    "GitLab merges it in your name, with the merge request's own options (squash, source branch removal). %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitLab la merge en ton nom, avec les options de la merge request (squash, suppression de la branche). %@"
+          }
+        }
+      }
+    },
     "Homebrew is not installed: install the missing tools yourself.": {
       "localizations": {
         "fr": {
@@ -873,6 +893,66 @@
           "stringUnit": {
             "state": "translated",
             "value": "Marquer fait"
+          }
+        }
+      }
+    },
+    "Merge": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merger"
+          }
+        }
+      }
+    },
+    "Merge %@?": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merger %@ ?"
+          }
+        }
+      }
+    },
+    "Merge When Pipeline Passes": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merger quand le pipeline passe"
+          }
+        }
+      }
+    },
+    "Merge When Pipeline Passes…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merger quand le pipeline passe…"
+          }
+        }
+      }
+    },
+    "Merged %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ mergée"
+          }
+        }
+      }
+    },
+    "Merge…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merger…"
           }
         }
       }
