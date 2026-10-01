@@ -100,6 +100,7 @@ struct ReminderListView: View {
 }
 
 /// Seven days from today; a click filters the list on that day.
+/// Seven days from today; a click filters the list on that day, a second click goes back to Today.
 struct DayStrip: View {
     @Environment(AppModel.self) private var model
 
@@ -109,23 +110,16 @@ struct DayStrip: View {
         HStack(spacing: 4) {
             ForEach(0 ..< 7, id: \.self) { offset in
                 let day = calendar.date(byAdding: .day, value: offset, to: start)!
-                let count = model.reminders(for: .day(day)).count + (offset == 0 ? model.overdueCount - overdueToday(day) : 0)
-                let selected = model.filter == .day(day)
-                Button {
-                    model.filter = selected ? .today : .day(day)
-                } label: {
-                    VStack(spacing: 2) {
-                        Text(Format.weekdayShort(day)).font(.system(size: 10)).opacity(0.8)
-                        Text(Format.dayNumber(day)).font(.system(size: 15, weight: .semibold)).monospacedDigit()
-                        Text(count == 0 ? " " : "\(count)").font(.system(size: 10)).monospacedDigit()
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                    .foregroundStyle(selected ? Theme.onAccent : (count == 0 ? Color.secondary.opacity(0.6) : Color.primary))
-                    .background(selected ? Theme.accent : Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
-                    .contentShape(Rectangle())
+                DayTile(
+                    day: day,
+                    isToday: offset == 0,
+                    total: model.reminders(for: .day(day)).count + (offset == 0 ? model.overdueCount - overdueToday(day) : 0),
+                    hasOverdue: offset == 0 && model.overdueCount > 0,
+                    isWeekend: calendar.isDateInWeekend(day),
+                    isSelected: model.filter == .day(day)
+                ) {
+                    model.filter = model.filter == .day(day) ? .today : .day(day)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("\(day.formatted(date: .complete, time: .omitted)), \(count) reminders"))
             }
         }
     }
@@ -133,6 +127,66 @@ struct DayStrip: View {
     /// Overdue reminders from today are already counted on today's tile.
     private func overdueToday(_ today: Date) -> Int {
         model.open.count { $0.dueAt < model.now && Calendar.current.isDate($0.dueAt, inSameDayAs: today) }
+    }
+}
+
+private struct DayTile: View {
+    let day: Date
+    let isToday: Bool
+    let total: Int
+    let hasOverdue: Bool
+    let isWeekend: Bool
+    let isSelected: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Text(isToday ? String(localized: "Today") : Format.weekdayShort(day))
+                    .font(.system(size: 10, weight: isToday ? .semibold : .regular))
+                    .foregroundStyle(isToday ? Theme.accent : .secondary)
+                    .lineLimit(1)
+                Text(Format.dayNumber(day))
+                    .font(.system(size: 15, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(isToday ? Theme.onAccent : (isWeekend ? Color.secondary : Color.primary))
+                    .frame(width: 28, height: 28)
+                    .background(isToday ? Theme.accent : .clear, in: Circle())
+                dots
+            }
+            .frame(maxWidth: .infinity, minHeight: 64)
+            .background(background, in: RoundedRectangle(cornerRadius: 9))
+            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(isSelected ? Theme.accent : .clear, lineWidth: 1.5))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .accessibilityLabel(Text("\(day.formatted(date: .complete, time: .omitted)), \(total) reminders"))
+    }
+
+    /// Up to three dots, then a total: the load of the day at a glance. Red when something is overdue.
+    private var dots: some View {
+        HStack(spacing: 3) {
+            if total == 0 {
+                Color.clear.frame(width: 5, height: 5)
+            } else if total <= 3 {
+                ForEach(0 ..< total, id: \.self) { index in
+                    Circle().fill(index == 0 && hasOverdue ? Theme.overdue : Theme.accent.opacity(0.85)).frame(width: 5, height: 5)
+                }
+            } else {
+                Circle().fill(hasOverdue ? Theme.overdue : Theme.accent.opacity(0.85)).frame(width: 5, height: 5)
+                Text(verbatim: "\(total)").font(.system(size: 9.5, weight: .semibold)).foregroundStyle(.secondary).monospacedDigit()
+            }
+        }
+        .frame(height: 9)
+    }
+
+    private var background: Color {
+        if isSelected {
+            return Theme.accent.opacity(0.14)
+        }
+        return Color.primary.opacity(hovering ? 0.08 : (isWeekend ? 0.025 : 0.045))
     }
 }
 
