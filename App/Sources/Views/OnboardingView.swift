@@ -60,7 +60,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("A notification at the due time, with Resume, Snooze and Done on it.")
             if model.notifications.authorized {
-                Text("Choose the Alerts style so reminders stay on screen until you act.").foregroundStyle(.secondary)
+                Text("Set the alert style to Persistent so reminders stay on screen until you act.").foregroundStyle(.secondary)
                 Button("Open Notification Settings") { openSystemSettings("com.apple.Notifications-Settings.extension") }
                     .buttonStyle(SecondaryButtonStyle())
             } else {

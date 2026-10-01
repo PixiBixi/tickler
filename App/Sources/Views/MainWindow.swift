@@ -171,7 +171,7 @@ private struct AlertsHint: View {
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Reminders vanish after a few seconds").foregroundStyle(.primary)
-                    Text("Switch to Alerts ›").foregroundStyle(.orange).underline(hovering)
+                    Text("Switch to Persistent alerts ›").foregroundStyle(.orange).underline(hovering)
                 }
                 .font(.system(size: 11))
                 .frame(maxWidth: .infinity, alignment: .leading)

@@ -102,7 +102,7 @@ The date fields accept French and English: `demain 9h30`, `lundi 10h`, `dans 2h`
 | Language | System, or force English or French (after a relaunch) |
 | Open at login | Off |
 
-For notifications to stay on screen until you act, set Tickler to **Alerts** in System Settings, Notifications.
+For notifications to stay on screen until you act, set Tickler's alert style to **Persistent** in System Settings, Notifications.
 
 ## Development
 
