@@ -16,7 +16,6 @@ struct ReminderDetailView: View {
     @State private var editingNotes = false
     @State private var sessionHover = false
     @State private var dismissedSuggestion = false
-    @FocusState private var dateFocused: Bool
     @FocusState private var notesFocused: Bool
 
     var body: some View {
@@ -74,7 +73,6 @@ struct ReminderDetailView: View {
             if model.focusDateField {
                 dateText = model.prefilledDateText ?? ""
                 editingDate = true
-                dateFocused = true
                 model.focusDateField = false
                 model.prefilledDateText = nil
             }
@@ -123,39 +121,30 @@ struct ReminderDetailView: View {
 
     @ViewBuilder
     private var dueChip: some View {
-        if editingDate {
-            DateEntryField(text: $dateText, focused: $dateFocused, current: reminder.dueAt) { date in
-                editingDate = false
-                if let date {
-                    model.reschedule(reminder.id, to: date)
+        let bucket = DueBucket.of(reminder.dueAt, now: model.now)
+        let soon = reminder.isSoon(now: model.now)
+        let color = reminder.status == .done ? Color
+            .secondary : (bucket == .overdue ? Theme.overdue : (soon ? Theme.accent : Color.primary))
+        Button { startRescheduling() } label: {
+            HStack(spacing: 6) {
+                Text(Format.dueLabel(reminder.dueAt, now: model.now))
+                if reminder.status == .open {
+                    Text("·")
+                    Text(Format.relative(reminder.dueAt, now: model.now))
+                }
+                if reminder.rescheduleCount > 0 {
+                    Text("·")
+                    Text("rescheduled \(reminder.rescheduleCount)×")
                 }
             }
-        } else {
-            let bucket = DueBucket.of(reminder.dueAt, now: model.now)
-            let soon = reminder.isSoon(now: model.now)
-            let color = reminder.status == .done ? Color
-                .secondary : (bucket == .overdue ? Theme.overdue : (soon ? Theme.accent : Color.primary))
-            Button { startRescheduling() } label: {
-                HStack(spacing: 6) {
-                    Text(Format.dueLabel(reminder.dueAt, now: model.now))
-                    if reminder.status == .open {
-                        Text("·")
-                        Text(Format.relative(reminder.dueAt, now: model.now))
-                    }
-                    if reminder.rescheduleCount > 0 {
-                        Text("·")
-                        Text("rescheduled \(reminder.rescheduleCount)×")
-                    }
-                }
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(color)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 4)
-                .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
-            }
-            .buttonStyle(.plain)
-            .help("Change the date")
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
         }
+        .buttonStyle(.plain)
+        .help("Change the date")
     }
 
     // MARK: Done suggestion
@@ -213,6 +202,15 @@ struct ReminderDetailView: View {
                 SnoozeMenu(reminderId: reminder.id) { startRescheduling() }
                 Button { startRescheduling() } label: { Label("Reschedule", systemImage: "calendar") }
                     .buttonStyle(SecondaryButtonStyle())
+                    .popover(isPresented: $editingDate, arrowEdge: .bottom) {
+                        ReschedulePopover(current: reminder.dueAt, initialText: dateText) { date in
+                            editingDate = false
+                            if let date {
+                                model.reschedule(reminder.id, to: date)
+                            }
+                        }
+                        .environment(model)
+                    }
                 Button { model.markDone(reminder.id) } label: { Label("Done", systemImage: "checkmark") }
                     .buttonStyle(SecondaryButtonStyle())
                     .help("⌘↩")
@@ -354,7 +352,6 @@ struct ReminderDetailView: View {
     private func startRescheduling() {
         dateText = ""
         editingDate = true
-        dateFocused = true
     }
 
     private func reopen() {
@@ -368,51 +365,4 @@ struct ReminderDetailView: View {
     }
 }
 
-/// Free-text date input with a live preview of what was understood.
-/// Reschedule: free text ("jeudi 14h", "in 3h") with what was understood, or the usual date and time picker.
-struct DateEntryField: View {
-    @Binding var text: String
-    var focused: FocusState<Bool>.Binding
-    let current: Date
-    let onFinish: (Date?) -> Void
-    @State private var picked: Date?
-
-    var body: some View {
-        let parsed = parse(text)
-        let choice = parsed ?? picked
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                TextField("tomorrow 2pm, lundi 10h, in 3h", text: $text)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 240)
-                    .focused(focused)
-                    .onSubmit { onFinish(choice) }
-                    .onExitCommand { onFinish(nil) }
-                Text("or").font(.system(size: 12)).foregroundStyle(.secondary)
-                DatePicker("", selection: Binding(get: { picked ?? max(current, Date()) }, set: { picked = $0; text = "" }))
-                    .labelsHidden()
-                    .datePickerStyle(.compact)
-            }
-            HStack(spacing: 8) {
-                if let choice {
-                    Text(Format.dueLabel(choice, now: Date())).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.accent)
-                } else if !text.isEmpty {
-                    Text("Not understood").font(.system(size: 12)).foregroundStyle(Theme.overdue)
-                }
-                Spacer()
-                Button("Cancel") { onFinish(nil) }
-                    .buttonStyle(SecondaryButtonStyle())
-                Button("Reschedule") { onFinish(choice) }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .disabled(choice == nil || (choice ?? .distantPast) <= Date())
-            }
-        }
-        .padding(10)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 9))
-        .frame(maxWidth: 560, alignment: .leading)
-    }
-
-    private func parse(_ text: String) -> Date? {
-        DateParser(preferred: Format.locale.language.languageCode?.identifier ?? "en").parse(text)
-    }
-}
+// Free-text date input with a live preview of what was understood.

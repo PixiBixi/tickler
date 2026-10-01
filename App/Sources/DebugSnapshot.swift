@@ -10,7 +10,12 @@
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) { AppModel.shared.showQuickAdd = true }
             }
             if let id = ProcessInfo.processInfo.environment["TICKLER_SELECT"] {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { AppModel.shared.reveal(id) }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    if ProcessInfo.processInfo.environment["TICKLER_RESCHEDULE"] != nil {
+                        AppModel.shared.focusDateField = true
+                    }
+                    AppModel.shared.reveal(id)
+                }
             }
             // TICKLER_SNAPSHOT_SIZE=WxH resizes the windows first, to check wide layouts.
             if let size = ProcessInfo.processInfo.environment["TICKLER_SNAPSHOT_SIZE"]?.split(separator: "x").compactMap({ Double($0) }),
