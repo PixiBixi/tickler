@@ -34,14 +34,14 @@ make install DEVELOPMENT_TEAM=XXXXXXXXXX
 
 | Command | Does |
 |---|---|
-| `tickler add <title> --at "YYYY-MM-DD HH:MM"` | Creates a reminder. `--notes <text>` or `--notes -` (stdin), `--link <url>` (repeatable), `--session <uuid>`, `--cwd <dir>`, `--json` |
+| `tickler add <title> --at "YYYY-MM-DD HH:MM"` | Creates a reminder. `--notes <text>` or `--notes -` (stdin), `--link <url>` (repeatable), `--session <uuid>`, `--cwd <dir>`, `--prompt <text>` (first message to Claude on resume), `--json` |
 | `tickler list` (alias `ls`) | Open reminders. `--due today` (default, overdue included), `week`, `overdue`, `all`; `--project <name>`; `--status done`; `--json` |
 | `tickler show <id>` | One reminder with notes, links and session. `--json` |
 | `tickler done <id>` | Marks it done |
 | `tickler snooze <id> --for 1h` | Pushes it back from now: `15m`, `1h`, `2d`. Or `--to "YYYY-MM-DD HH:MM"` |
-| `tickler edit <id>` | `--title`, `--at`, `--notes <text>` or `--notes -` |
+| `tickler edit <id>` | `--title`, `--at`, `--notes <text>` or `--notes -`, `--prompt <text>` (`""` removes it) |
 | `tickler rm <id>` | Deletes it |
-| `tickler resume <id>` | Focuses the tab of the reminder's Claude session in WezTerm, Ghostty or iTerm2, or reopens it with `claude --resume` in the reminder's folder. `TICKLER_TERMINAL=wezterm\|ghostty\|iterm` picks where new tabs open |
+| `tickler resume <id>` | Focuses the tab of the reminder's Claude session in WezTerm, Ghostty or iTerm2, or reopens it with `claude --resume` in the reminder's folder. A resume prompt is sent as the first message of a reopened session, and typed without Return into a running one (WezTerm, iTerm2). `TICKLER_TERMINAL=wezterm\|ghostty\|iterm` picks where new tabs open |
 | `tickler status <id>` | Live state of the linked GitLab MRs, Jira issues and GitHub PRs (pipeline, approvals, ticket status, checks). `--json` |
 | `tickler completion zsh` | Prints the shell completion script (also `bash`, `fish`): subcommands, options, and reminder ids with their title |
 | `tickler import-apple --list Claude` | One-shot import of the open reminders of an Apple Reminders list, which is left untouched |
@@ -83,7 +83,7 @@ Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 | Where | What |
 |---|---|
 | Menu bar | Count of today's reminders (overdue included); the glyph turns solid while one is overdue. The popover shows the next reminder with Resume, Snooze and Done, then overdue, today, tomorrow and later |
-| Window | Views (Today, Next 7 Days, Overdue, All, Done), projects from the session folder, a 7-day strip to filter on a day, search, and a detail pane where title, date and notes edit in place |
+| Window | Views (Today, Next 7 Days, Overdue, All, Done), projects from the session folder, a 7-day strip to filter on a day, search, and a detail pane where title, date, notes and resume prompt edit in place |
 | Notifications | One per reminder at its time, with Resume Session, Snooze 15 min, Snooze 1 hour, Tomorrow 09:30, Reschedule (type "jeudi 14h" or "in 3h"), Open Ticket, Open Slack Thread or Open Link, Mark Done. Reminders missed while the Mac slept are notified on wake, as one summary beyond three |
 | Live status | For each linked GitLab MR, Jira issue or GitHub PR: pipeline, approvals, threads, conflicts, ticket status and assignee, checks. **Approve…** appears when GitLab says you may approve, and asks for confirmation first. Data from `glab`, `jira` and `gh`, run through your login shell, refreshed when older than 2 minutes |
 | Calendar | Every open reminder from 7 days ago to 60 days ahead becomes a 15 min event marked Free, without alert, with a `tickler://open/<id>` link |
