@@ -62,6 +62,9 @@ targets:
         SWIFT_EMIT_LOC_STRINGS: YES
         COMBINE_HIDPI_IMAGES: YES
         DEAD_CODE_STRIPPING: YES
+        # Xcode's debug dylib (for previews) is signed apart: with a local identity and the hardened runtime,
+        # library validation then refuses to load it and the Debug app dies at launch.
+        ENABLE_DEBUG_DYLIB: NO
 schemes:
   Tickler:
     build:
