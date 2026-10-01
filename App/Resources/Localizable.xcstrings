@@ -1287,6 +1287,16 @@
         }
       }
     },
+    "New reminder from anywhere with ⌥⌘N": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveau rappel depuis n'importe où avec ⌥⌘N"
+          }
+        }
+      }
+    },
     "New reminder: %@": {
       "localizations": {
         "fr": {

@@ -83,6 +83,13 @@ final class AppModel {
         NSApp.windows.first { $0.identifier?.rawValue.contains(WindowID.main) == true && $0.isVisible }?.makeKeyAndOrderFront(nil)
     }
 
+    /// The global shortcut: window forward, sheet open, whatever app was in front.
+    func quickAddFromAnywhere() {
+        showMainWindow()
+        NSApp.activate(ignoringOtherApps: true)
+        showQuickAdd = true
+    }
+
     func showMainWindow() {
         if let openMainWindow {
             openMainWindow()
@@ -126,6 +133,7 @@ final class AppModel {
                 AppModel.shared.calendarSync.loadCalendars()
             }
         }
+        GlobalHotKey.shared.setEnabled(preferences.globalShortcut)
         notifications.setUp()
         Task {
             await calendarSync.prepare(calendarId: preferences.calendarId)

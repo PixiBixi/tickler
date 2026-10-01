@@ -31,6 +31,13 @@ final class Preferences {
         didSet { defaults.set(enabledTools.map(\.rawValue).sorted(), forKey: "enabledTools") }
     }
 
+    var globalShortcut: Bool {
+        didSet {
+            defaults.set(globalShortcut, forKey: "globalShortcut")
+            GlobalHotKey.shared.setEnabled(globalShortcut)
+        }
+    }
+
     var announceNewReminders: Bool {
         didSet { defaults.set(announceNewReminders, forKey: "announceNewReminders") }
     }
@@ -67,6 +74,7 @@ final class Preferences {
         weztermPath = defaults.string(forKey: "weztermPath") ?? ""
         onboardingDone = defaults.bool(forKey: "onboardingDone")
         announceNewReminders = defaults.object(forKey: "announceNewReminders") as? Bool ?? true
+        globalShortcut = defaults.object(forKey: "globalShortcut") as? Bool ?? true
         enabledTools = defaults.stringArray(forKey: "enabledTools")
             .map { Set($0.compactMap(ExternalTool.init(rawValue:))) } ?? Set(ExternalTool.allCases)
         terminal = TerminalChoice(rawValue: defaults.string(forKey: "terminal") ?? "") ?? .auto
