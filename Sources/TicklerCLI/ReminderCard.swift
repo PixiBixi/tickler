@@ -39,6 +39,9 @@ struct ReminderCard {
             case nil: ""
             }
             lines.append("  \(state)  \(Ansi.style(session, .dim))")
+            if let prompt = reminder.resumePrompt {
+                lines.append("  says \(Ansi.style("\u{201C}\(prompt)\u{201D}", .bold)) on resume")
+            }
             lines.append("  \(Ansi.style("tickler resume \(reminder.id)", .accent))")
         }
 

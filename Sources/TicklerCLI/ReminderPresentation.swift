@@ -5,7 +5,7 @@ import TicklerCore
 ///
 /// `id`, `title`, `notes`, `due` ("YYYY-MM-DD HH:MM", local), `dueISO` (ISO 8601 with UTC offset), `originalDue`,
 /// `rescheduleCount`, `status` (open|done|deleted), `source` (claude|human), `sessionId`, `cwd`, `project`,
-/// `overdue` (open and past due), `links` (`[{kind, label, url}]`).
+/// `resumePrompt` (first message on resume), `overdue` (open and past due), `links` (`[{kind, label, url}]`).
 struct ReminderJSON: Encodable {
     struct Link: Encodable {
         let kind: String
@@ -25,6 +25,7 @@ struct ReminderJSON: Encodable {
     let sessionId: String?
     let cwd: String?
     let project: String?
+    let resumePrompt: String?
     let overdue: Bool
     let links: [Link]
 
@@ -43,6 +44,7 @@ struct ReminderJSON: Encodable {
         sessionId = reminder.sessionId
         cwd = reminder.cwd
         project = reminder.project
+        resumePrompt = reminder.resumePrompt
         overdue = reminder.status == .open && reminder.dueAt < context.now()
         self.links = links.map { Link(kind: $0.kind.rawValue, label: $0.label, url: $0.url) }
     }
@@ -51,7 +53,7 @@ struct ReminderJSON: Encodable {
     func encode(to encoder: Encoder) throws {
         enum Key: String, CodingKey {
             case id, title, notes, due, dueISO, originalDue, rescheduleCount, status, source
-            case sessionId, cwd, project, overdue, links
+            case sessionId, cwd, project, resumePrompt, overdue, links
         }
         var container = encoder.container(keyedBy: Key.self)
         try container.encode(id, forKey: .id)
@@ -66,6 +68,7 @@ struct ReminderJSON: Encodable {
         try container.encode(sessionId, forKey: .sessionId)
         try container.encode(cwd, forKey: .cwd)
         try container.encode(project, forKey: .project)
+        try container.encode(resumePrompt, forKey: .resumePrompt)
         try container.encode(overdue, forKey: .overdue)
         try container.encode(links, forKey: .links)
     }
@@ -124,6 +127,9 @@ extension CLIContext {
         }
         if let session = reminder.sessionId {
             lines.append("session: \(session)")
+        }
+        if let prompt = reminder.resumePrompt {
+            lines.append("resume prompt: \(prompt)")
         }
         if !reminder.notes.isEmpty {
             lines.append("notes:")

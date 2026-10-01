@@ -12,6 +12,7 @@ struct AddCommand: TicklerSubcommand {
     @Option(name: .customLong("link"), help: "A URL to attach; repeatable.") var links: [String] = []
     @Option(help: "Claude session id. Defaults to $CLAUDE_CODE_SESSION_ID.") var session: String?
     @Option(help: "Session folder. Defaults to the current directory when a session id is known.") var cwd: String?
+    @Option(help: "First message sent to Claude when the session is resumed.") var prompt: String?
     @Flag(help: "Print the reminder as JSON.") var json = false
 
     func validate() throws {
@@ -26,7 +27,7 @@ struct AddCommand: TicklerSubcommand {
         let folder = cwd ?? (sessionId == nil ? nil : context.currentDirectory)
         let draft = ReminderDraft(
             title: title, notes: notes.map(context.readNotes) ?? "", dueAt: due, links: links,
-            sessionId: sessionId, cwd: folder, source: sessionId == nil ? .human : .claude
+            sessionId: sessionId, cwd: folder, resumePrompt: prompt, source: sessionId == nil ? .human : .claude
         )
         let store = try context.openStore(options)
         try context.printResult(store.add(draft), store: store, json: json)

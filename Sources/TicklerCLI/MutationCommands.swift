@@ -57,10 +57,13 @@ struct EditCommand: TicklerSubcommand {
     @Option(help: "New title.") var title: String?
     @Option(help: "New due date, \"YYYY-MM-DD HH:MM\" in local time.") var at: String?
     @Option(help: "New notes, or - to read them from stdin.") var notes: String?
+    @Option(help: "First message sent to Claude on resume; an empty string removes it.") var prompt: String?
     @Flag(help: "Print the reminder as JSON.") var json = false
 
     func validate() throws {
-        guard title != nil || at != nil || notes != nil else { throw ValidationError("nothing to change: pass --title, --at or --notes") }
+        guard title != nil || at != nil || notes != nil || prompt != nil else {
+            throw ValidationError("nothing to change: pass --title, --at, --notes or --prompt")
+        }
         if let title, title.trimmingCharacters(in: .whitespaces).isEmpty {
             throw ValidationError("the title is empty")
         }
@@ -70,7 +73,7 @@ struct EditCommand: TicklerSubcommand {
         let store = try context.openStore(options)
         _ = try context.loadReminder(id, from: store)
         let due = try at.map { try context.parseFutureDate($0, flag: "--at") }
-        let updated = try store.update(id, title: title, notes: notes.map(context.readNotes), dueAt: due)
+        let updated = try store.update(id, title: title, notes: notes.map(context.readNotes), dueAt: due, resumePrompt: prompt)
         try context.printResult(updated, store: store, json: json)
     }
 }
