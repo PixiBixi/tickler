@@ -34,7 +34,7 @@ struct ReschedulePopover: View {
             footer(choice)
         }
         .padding(16)
-        .frame(width: 340)
+        .frame(width: 380)
         .onAppear {
             text = initialText
             let start = max(current, Date())
@@ -149,6 +149,7 @@ struct ReschedulePopover: View {
                     Text(Format.dueLabel(choice, now: Date())).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.accent)
                     Text(Format.relative(choice, now: Date())).font(.system(size: 11)).foregroundStyle(.secondary)
                 }
+                .fixedSize()
             } else {
                 Text("Pick a day and a time").font(.system(size: 12)).foregroundStyle(.secondary)
             }
