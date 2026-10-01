@@ -24,7 +24,15 @@ final class LiveStatusStore {
         return links.filter { LiveTarget(link: $0).map { enabled.contains($0.tool) } ?? false }
     }
 
+    /// Demo recordings show fixed statuses instead of calling glab, jira or gh.
+    func setDemoStatus(_ status: LiveStatus, for url: String) {
+        entries[url] = Entry(status: status, error: nil, fetchedAt: Date(), loading: false)
+    }
+
     func refresh(_ links: [ReminderLink], force: Bool = false) {
+        if AppModel.shared.isDemo {
+            return
+        }
         for link in supported(links) {
             let entry = entries[link.url] ?? Entry()
             if entry.loading {

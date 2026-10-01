@@ -59,6 +59,9 @@ final class AppModel {
     var selection: String?
     var search = ""
     var showQuickAdd = false
+    /// Debug demo recordings: no calendar writes, canned live status, scripted typing in the new reminder sheet.
+    let isDemo = ProcessInfo.processInfo.environment["TICKLER_DEMO"] != nil
+    var demoTyping: (title: String, when: String)?
     var showOnboarding = false
     var focusDateField = false
     var prefilledDateText: String?
@@ -160,7 +163,7 @@ final class AppModel {
     private func externalChange() {
         let before = Set((open + done).map(\.id))
         reload()
-        if preferences.announceNewReminders {
+        if preferences.announceNewReminders, !isDemo {
             let added = NotificationPlanner.newlyAdded(previousIds: before, reminders: open)
             Task { await notifications.announce(added) }
         }
@@ -209,7 +212,8 @@ final class AppModel {
             try? store.markNotified(notified, at: Date())
             reload()
         }
-        calendarSync.reconcile(store: store, calendarId: preferences.calendarId)
+        // Demo recordings never touch the user's real calendar.
+        calendarSync.reconcile(store: store, calendarId: isDemo ? nil : preferences.calendarId)
     }
 
     /// Off the main actor: it walks the process table.

@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             #if DEBUG
                 DebugSnapshot.scheduleIfRequested()
+                DemoDriver.startIfRequested()
             #endif
         }
     }

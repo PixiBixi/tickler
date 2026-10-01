@@ -32,6 +32,13 @@ struct QuickAddSheet: View {
         .frame(width: 560)
         .background(Theme.listBackground)
         .onAppear { focus = .title }
+        .onChange(of: model.demoTyping?.title) { _, value in title = value ?? title }
+        .onChange(of: model.demoTyping?.when) { _, value in
+            when = value ?? when
+            if value != nil {
+                focus = .when
+            }
+        }
     }
 
     // MARK: Sections
