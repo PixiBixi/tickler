@@ -257,13 +257,16 @@ final class AppModel {
         return names.map { ($0.key, $0.value.count) }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
+    /// Sidebar badges count what is left to do; only the Done view counts finished reminders.
     func count(for filter: SidebarFilter) -> Int {
-        reminders(for: filter).count
+        let items = reminders(for: filter)
+        return filter == .done ? items.count : items.count { $0.status == .open }
     }
 
     func reminders(for filter: SidebarFilter) -> [Reminder] {
         switch filter {
-        case .today: open.filter { $0.dueAt < startOfTomorrow }
+        // Today matches the day view of today: what was done today stays listed under Done.
+        case .today: open.filter { $0.dueAt < startOfTomorrow } + done.filter { calendar.isDateInToday($0.dueAt) }
         case .week: open.filter { $0.dueAt < now.addingTimeInterval(7 * 86400) }
         case .overdue: open.filter { $0.dueAt < now }
         case .all: open
@@ -282,7 +285,7 @@ final class AppModel {
         if filter == .done {
             return items.isEmpty ? [] : [ReminderGroup(bucket: nil, reminders: items)]
         }
-        // A day view also lists what was done that day, after what is still open.
+        // Day views, today included, also list what was done that day, after what is still open.
         let finished = items.filter { $0.status == .done }
         let grouped = Dictionary(grouping: items.filter { $0.status == .open }) { DueBucket.of($0.dueAt, now: now, calendar: calendar) }
         let openGroups = DueBucket.allCases.compactMap { bucket in grouped[bucket].map { ReminderGroup(bucket: bucket, reminders: $0) } }
