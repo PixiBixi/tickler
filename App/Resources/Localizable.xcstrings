@@ -74,6 +74,86 @@
         }
       }
     },
+    "%lld MRs merged or closed": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld MR merged or closed"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld MRs merged or closed"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld MR mergée ou fermée"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld MR mergées ou fermées"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld PRs merged or closed": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld PR merged or closed"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld PRs merged or closed"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld PR mergée ou fermée"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld PR mergées ou fermées"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld calendar events could not be written: %@": {
       "localizations": {
         "en": {
@@ -347,6 +427,46 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld overdue reminders"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld tickets done": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld ticket done"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld tickets done"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld ticket terminé"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld tickets terminés"
                 }
               }
             }
@@ -817,6 +937,16 @@
         }
       }
     },
+    "Everything linked is finished": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout ce qui est lié est terminé"
+          }
+        }
+      }
+    },
     "Four quick steps. You can change all of it later in Settings.": {
       "localizations": {
         "fr": {
@@ -1263,6 +1393,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pas encore compris"
+          }
+        }
+      }
+    },
+    "Not yet": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pas encore"
           }
         }
       }

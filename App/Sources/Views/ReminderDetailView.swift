@@ -15,6 +15,7 @@ struct ReminderDetailView: View {
     @State private var paneSize = CGSize(width: 800, height: 700)
     @State private var editingNotes = false
     @State private var sessionHover = false
+    @State private var dismissedSuggestion = false
     @FocusState private var dateFocused: Bool
     @FocusState private var notesFocused: Bool
 
@@ -26,6 +27,7 @@ struct ReminderDetailView: View {
                     HStack(alignment: .top, spacing: 32) {
                         VStack(alignment: .leading, spacing: 18) {
                             header
+                            doneSuggestion
                             actions
                             notesSection(minHeight: max(260, paneSize.height - 280))
                         }
@@ -158,6 +160,45 @@ struct ReminderDetailView: View {
             .buttonStyle(.plain)
             .help("Change the date")
         }
+    }
+
+    // MARK: Done suggestion
+
+    /// Everything linked is merged or done: the reminder has most likely served its purpose.
+    @ViewBuilder
+    private var doneSuggestion: some View {
+        if reminder.status == .open, !dismissedSuggestion, let statuses = model.liveStatus.allFinished(model.links(of: reminder)) {
+            let counts = LiveStatus.finishedSummary(statuses)
+            HStack(spacing: 10) {
+                Image(systemName: "checkmark.seal.fill").foregroundStyle(.green)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Everything linked is finished").font(.system(size: 13, weight: .semibold))
+                    Text(Self.describe(counts)).font(.system(size: 12)).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Not yet") { dismissedSuggestion = true }
+                    .buttonStyle(SecondaryButtonStyle())
+                Button("Mark Done") { model.markDone(reminder.id) }
+                    .buttonStyle(PrimaryButtonStyle())
+            }
+            .padding(12)
+            .background(Color.green.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.green.opacity(0.35)))
+        }
+    }
+
+    private static func describe(_ counts: FinishedCounts) -> String {
+        var parts: [String] = []
+        if counts.mergeRequests > 0 {
+            parts.append(String(localized: "\(counts.mergeRequests) MRs merged or closed"))
+        }
+        if counts.pullRequests > 0 {
+            parts.append(String(localized: "\(counts.pullRequests) PRs merged or closed"))
+        }
+        if counts.tickets > 0 {
+            parts.append(String(localized: "\(counts.tickets) tickets done"))
+        }
+        return parts.joined(separator: ", ")
     }
 
     // MARK: Actions

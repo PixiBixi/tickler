@@ -37,6 +37,15 @@ final class LiveStatusStore {
         }
     }
 
+    /// The statuses of `links` when every one is loaded and finished; nil while something is open, unknown or failing.
+    func allFinished(_ links: [ReminderLink]) -> [LiveStatus]? {
+        let tracked = supported(links)
+        guard !tracked.isEmpty else { return nil }
+        let statuses = tracked.compactMap { entries[$0.url]?.status }
+        guard statuses.count == tracked.count, statuses.allSatisfy(\.isFinished) else { return nil }
+        return statuses
+    }
+
     /// Returns whether GitLab accepted the approval; the card refreshes either way.
     func approve(_ link: ReminderLink) async -> Result<Void, Error> {
         guard let target = LiveTarget(link: link) else { return .failure(LiveError.unsupported) }

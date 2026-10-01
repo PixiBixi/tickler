@@ -73,12 +73,7 @@ private struct LiveCard: View {
     @State private var hovering = false
 
     static func isFinished(_ status: LiveStatus?) -> Bool {
-        switch status {
-        case let .mergeRequest(mr): mr.state != "opened"
-        case let .ticket(ticket): ticket.category == .done
-        case let .pullRequest(pr): pr.state != "OPEN"
-        case nil: false
-        }
+        status?.isFinished ?? false
     }
 
     var body: some View {
