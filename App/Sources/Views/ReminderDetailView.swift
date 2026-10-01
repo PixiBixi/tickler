@@ -14,6 +14,7 @@ struct ReminderDetailView: View {
     @State private var editingDate = false
     @State private var paneSize = CGSize(width: 800, height: 700)
     @State private var editingNotes = false
+    @State private var sessionHover = false
     @FocusState private var dateFocused: Bool
     @FocusState private var notesFocused: Bool
 
@@ -198,7 +199,9 @@ struct ReminderDetailView: View {
 
     @ViewBuilder
     private var linksSection: some View {
-        let links = model.links(of: reminder)
+        // MRs, tickets and PRs already have a live card above: list only the other links.
+        let tracked = Set(model.liveStatus.supported(model.links(of: reminder)).map(\.url))
+        let links = model.links(of: reminder).filter { !tracked.contains($0.url) }
         if !links.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 sectionTitle("Links")
@@ -225,24 +228,36 @@ struct ReminderDetailView: View {
     @ViewBuilder
     private var sessionSection: some View {
         if let sessionId = reminder.sessionId {
+            let running = model.runningSessions.contains(sessionId)
             VStack(alignment: .leading, spacing: 6) {
                 sectionTitle("Claude Session")
-                HStack(spacing: 10) {
-                    Text(sessionId).font(.system(size: 12, design: .monospaced)).textSelection(.enabled)
-                        .lineLimit(1).truncationMode(.middle)
-                    Spacer()
-                    let running = model.runningSessions.contains(sessionId)
-                    Label(
-                        running ? "Running, Resume focuses its tab" : "Ended, Resume opens a new tab",
-                        systemImage: running ? "circle.fill" : "circle"
-                    )
-                    .font(.system(size: 11))
-                    .fixedSize()
-                    .foregroundStyle(running ? .green : .secondary)
+                // The whole row resumes the session: state first, the id truncated in the middle when space runs out.
+                Button { model.resume(reminder) } label: {
+                    HStack(spacing: 8) {
+                        Circle().fill(running ? Color.green : Color.secondary.opacity(0.6)).frame(width: 7, height: 7)
+                        Text(running ? "Running" : "Ended")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(running ? .green : .secondary)
+                            .fixedSize()
+                        Text(verbatim: sessionId)
+                            .font(.system(size: 11.5, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer(minLength: 8)
+                        Label(running ? "Show Tab" : "Reopen", systemImage: "terminal")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Theme.accent)
+                            .fixedSize()
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(Color.primary.opacity(sessionHover ? 0.08 : 0.04), in: RoundedRectangle(cornerRadius: 8))
+                    .contentShape(Rectangle())
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
+                .buttonStyle(.plain)
+                .onHover { sessionHover = $0 }
+                .help(sessionId)
             }
         }
     }
