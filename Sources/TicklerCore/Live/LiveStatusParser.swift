@@ -18,8 +18,10 @@ public enum LiveStatusParser {
             let hasConflicts: Bool?
             let blockingDiscussionsResolved: Bool?
             let webUrl: String
+            struct Permissions: Decodable { let canMerge: Bool? }
             let author: User?
             let headPipeline: Pipeline?
+            let user: Permissions?
         }
         struct Approvals: Decodable {
             struct Approver: Decodable {
@@ -52,7 +54,8 @@ public enum LiveStatusParser {
             hasConflicts: request.hasConflicts ?? false,
             discussionsResolved: request.blockingDiscussionsResolved ?? true,
             webURL: request.webUrl,
-            author: request.author?.username
+            author: request.author?.username,
+            userCanMerge: request.user?.canMerge ?? false
         )
     }
 

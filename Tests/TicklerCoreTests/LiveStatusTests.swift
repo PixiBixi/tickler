@@ -158,6 +158,29 @@ struct LiveStatusFetcherTests {
         ])
     }
 
+    @Test func mergePutsToTheMergeEndpoint() async throws {
+        let runner = FakeRunner()
+        let fetcher = LiveStatusFetcher(runner: runner)
+        try await fetcher.merge(.gitlabMR(host: "gitlab.com", project: "acme/app", iid: 9))
+        try await fetcher.merge(.gitlabMR(host: "gitlab.com", project: "acme/app", iid: 9), whenPipelinePasses: true)
+        #expect(runner.calls == [
+            ["glab", "api", "--hostname", "gitlab.com", "-X", "PUT", "projects/acme%2Fapp/merge_requests/9/merge"],
+            ["glab", "api", "--hostname", "gitlab.com", "-X", "PUT", "projects/acme%2Fapp/merge_requests/9/merge", "-f", "auto_merge=true"],
+        ])
+    }
+
+    @Test func mergeAvailabilityFollowsGitLab() throws {
+        func status(_ mergeStatus: String, canMerge: Bool, draft: Bool = false) throws -> MergeRequestStatus {
+            let mr = #"{"iid":1,"title":"t","state":"opened","draft":\#(draft),"detailed_merge_status":"\#(mergeStatus)","web_url":"u","user":{"can_merge":\#(canMerge)}}"#
+            return try LiveStatusParser.mergeRequest(mr: Data(mr.utf8), approvals: Data("{}".utf8))
+        }
+        #expect(try status("mergeable", canMerge: true).canMergeNow)
+        #expect(try !status("mergeable", canMerge: false).canMergeNow)
+        #expect(try !status("not_approved", canMerge: true).canMergeNow)
+        #expect(try !status("mergeable", canMerge: true, draft: true).canMergeNow)
+        #expect(try status("ci_still_running", canMerge: true).canMergeWhenPipelinePasses)
+    }
+
     @Test func approvingAnythingButAnMRIsRefused() async {
         await #expect(throws: LiveError.unsupported) {
             try await LiveStatusFetcher(runner: FakeRunner()).approve(.jira(key: "OPS-1"))

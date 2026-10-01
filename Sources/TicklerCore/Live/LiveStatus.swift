@@ -63,10 +63,21 @@ public struct MergeRequestStatus: Codable, Hashable, Sendable {
     public var discussionsResolved: Bool
     public var webURL: String
     public var author: String?
+    public var userCanMerge: Bool = false
 
     /// GitLab has the last word: it says who may approve. Tickler only adds "still open and not approved by you yet".
     public var canApproveNow: Bool {
         state == "opened" && userCanApprove && !userHasApproved
+    }
+
+    /// GitLab's own verdict: approvals, pipeline, threads and conflicts are all clear, and the owner may merge.
+    public var canMergeNow: Bool {
+        state == "opened" && !draft && userCanMerge && mergeStatus == "mergeable"
+    }
+
+    /// Only the pipeline is left: GitLab can merge on its own once it passes.
+    public var canMergeWhenPipelinePasses: Bool {
+        state == "opened" && !draft && userCanMerge && mergeStatus == "ci_still_running"
     }
 }
 
@@ -117,7 +128,7 @@ public enum LiveError: Error, Equatable, CustomStringConvertible {
         case let .toolMissing(tool): "\(tool) is not installed"
         case let .failed(tool, message): message.isEmpty ? "\(tool) failed" : "\(tool): \(message)"
         case let .unreadable(what): "unexpected answer for \(what)"
-        case .unsupported: "only GitLab merge requests can be approved"
+        case .unsupported: "only GitLab merge requests can be approved or merged"
         }
     }
 }

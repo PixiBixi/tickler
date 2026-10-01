@@ -79,6 +79,16 @@ public struct LiveStatusFetcher: Sendable {
         )
     }
 
+    /// Merges with the MR's own options (squash, source branch removal), now or once the pipeline passes.
+    public func merge(_ target: LiveTarget, whenPipelinePasses: Bool = false) async throws {
+        guard case let .gitlabMR(host, project, iid) = target else { throw LiveError.unsupported }
+        var arguments = ["api", "--hostname", host, "-X", "PUT", Self.mergeRequestPath(project: project, iid: iid) + "/merge"]
+        if whenPipelinePasses {
+            arguments += ["-f", "auto_merge=true"]
+        }
+        _ = try await runner.run("glab", arguments)
+    }
+
     static func mergeRequestPath(project: String, iid: Int) -> String {
         let encoded = project
             .addingPercentEncoding(withAllowedCharacters: .alphanumerics.union(CharacterSet(charactersIn: "-._"))) ?? project
