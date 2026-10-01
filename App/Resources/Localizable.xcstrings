@@ -1627,6 +1627,16 @@
         }
       }
     },
+    "Pick a Date…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisir une date…"
+          }
+        }
+      }
+    },
     "Pick a reminder to see its notes and actions.": {
       "localizations": {
         "fr": {
@@ -2343,6 +2353,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "threads ouverts"
+          }
+        }
+      }
+    },
+    "or": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ou"
           }
         }
       }

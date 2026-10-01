@@ -245,6 +245,8 @@ private struct CompactRow: View {
 struct SnoozeMenu: View {
     @Environment(AppModel.self) private var model
     let reminderId: String
+    /// "Pick a date…" at the bottom, where the caller can show a date field.
+    var onPickDate: (() -> Void)?
 
     var body: some View {
         Menu {
@@ -255,6 +257,10 @@ struct SnoozeMenu: View {
                     Text(preset.title) + Text(verbatim: "  ") +
                         Text(preset.date(from: model.now).map { Format.dueLabel($0, now: model.now) } ?? "")
                 }
+            }
+            if let onPickDate {
+                Divider()
+                Button("Pick a Date…", action: onPickDate)
             }
         } label: {
             Label("Snooze", systemImage: "clock")
