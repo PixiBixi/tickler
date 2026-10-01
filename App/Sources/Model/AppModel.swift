@@ -335,9 +335,9 @@ final class AppModel {
         }
     }
 
-    func update(_ id: String, title: String? = nil, notes: String? = nil) {
+    func update(_ id: String, title: String? = nil, notes: String? = nil, resumePrompt: String? = nil) {
         perform {
-            try $0.update(id, title: title, notes: notes)
+            try $0.update(id, title: title, notes: notes, resumePrompt: resumePrompt)
             return nil
         }
     }
@@ -371,15 +371,27 @@ final class AppModel {
         guard let sessionId = reminder.sessionId else { return }
         let driver = preferences.terminal.driver(weztermPath: preferences.weztermPath)
         let cwd = reminder.cwd
+        let prompt = reminder.resumePrompt
         Task {
             let result = await Task.detached {
-                Result { try SessionResumer(driver: driver).resume(sessionId: sessionId, fallbackCwd: cwd) }
+                Result { try SessionResumer(driver: driver).resume(sessionId: sessionId, fallbackCwd: cwd, prompt: prompt) }
             }.value
             switch result {
+            case .success(.focused(_, typedPrompt: true)):
+                showToast(String(localized: "Prompt typed in the session, press Return to send it"))
             case .success(.focused):
-                showToast(String(localized: "Session brought to the front"))
+                if let prompt {
+                    // The terminal cannot type into a running session (Ghostty): hand the prompt over the clipboard.
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(prompt, forType: .string)
+                    showToast(String(localized: "Session brought to the front, prompt copied: paste it with ⌘V"))
+                } else {
+                    showToast(String(localized: "Session brought to the front"))
+                }
             case .success:
-                showToast(String(localized: "Session reopened in the terminal"))
+                showToast(prompt == nil
+                    ? String(localized: "Session reopened in the terminal")
+                    : String(localized: "Session reopened, prompt sent to Claude"))
             case let .failure(error):
                 showError(String(describing: error))
             }

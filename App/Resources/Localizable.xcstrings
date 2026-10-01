@@ -1687,6 +1687,16 @@
         }
       }
     },
+    "Prompt typed in the session, press Return to send it": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prompt tapé dans la session, appuie sur Entrée pour l'envoyer"
+          }
+        }
+      }
+    },
     "Refresh": {
       "localizations": {
         "fr": {
@@ -1827,12 +1837,32 @@
         }
       }
     },
+    "Resume Prompt": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prompt de reprise"
+          }
+        }
+      }
+    },
     "Resume Session": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Reprendre la session"
+          }
+        }
+      }
+    },
+    "Resume and say “%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reprendre et dire « %@ »"
           }
         }
       }
@@ -1887,6 +1917,16 @@
         }
       }
     },
+    "Sent to Claude as the first message when the session is reopened; typed without sending when it still runs.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoyé à Claude en premier message quand la session est rouverte ; tapé sans être envoyé si elle tourne encore."
+          }
+        }
+      }
+    },
     "Session brought to the front": {
       "localizations": {
         "fr": {
@@ -1897,12 +1937,32 @@
         }
       }
     },
+    "Session brought to the front, prompt copied: paste it with ⌘V": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session ramenée au premier plan, prompt copié : colle-le avec ⌘V"
+          }
+        }
+      }
+    },
     "Session reopened in the terminal": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Session rouverte dans le terminal"
+          }
+        }
+      }
+    },
+    "Session reopened, prompt sent to Claude": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session rouverte, prompt envoyé à Claude"
           }
         }
       }
@@ -2243,6 +2303,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Binaire WezTerm"
+          }
+        }
+      }
+    },
+    "What Claude should do on resume, e.g. compare ws-ports": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce que Claude doit faire à la reprise, ex. compare ws-ports"
           }
         }
       }

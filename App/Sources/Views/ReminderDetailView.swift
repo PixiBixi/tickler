@@ -193,10 +193,17 @@ struct ReminderDetailView: View {
         return FlowLayout(spacing: 8) {
             if reminder.sessionId != nil {
                 Button { model.resume(reminder) } label: {
-                    Label("Resume Session", systemImage: "terminal")
+                    if let prompt = reminder.resumePrompt {
+                        Label("Resume and say “\(prompt)”", systemImage: "terminal")
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .frame(maxWidth: 360)
+                    } else {
+                        Label("Resume Session", systemImage: "terminal")
+                    }
                 }
                 .buttonStyle(PrimaryButtonStyle())
-                .help("⌘R")
+                .help(reminder.resumePrompt.map { "⌘R: \($0)" } ?? "⌘R")
             }
             if reminder.status == .open {
                 SnoozeMenu(reminderId: reminder.id) { startRescheduling() }
@@ -298,6 +305,7 @@ struct ReminderDetailView: View {
                 .buttonStyle(.plain)
                 .onHover { sessionHover = $0 }
                 .help(sessionId)
+                ResumePromptField(reminder: reminder)
             }
         }
     }
