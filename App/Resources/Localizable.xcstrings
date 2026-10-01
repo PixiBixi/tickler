@@ -284,6 +284,9 @@
         }
       }
     },
+    "**gras**  *italique*  `code`  # titre  - liste  [lien](url)": {
+      "shouldTranslate": false
+    },
     "1 hour": {
       "localizations": {
         "fr": {
@@ -330,6 +333,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ajouter"
+          }
+        }
+      }
+    },
+    "Add notes, commands or links…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajoute des notes, commandes ou liens…"
           }
         }
       }
@@ -630,6 +643,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chaque rappel apparaît aussi comme un événement de 15 minutes, marqué Disponible, dans le calendrier que tu choisis."
+          }
+        }
+      }
+    },
+    "Edit": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifier"
           }
         }
       }

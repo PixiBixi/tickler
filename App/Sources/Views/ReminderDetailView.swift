@@ -13,6 +13,7 @@ struct ReminderDetailView: View {
     @State private var dateText = ""
     @State private var editingDate = false
     @State private var paneSize = CGSize(width: 800, height: 700)
+    @State private var editingNotes = false
     @FocusState private var dateFocused: Bool
     @FocusState private var notesFocused: Bool
 
@@ -25,7 +26,7 @@ struct ReminderDetailView: View {
                         VStack(alignment: .leading, spacing: 18) {
                             header
                             actions
-                            notesEditor(minHeight: max(260, paneSize.height - 260))
+                            notesSection(minHeight: max(260, paneSize.height - 280))
                         }
                         .frame(maxWidth: 820, alignment: .leading)
                         VStack(alignment: .leading, spacing: 18) {
@@ -43,7 +44,7 @@ struct ReminderDetailView: View {
                         header
                         actions
                         LiveStatusSection(reminder: reminder)
-                        notesEditor(minHeight: 140)
+                        notesSection(minHeight: 120)
                         linksSection
                         sessionSection
                     }
@@ -77,6 +78,7 @@ struct ReminderDetailView: View {
         }
         .onChange(of: notesFocused) { _, focused in
             if !focused {
+                editingNotes = false
                 commitNotes()
             }
         }
@@ -190,18 +192,8 @@ struct ReminderDetailView: View {
 
     static let twoColumnWidth: CGFloat = 1000
 
-    private func notesEditor(minHeight: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            sectionTitle("Notes")
-            TextEditor(text: $notes)
-                .font(.system(size: 13))
-                .lineSpacing(3)
-                .scrollContentBackground(.hidden)
-                .focused($notesFocused)
-                .frame(minHeight: minHeight)
-                .padding(8)
-                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
-        }
+    private func notesSection(minHeight: CGFloat) -> some View {
+        NotesView(text: $notes, isEditing: $editingNotes, focused: $notesFocused, minHeight: minHeight, onCommit: commitNotes)
     }
 
     @ViewBuilder
