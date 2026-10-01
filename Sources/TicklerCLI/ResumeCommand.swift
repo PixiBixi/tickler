@@ -9,7 +9,7 @@ struct ResumeCommand: TicklerSubcommand {
     )
 
     @OptionGroup var options: GlobalOptions
-    @Argument(help: "Reminder id.") var id: String
+    @Argument(help: "Reminder id.", completion: .custom(IDCompletion.complete)) var id: String
 
     func execute(_ context: CLIContext) throws {
         let store = try context.openStore(options)

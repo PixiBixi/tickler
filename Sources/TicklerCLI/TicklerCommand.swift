@@ -24,7 +24,7 @@ public struct TicklerCommand: ParsableCommand {
         abstract: "Reminders written by Claude Code, shown by Tickler.app.",
         subcommands: [
             AddCommand.self, ListCommand.self, ShowCommand.self, DoneCommand.self, SnoozeCommand.self,
-            EditCommand.self, RemoveCommand.self, ResumeCommand.self, StatusCommand.self,
+            EditCommand.self, RemoveCommand.self, ResumeCommand.self, StatusCommand.self, CompletionCommand.self,
             ImportAppleCommand.self,
         ]
     )

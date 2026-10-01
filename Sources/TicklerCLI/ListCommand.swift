@@ -49,7 +49,7 @@ struct ShowCommand: TicklerSubcommand {
     static let configuration = CommandConfiguration(commandName: "show", abstract: "Show one reminder.")
 
     @OptionGroup var options: GlobalOptions
-    @Argument(help: "Reminder id.") var id: String
+    @Argument(help: "Reminder id.", completion: .custom(IDCompletion.complete)) var id: String
     @Flag(help: "Print the reminder as JSON.") var json = false
 
     func execute(_ context: CLIContext) throws {

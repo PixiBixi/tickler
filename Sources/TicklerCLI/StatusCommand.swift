@@ -20,7 +20,7 @@ struct StatusCommand: TicklerSubcommand {
     )
 
     @OptionGroup var options: GlobalOptions
-    @Argument(help: "Reminder id.") var id: String
+    @Argument(help: "Reminder id.", completion: .custom(IDCompletion.complete)) var id: String
     @Flag(help: "Print a JSON array, one entry per supported link.") var json = false
 
     func execute(_ context: CLIContext) throws {

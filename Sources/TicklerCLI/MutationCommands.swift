@@ -6,7 +6,7 @@ struct DoneCommand: TicklerSubcommand {
     static let configuration = CommandConfiguration(commandName: "done", abstract: "Mark a reminder as done.")
 
     @OptionGroup var options: GlobalOptions
-    @Argument(help: "Reminder id.") var id: String
+    @Argument(help: "Reminder id.", completion: .custom(IDCompletion.complete)) var id: String
     @Flag(help: "Print the reminder as JSON.") var json = false
 
     func execute(_ context: CLIContext) throws {
@@ -22,7 +22,7 @@ struct SnoozeCommand: TicklerSubcommand {
     static let configuration = CommandConfiguration(commandName: "snooze", abstract: "Push a reminder back.")
 
     @OptionGroup var options: GlobalOptions
-    @Argument(help: "Reminder id.") var id: String
+    @Argument(help: "Reminder id.", completion: .custom(IDCompletion.complete)) var id: String
     @Option(name: .customLong("for"), help: "From now: 15m, 1h, 2d.") var duration: String?
     @Option(help: "New due date, \"YYYY-MM-DD HH:MM\" in local time.") var to: String?
     @Flag(help: "Print the reminder as JSON.") var json = false
@@ -53,7 +53,7 @@ struct EditCommand: TicklerSubcommand {
     static let configuration = CommandConfiguration(commandName: "edit", abstract: "Change the title, date or notes.")
 
     @OptionGroup var options: GlobalOptions
-    @Argument(help: "Reminder id.") var id: String
+    @Argument(help: "Reminder id.", completion: .custom(IDCompletion.complete)) var id: String
     @Option(help: "New title.") var title: String?
     @Option(help: "New due date, \"YYYY-MM-DD HH:MM\" in local time.") var at: String?
     @Option(help: "New notes, or - to read them from stdin.") var notes: String?
@@ -79,7 +79,7 @@ struct RemoveCommand: TicklerSubcommand {
     static let configuration = CommandConfiguration(commandName: "rm", abstract: "Delete a reminder.")
 
     @OptionGroup var options: GlobalOptions
-    @Argument(help: "Reminder id.") var id: String
+    @Argument(help: "Reminder id.", completion: .custom(IDCompletion.complete)) var id: String
 
     func execute(_ context: CLIContext) throws {
         let store = try context.openStore(options)
