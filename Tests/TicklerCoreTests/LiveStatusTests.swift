@@ -191,6 +191,12 @@ struct LiveStatusFetcherTests {
         let command = LoginShellRunner.command(shell: "/bin/zsh", tool: "jira", arguments: ["issue", "view", "OPS-1; rm -rf ~"])
         #expect(command == ["/bin/zsh", "-lic", #"exec "$0" "$@""#, "jira", "issue", "view", "OPS-1; rm -rf ~"])
     }
+
+    @Test func failureMessageDropsColorCodesAndTrailingResets() {
+        let stderr = "\u{1B}[31m\u{1B}[1mError:\u{1B}[0m 401 Unauthorized\n\u{1B}[0m\n"
+        #expect(LiveError.failureMessage(Data(stderr.utf8)) == "Error: 401 Unauthorized")
+        #expect(LiveError.failureMessage(Data("\u{1B}[0m".utf8)) == "")
+    }
 }
 
 struct LiveStatusFinishedTests {

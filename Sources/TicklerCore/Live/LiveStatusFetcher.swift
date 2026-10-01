@@ -33,12 +33,12 @@ public struct LoginShellRunner: CommandRunning {
             let output = out.fileHandleForReading.readDataToEndOfFile()
             let errors = err.fileHandleForReading.readDataToEndOfFile()
             process.waitUntilExit()
-            let message = String(decoding: errors, as: UTF8.self).split(whereSeparator: \.isNewline).last.map(String.init) ?? ""
+            let message = LiveError.failureMessage(errors)
             if process.terminationStatus == 127 || message.contains("command not found") {
                 throw LiveError.toolMissing(tool)
             }
             guard process.terminationStatus == 0 else {
-                throw LiveError.failed(tool: tool, message: message.trimmingCharacters(in: .whitespaces))
+                throw LiveError.failed(tool: tool, message: message)
             }
             return output
         }.value
@@ -114,12 +114,12 @@ public struct DirectRunner: CommandRunning {
             let output = out.fileHandleForReading.readDataToEndOfFile()
             let errors = err.fileHandleForReading.readDataToEndOfFile()
             process.waitUntilExit()
-            let message = String(decoding: errors, as: UTF8.self).split(whereSeparator: \.isNewline).last.map(String.init) ?? ""
+            let message = LiveError.failureMessage(errors)
             if process.terminationStatus == 127 {
                 throw LiveError.toolMissing(tool)
             }
             guard process.terminationStatus == 0 else {
-                throw LiveError.failed(tool: tool, message: message.trimmingCharacters(in: .whitespaces))
+                throw LiveError.failed(tool: tool, message: message)
             }
             return output
         }.value
@@ -167,8 +167,7 @@ public struct AppToolRunner: CommandRunning {
             let errors = err.fileHandleForReading.readDataToEndOfFile()
             process.waitUntilExit()
             guard process.terminationStatus == 0 else {
-                let message = String(decoding: errors, as: UTF8.self).split(whereSeparator: \.isNewline).last.map(String.init) ?? ""
-                throw LiveError.failed(tool: tool, message: message.trimmingCharacters(in: .whitespaces))
+                throw LiveError.failed(tool: tool, message: LiveError.failureMessage(errors))
             }
             return output
         }.value

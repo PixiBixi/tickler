@@ -161,4 +161,13 @@ public enum LiveError: Error, Equatable, CustomStringConvertible {
         case .unsupported: "only GitLab merge requests can be approved or merged"
         }
     }
+
+    /// Last line of a tool's stderr with its ANSI styling removed: jira ends its errors with a lone color reset.
+    public static func failureMessage(_ stderr: Data) -> String {
+        String(decoding: stderr, as: UTF8.self)
+            .replacing(/\u{1B}\[[0-9;?]*[ -\/]*[@-~]/, with: "")
+            .split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .last { !$0.isEmpty } ?? ""
+    }
 }
