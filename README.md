@@ -144,6 +144,14 @@ The date fields accept French and English: `demain 9h30`, `lundi 10h`, `dans 2h`
 
 For notifications to stay on screen until you act, set Tickler's alert style to **Persistent** in System Settings, Notifications.
 
+### Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| After each upgrade, "Tickler wants to access key Tickler: Jira API token in your keychain" | Enter your password and click **Always Allow**, once per version. Without an Apple Developer account, macOS ties the keychain entry to the exact build, not to the signing certificate |
+| Calendar, notifications or terminal access asked again after switching from a source build to the cask | Expected once: the two builds are signed with different certificates. Grant it again; later `brew upgrade`s keep it |
+| A Jira card shows `jira: ...` instead of the ticket | Save the Jira API token in Settings > Live Status, or check `jira me` in a terminal |
+
 ## Development
 
 | Command | Does |
