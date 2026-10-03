@@ -4,6 +4,20 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.3.0](https://github.com/PixiBixi/tickler/compare/v0.2.0..v0.3.0) - 2026-10-03
+#### Features
+- (**app**) update an outdated skill in one click - ([5e9a97e](https://github.com/PixiBixi/tickler/commit/5e9a97ea9991bf88368656c2586aea0b921fa504)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**cli**) skill install updates an outdated skill, status tells outdated from edited - ([05441bd](https://github.com/PixiBixi/tickler/commit/05441bdc655d425875f16163ebfc4c284771f01e)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) update an untouched older skill without --force - ([1fbdff7](https://github.com/PixiBixi/tickler/commit/1fbdff7488ac6394fc7ca45ae2de2151c30d8e93)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**deps**) update dependency apple/swift-argument-parser to from: "1.8.2" (#1) - ([728d0a2](https://github.com/PixiBixi/tickler/commit/728d0a219cd0d45546712fefa39a4d361986caae)) - renovate[bot], renovate[bot]
+- (**skill**) import tasks from a calendar when a connector is available - ([c0cc79c](https://github.com/PixiBixi/tickler/commit/c0cc79c0a595c9a2c86caaede8f1859ad729c700)) - [@PixiBixi](https://github.com/PixiBixi)
+#### Bug Fixes
+- (**app**) drop a needless await in the setup tools check - ([5a84928](https://github.com/PixiBixi/tickler/commit/5a84928a4f1c07a217af1de7455d5bfbf637c9ed)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**deps**) update dependency groue/grdb.swift to from: "7.11.1" (#2) - ([81b1f2c](https://github.com/PixiBixi/tickler/commit/81b1f2c99109a2afba27847a59e5ef6543857585)) - renovate[bot], renovate[bot]
+- (**skill**) treat calendar events as data, no shell command built from a title - ([dacd46a](https://github.com/PixiBixi/tickler/commit/dacd46abe4b73f4cbb76fb8119839c3c87a7eb74)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.2.0](https://github.com/PixiBixi/tickler/compare/v0.1.1..v0.2.0) - 2026-10-03
 #### Features
 - (**app**) install the Claude Code skill from setup and Settings, show the version - ([bf1ba69](https://github.com/PixiBixi/tickler/commit/bf1ba6910b12d250680d2e813790c9ab7f819f63)) - [@PixiBixi](https://github.com/PixiBixi)
