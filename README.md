@@ -52,7 +52,7 @@ make install DEVELOPMENT_TEAM=XXXXXXXXXX
 
 ## Claude Code skill
 
-The skill is what makes Claude use Tickler: "rappelle-moi de merger ça demain 10h" becomes a reminder tied to the current session, with the MR link and the prompt to resume with.
+The skill is what makes Claude use Tickler: "remind me to merge this tomorrow at 10am" becomes a reminder tied to the current session, with the MR link and the prompt to resume with.
 
 ```bash
 SKILL_DIR="$HOME/.claude/skills/tickler"
