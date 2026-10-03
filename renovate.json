@@ -21,15 +21,9 @@
       "automergeType": "pr"
     },
     {
-      "description": "Minor SwiftPM bumps ship in the binary and the app",
+      "description": "SwiftPM bumps ship in the binary and the app, so they release, but as a patch under Bug Fixes: a dependency bump is not a Tickler feature",
       "matchManagers": ["swift"],
-      "matchUpdateTypes": ["minor"],
-      "semanticCommitType": "feat"
-    },
-    {
-      "description": "Patch/digest SwiftPM bumps ship in the binary and the app",
-      "matchManagers": ["swift"],
-      "matchUpdateTypes": ["patch", "digest"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
       "semanticCommitType": "fix"
     },
     {
