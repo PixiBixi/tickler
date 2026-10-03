@@ -44,16 +44,7 @@ jobs:
           echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
           rm xcodegen.zip
 
-      - name: Cache SwiftPM and Xcode builds
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            .build
-            build/DerivedData
-          key: release-${{ runner.os }}-${{ env.XCODE_VERSION }}-${{ hashFiles('Package.resolved') }}
-          restore-keys: |
-            release-${{ runner.os }}-${{ env.XCODE_VERSION }}-
-
+      # No build cache: a restored cache would feed unreviewed objects into the signed release.
       - name: Import the signing certificate
         # A trust prompt would hang the runner silently: fail fast instead.
         timeout-minutes: 5
