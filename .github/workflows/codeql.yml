@@ -21,12 +21,13 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  XCODE_VERSION: "16.4"
+  # Same Xcode as the local builds: a different Swift version accepts or rejects different code.
+  XCODE_VERSION: "26.4.1"
 
 jobs:
   analyze:
     name: Analyze
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     permissions:
       contents: read

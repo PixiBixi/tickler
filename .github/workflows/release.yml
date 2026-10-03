@@ -14,7 +14,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  XCODE_VERSION: "16.4"
+  # Same Xcode as the local builds: a different Swift version accepts or rejects different code.
+  XCODE_VERSION: "26.4.1"
   # renovate: datasource=github-releases depName=yonaskolb/XcodeGen
   XCODEGEN_VERSION: 2.46.0
   SIGN_IDENTITY: Tickler Release Signing
@@ -23,7 +24,7 @@ env:
 jobs:
   release:
     name: Build and publish
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     permissions:
       contents: write
