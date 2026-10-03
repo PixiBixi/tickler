@@ -33,8 +33,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # The release notes are generated from every commit since the previous tag.
-          fetch-depth: 0
 
       - name: Select Xcode
         run: sudo xcode-select --switch "/Applications/Xcode_${XCODE_VERSION}.app"
@@ -82,8 +80,9 @@ jobs:
         run: |
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
-          brew install --quiet cocogitto
-          cog changelog --at "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
+          # The section scripts/bump.sh committed for this tag: no tool installed in the job that holds the signing key.
+          awk -v tag="$GITHUB_REF_NAME" '$0 ~ "^## \\[" tag "\\]" {found=1; next} found && /^- - -/ {exit} found' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          [[ -s "$RUNNER_TEMP/notes.md" ]] || echo "Release $GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
           gh release create "$GITHUB_REF_NAME" "dist/tickler-${version}.zip" --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"
 
       - name: Bump the Homebrew cask
