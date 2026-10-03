@@ -41,6 +41,20 @@ struct SkillVersionTests {
         #expect(try String(contentsOf: skillFile, encoding: .utf8) == ClaudeSkill.content)
     }
 
+    @Test func anUntouchedOlderSkillIsUpdatedWithoutForce() throws {
+        let cli = cli()
+        _ = cli.run("skill", "install")
+        // What an older Tickler would have left: its own content and the matching stamp.
+        let older = "older skill\n"
+        try older.write(to: skillFile, atomically: true, encoding: .utf8)
+        try (ClaudeSkill.hash(older) + "\n").write(
+            to: skillFile.deletingLastPathComponent().appendingPathComponent(".tickler-installed"), atomically: true, encoding: .utf8
+        )
+        #expect(cli.run("skill", "status").out.hasPrefix("outdated"))
+        #expect(cli.run("skill", "install").out.hasPrefix("updated\t"))
+        #expect(try String(contentsOf: skillFile, encoding: .utf8) == ClaudeSkill.content)
+    }
+
     @Test func claudeConfigDirIsHonored() {
         let custom = home.appendingPathComponent("custom")
         #expect(ClaudeSkill.directory(environment: ["HOME": home.path, "CLAUDE_CONFIG_DIR": custom.path]).path

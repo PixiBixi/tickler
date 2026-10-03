@@ -16,7 +16,7 @@ struct SkillInstallCommand: TicklerSubcommand {
         abstract: "Install or update the skill in ~/.claude/skills/tickler ($CLAUDE_CONFIG_DIR is honored)."
     )
 
-    @Flag(help: "Replace a skill that differs (edited, or from another version).") var force = false
+    @Flag(help: "Replace a skill that was edited, or not installed by Tickler.") var force = false
     @OptionGroup var options: GlobalOptions
 
     func execute(_ context: CLIContext) throws {
@@ -25,7 +25,8 @@ struct SkillInstallCommand: TicklerSubcommand {
         do {
             switch try ClaudeSkill.install(in: directory, force: force) {
             case .notInstalled: context.stdout.line("installed\t\(path)")
-            case .differs: context.stdout.line("replaced\t\(path)")
+            case .outdated: context.stdout.line("updated\t\(path)")
+            case .edited: context.stdout.line("replaced\t\(path)")
             case .upToDate: context.stdout.line("up to date\t\(path)")
             }
         } catch let error as ClaudeSkill.InstallError {
@@ -43,7 +44,8 @@ struct SkillStatusCommand: TicklerSubcommand {
         let state = switch ClaudeSkill.state(in: directory) {
         case .notInstalled: "not installed"
         case .upToDate: "up to date"
-        case .differs: "differs from tickler \(Tickler.version) (edited, or another version)"
+        case .outdated: "outdated, run: tickler skill install"
+        case .edited: "edited, or not installed by Tickler (tickler skill install --force replaces it)"
         }
         context.stdout.line("\(state)\t\(ClaudeSkill.file(in: directory).path)")
     }
