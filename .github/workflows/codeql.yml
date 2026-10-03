@@ -1,10 +1,15 @@
 name: CodeQL
 
+# Swift analysis traces a full build (about 14 min): only pull requests that touch code, plus a weekly run.
+# A traced build cannot come from a cache, CodeQL would see nothing compiled.
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+    paths:
+      - "Sources/**"
+      - "App/**"
+      - "Package.*"
+      - ".github/workflows/codeql.yml"
   schedule:
     # Weekly: a query published after the last push still gets to run.
     - cron: "27 4 * * 1"
