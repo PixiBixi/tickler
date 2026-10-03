@@ -49,8 +49,9 @@ final class CalendarService {
 
     func requestAccess() async -> Bool {
         // Completion form: the async one sends the main-actor store across isolation, an error before Swift 6.3.
+        // @Sendable: EventKit calls back on its XPC queue, a main-actor closure would trap there. Do NOT remove.
         let granted = await withCheckedContinuation { continuation in
-            eventStore.requestFullAccessToEvents { granted, _ in continuation.resume(returning: granted) }
+            eventStore.requestFullAccessToEvents { @Sendable granted, _ in continuation.resume(returning: granted) }
         }
         AppModel.shared.bringToFront()
         loadCalendars()
