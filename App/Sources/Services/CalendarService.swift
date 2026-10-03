@@ -48,7 +48,10 @@ final class CalendarService {
     }
 
     func requestAccess() async -> Bool {
-        let granted = await (try? eventStore.requestFullAccessToEvents()) ?? false
+        // Completion form: the async one sends the main-actor store across isolation, an error before Swift 6.3.
+        let granted = await withCheckedContinuation { continuation in
+            eventStore.requestFullAccessToEvents { granted, _ in continuation.resume(returning: granted) }
+        }
         AppModel.shared.bringToFront()
         loadCalendars()
         return granted
