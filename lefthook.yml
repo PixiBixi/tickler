@@ -7,7 +7,7 @@ pre-commit:
 
     - name: swiftlint
       glob: "*.swift"
-      run: swiftlint lint --strict --quiet {staged_files}
+      run: swiftlint lint --strict --quiet --force-exclude {staged_files}
 
     - name: gitleaks
       run: gitleaks protect --staged --redact

@@ -6,4 +6,4 @@
 --self remove
 --stripunusedargs closure-only
 --header strip
---exclude .build,build,Tickler.xcodeproj
+--exclude .build,build,Tickler.xcodeproj,Sources/TicklerCore/Skill/SkillContent.swift
