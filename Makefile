@@ -51,7 +51,7 @@ project:
 
 app: project
 	xcodebuild -project Tickler.xcodeproj -scheme Tickler -configuration $(CONFIGURATION) \
-		-derivedDataPath $(DERIVED) \
+		-derivedDataPath $(DERIVED) -destination "generic/platform=macOS" \
 		$(SIGN_FLAGS) $(XCODEBUILD_EXTRA) \
 		-quiet build
 
