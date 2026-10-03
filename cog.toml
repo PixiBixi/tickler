@@ -1,0 +1,21 @@
+# Releases: `cog bump --auto` locally writes CHANGELOG.md, commits and tags; the v* tag runs the release workflow.
+ignore_merge_commits = true
+tag_prefix = "v"
+branch_whitelist = ["main"]
+
+# The changelog is for users: what changed in the app, the CLI and the skill.
+[commit_types]
+ci = { changelog_title = "", omit_from_changelog = true }
+build = { changelog_title = "", omit_from_changelog = true }
+test = { changelog_title = "", omit_from_changelog = true }
+docs = { changelog_title = "", omit_from_changelog = true }
+style = { changelog_title = "", omit_from_changelog = true }
+chore = { changelog_title = "", omit_from_changelog = true }
+
+[changelog]
+path = "CHANGELOG.md"
+template = "remote"
+remote = "github.com"
+owner = "PixiBixi"
+repository = "tickler"
+authors = [{ signature = "Jeremy Delgado", username = "PixiBixi" }]
