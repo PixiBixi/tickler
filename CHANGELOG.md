@@ -4,6 +4,14 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.2.0](https://github.com/PixiBixi/tickler/compare/v0.1.1..v0.2.0) - 2026-10-03
+#### Features
+- (**app**) install the Claude Code skill from setup and Settings, show the version - ([bf1ba69](https://github.com/PixiBixi/tickler/commit/bf1ba6910b12d250680d2e813790c9ab7f819f63)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**cli**) tickler version, tickler skill install and status - ([5afe171](https://github.com/PixiBixi/tickler/commit/5afe1716a25cb5a1c04ff4fef1f0746d126cd737)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) embedded Claude Code skill with an installer, and the version - ([c7285c6](https://github.com/PixiBixi/tickler/commit/c7285c61af96e87bf5363b7cbefa492cc77d7647)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.1.1](https://github.com/PixiBixi/tickler/compare/v0.1.0..v0.1.1) - 2026-10-03
 #### Bug Fixes
 - (**app**) calendar access callback must not be main-actor isolated - ([2cf1c0f](https://github.com/PixiBixi/tickler/commit/2cf1c0f473ef3cf2a13e557c330e4b7945274a4a)) - [@PixiBixi](https://github.com/PixiBixi)
