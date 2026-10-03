@@ -22,10 +22,11 @@ public struct TicklerCommand: ParsableCommand {
     public static let configuration = CommandConfiguration(
         commandName: "tickler",
         abstract: "Reminders written by Claude Code, shown by Tickler.app.",
+        version: Tickler.version,
         subcommands: [
             AddCommand.self, ListCommand.self, ShowCommand.self, DoneCommand.self, SnoozeCommand.self,
             EditCommand.self, RemoveCommand.self, ResumeCommand.self, StatusCommand.self, CompletionCommand.self,
-            ImportAppleCommand.self,
+            ImportAppleCommand.self, SkillCommand.self, VersionCommand.self,
         ]
     )
 
