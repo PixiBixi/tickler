@@ -3,3 +3,7 @@ default: true
 MD013: false
 # Table pipe spacing is cosmetic and editors format tables differently.
 MD060: false
+# Centered logo and title at the top of the README.
+MD033:
+  allowed_elements: [p, img, h1]
+MD041: false

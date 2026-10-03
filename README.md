@@ -1,13 +1,23 @@
-# Tickler
+<p align="center">
+  <img src="assets/brand/tickler-app-icon.svg" width="128" alt="Tickler icon">
+</p>
 
-Reminders that Claude Code writes for you, with a macOS menu bar app that notifies you on time and brings the Claude session back in one click.
+<h1 align="center">Tickler</h1>
+
+<p align="center">Reminders that Claude Code writes for you, with a macOS menu bar app that notifies you on time and brings the Claude session back in one click.</p>
+
+![Tickler: a reminder with the live status of its merge request and Jira issue](assets/screenshots/live-status.png)
 
 - `tickler`: the CLI Claude uses to add, list and close reminders (JSON output).
 - `Tickler.app`: menu bar item with a badge, a window filtered by date, notifications with actions (resume the session, snooze, reschedule, done, open the ticket or Slack thread), live status of the linked MRs, tickets and PRs with an Approve button, and a one-way copy of every reminder into a calendar of your choice.
 
 Both share one SQLite file: `~/Library/Application Support/Tickler/tickler.sqlite`. The CLI works while the app is closed; the app picks up its changes instantly.
 
-Requirements: macOS 14 or later, Xcode 16 or later, [XcodeGen](https://github.com/yonaskolb/XcodeGen). Optional: [WezTerm](https://wezterm.org), [Ghostty](https://ghostty.org) or [iTerm2](https://iterm2.com) for session resume; `glab`, `jira` ([jira-cli](https://github.com/ankitpokhrel/jira-cli)) and `gh`, logged in, for live status.
+Requirements: macOS 14 or later; to build from source, Xcode 16 or later and [XcodeGen](https://github.com/yonaskolb/XcodeGen). Optional: [WezTerm](https://wezterm.org), [Ghostty](https://ghostty.org) or [iTerm2](https://iterm2.com) for session resume; `glab`, `jira` ([jira-cli](https://github.com/ankitpokhrel/jira-cli)) and `gh`, logged in, for live status.
+
+| Resume with a prompt | New reminder | Reschedule |
+|---|---|---|
+| ![Resume button that sends a prompt to Claude](assets/screenshots/resume-prompt.png) | ![New reminder sheet with a natural language date](assets/screenshots/new-reminder.png) | ![Reschedule popover with quick picks and a calendar](assets/screenshots/reschedule.png) |
 
 ## Install
 
