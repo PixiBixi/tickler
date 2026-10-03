@@ -55,11 +55,11 @@ make install DEVELOPMENT_TEAM=XXXXXXXXXX
 The skill is what makes Claude use Tickler: "remind me to merge this tomorrow at 10am" becomes a reminder tied to the current session, with the MR link and the prompt to resume with.
 
 ```bash
-SKILL_DIR="$HOME/.claude/skills/tickler"
-mkdir -p "$SKILL_DIR"
-curl -fsSL https://raw.githubusercontent.com/PixiBixi/tickler/main/skills/tickler/SKILL.md -o "$SKILL_DIR/SKILL.md"
-# Claude Code picks it up in the next session
+tickler skill install
+# installed  ~/.claude/skills/tickler/SKILL.md (Claude Code picks it up in the next session)
 ```
+
+The setup assistant and Settings offer the same button. The skill ships with each version: run it again after an upgrade, `tickler skill status` tells whether the installed one is current.
 
 | Ask Claude | It runs |
 |---|---|
@@ -82,6 +82,8 @@ curl -fsSL https://raw.githubusercontent.com/PixiBixi/tickler/main/skills/tickle
 | `tickler resume <id>` | Focuses the tab of the reminder's Claude session in WezTerm, Ghostty or iTerm2, or reopens it with `claude --resume` in the reminder's folder. A resume prompt is sent as the first message of a reopened session, and typed without Return into a running one (WezTerm, iTerm2). `TICKLER_TERMINAL=wezterm\|ghostty\|iterm` picks where new tabs open |
 | `tickler status <id>` | Live state of the linked GitLab MRs, Jira issues and GitHub PRs (pipeline, approvals, ticket status, checks). `--json` |
 | `tickler completion zsh` | Prints the shell completion script (also `bash`, `fish`): subcommands, options, and reminder ids with their title |
+| `tickler skill install` / `status` | Installs the Claude Code skill of this version in `~/.claude/skills/tickler` (`$CLAUDE_CONFIG_DIR` honored); an edited skill is only replaced with `--force` |
+| `tickler version` | Prints the version (also `--version`) |
 | `tickler import-apple --list Claude` | One-shot import of the open reminders of an Apple Reminders list, which is left untouched |
 
 - Completion: add `source <(tickler completion zsh)` to `~/.zshrc`; `tickler rm <Tab>` then lists open reminders as `id -- date title`.
