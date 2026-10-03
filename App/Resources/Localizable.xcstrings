@@ -1167,12 +1167,22 @@
         }
       }
     },
-    "Installed, differs from this version": {
+    "Installed, edited": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Installé, différent de cette version"
+            "value": "Installé, modifié"
+          }
+        }
+      }
+    },
+    "Installed, from an older version": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installé, version antérieure"
           }
         }
       }
@@ -1197,12 +1207,12 @@
         }
       }
     },
-    "It differs from the skill of Tickler %@: it was edited, or comes from another version. Edits are lost.": {
+    "It was edited, or not installed by Tickler. Edits are lost.": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Il diffère du skill de Tickler %@ : il a été modifié, ou vient d'une autre version. Les modifications seront perdues."
+            "value": "Il a été modifié, ou n'a pas été installé par Tickler. Les modifications seront perdues."
           }
         }
       }
@@ -2533,6 +2543,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Non assigné"
+          }
+        }
+      }
+    },
+    "Update Skill": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mettre à jour le skill"
           }
         }
       }

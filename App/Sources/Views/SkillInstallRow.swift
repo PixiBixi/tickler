@@ -16,12 +16,14 @@ struct SkillInstallRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Label(statusText, systemImage: statusIcon)
-                    .foregroundStyle(state == .upToDate ? .green : (state == .differs ? .orange : .secondary))
+                    .foregroundStyle(state == .upToDate ? .green : (state == .notInstalled ? .secondary : .orange))
                 Spacer()
                 switch state {
                 case .notInstalled:
                     Button("Install Skill") { install(force: false) }.buttonStyle(PrimaryButtonStyle())
-                case .differs:
+                case .outdated:
+                    Button("Update Skill") { install(force: false) }.buttonStyle(PrimaryButtonStyle())
+                case .edited:
                     Button("Replace…") { confirmReplace = true }.buttonStyle(SecondaryButtonStyle())
                 case .upToDate:
                     EmptyView()
@@ -39,7 +41,7 @@ struct SkillInstallRow: View {
         .confirmationDialog("Replace the installed skill?", isPresented: $confirmReplace) {
             Button("Replace", role: .destructive) { install(force: true) }
         } message: {
-            Text("It differs from the skill of Tickler \(Tickler.version): it was edited, or comes from another version. Edits are lost.")
+            Text("It was edited, or not installed by Tickler. Edits are lost.")
         }
     }
 
@@ -47,7 +49,8 @@ struct SkillInstallRow: View {
         switch state {
         case .notInstalled: "Not installed"
         case .upToDate: "Installed, up to date"
-        case .differs: "Installed, differs from this version"
+        case .outdated: "Installed, from an older version"
+        case .edited: "Installed, edited"
         }
     }
 
@@ -55,7 +58,8 @@ struct SkillInstallRow: View {
         switch state {
         case .notInstalled: "circle.dashed"
         case .upToDate: "checkmark.seal.fill"
-        case .differs: "exclamationmark.triangle"
+        case .outdated: "arrow.triangle.2.circlepath"
+        case .edited: "exclamationmark.triangle"
         }
     }
 
