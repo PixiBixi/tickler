@@ -8,6 +8,7 @@
 
 ![Tickler: a reminder with the live status of its merge request and Jira issue](assets/screenshots/live-status.png)
 
+- **The Claude Code skill** ([`skills/tickler`](skills/tickler/SKILL.md)): teaches Claude when and how to create reminders, with the session, the links and the prompt to resume with, and to offer follow-ups on its own (chase a review two days after opening an MR, re-measure 24 h after a rollout).
 - `tickler`: the CLI Claude uses to add, list and close reminders (JSON output).
 - `Tickler.app`: menu bar item with a badge, a window filtered by date, notifications with actions (resume the session, snooze, reschedule, done, open the ticket or Slack thread), live status of the linked MRs, tickets and PRs with an Approve button, and a one-way copy of every reminder into a calendar of your choice.
 
@@ -48,6 +49,24 @@ Or, with an Apple Development certificate (Xcode, Settings, Accounts, your Apple
 ```bash
 make install DEVELOPMENT_TEAM=XXXXXXXXXX
 ```
+
+## Claude Code skill
+
+The skill is what makes Claude use Tickler: "rappelle-moi de merger ça demain 10h" becomes a reminder tied to the current session, with the MR link and the prompt to resume with.
+
+```bash
+SKILL_DIR="$HOME/.claude/skills/tickler"
+mkdir -p "$SKILL_DIR"
+curl -fsSL https://raw.githubusercontent.com/PixiBixi/tickler/main/skills/tickler/SKILL.md -o "$SKILL_DIR/SKILL.md"
+# Claude Code picks it up in the next session
+```
+
+| Ask Claude | It runs |
+|---|---|
+| "remind me to merge this tomorrow 10am" | `tickler add` with the session, folder, MR link and a resume prompt |
+| "check yesterday's reminders" | `tickler list --due today --json`, then `tickler status` on linked MRs and tickets before acting |
+| "push it to Monday" / "it's done" | `tickler edit --at` / `tickler done` |
+| (after opening an MR or rolling out a change) | Offers a follow-up: chase the review, re-measure against the baseline |
 
 ## CLI
 
