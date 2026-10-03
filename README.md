@@ -153,6 +153,7 @@ For notifications to stay on screen until you act, set Tickler's alert style to 
 | `make app` | Generates `Tickler.xcodeproj` with XcodeGen and builds the app |
 | `make dev` | Incremental Debug build of the app, installed and relaunched (about 10 s) |
 | `make install` / `make uninstall` | Installs or removes the CLI and the app (Release) |
+| `scripts/bump.sh [--push]` | Cuts a release: next version from the commits ([cocogitto](https://github.com/cocogitto/cocogitto)), `CHANGELOG.md`, signed commit and tag; the pushed tag runs the release workflow |
 | `make release VERSION=x.y.z SIGN_IDENTITY=<name>` | Universal signed zip in `dist/`, as the release workflow publishes on a `v*` tag |
 | `scripts/create-release-signing-certificate.sh <owner/repo>` | Once: creates the release certificate and stores it as the repository's secrets |
 
