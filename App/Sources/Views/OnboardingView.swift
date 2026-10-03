@@ -243,7 +243,7 @@ struct OnboardingView: View {
     private func checkTools() async {
         var found: [ExternalTool: String] = [:]
         for tool in ExternalTool.allCases {
-            if let path = await ToolCheck.locate(tool) {
+            if let path = ToolCheck.locate(tool) {
                 found[tool] = path
             }
         }
