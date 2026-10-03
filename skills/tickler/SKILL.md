@@ -41,6 +41,10 @@ Offer these in one line at the moment they arise, create on a yes:
 
 At check time, look at the live state first (`tickler status <id> --json` for linked MRs and tickets, the metric for re-measures) so the report says whether the action is still needed.
 
+## Importing tasks from a calendar
+
+When a calendar connector is available, events the user created alone (no other attendee) that describe an action are tasks: propose them as reminders, copying links and steps into the note, plus any follow-up the description implies (a re-measure 24h later). The reminder must point at the session that planned the task, not the importing one: find it with `/usr/bin/grep -rlF --include='*.jsonl' '<event title>' ~/.claude/projects` (excluding the current session), take its `cwd` from the transcript, and pass both as `--session <id> --cwd <dir>` to `add`. No match: keep the current session. Once created, delete the source event without notifying anyone, since Tickler already copies the reminder into the calendar. Meetings stay in the calendar.
+
 ## Checking ("check les reminders de la veille")
 
 1. Run `tickler list --due today --json`. It returns every open reminder due today or earlier, not only yesterday's: an unfinished one from three days ago still matters.
