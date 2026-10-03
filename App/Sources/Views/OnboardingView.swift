@@ -12,6 +12,8 @@ struct OnboardingView: View {
     @State private var installOutput: String?
     @State private var confirmInstall = false
     @State private var jiraTokenSaved = JiraToken.isSet
+    @State private var skillInstalled = ClaudeSkill
+        .state(in: ClaudeSkill.directory(environment: ProcessInfo.processInfo.environment)) == .upToDate
 
     var body: some View {
         @Bindable var preferences = model.preferences
@@ -29,8 +31,9 @@ struct OnboardingView: View {
                     step(2, "Calendar", done: model.calendarSync.hasAccess && preferences.calendarId != nil) { calendarStep }
                     step(3, "Terminal", done: true) { terminalStep }
                     step(4, "Live status tools", done: checkedTools && toInstall.isEmpty) { toolsStep }
+                    step(5, "Claude Code skill", done: skillInstalled) { skillStep }
                     if preferences.enabledTools.contains(.jira) {
-                        step(5, "Jira token (optional)", done: jiraTokenSaved) { jiraStep }
+                        step(6, "Jira token (optional)", done: jiraTokenSaved) { jiraStep }
                     }
                 }
                 .padding(24)
@@ -192,6 +195,16 @@ struct OnboardingView: View {
                         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
                 }
             }
+        }
+    }
+
+    private var skillStep: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Teaches Claude Code when and how to create reminders, with the session, the links and the prompt to resume with.")
+                .foregroundStyle(.secondary)
+            SkillInstallRow(onChange: {
+                skillInstalled = ClaudeSkill.state(in: ClaudeSkill.directory(environment: ProcessInfo.processInfo.environment)) == .upToDate
+            })
         }
     }
 

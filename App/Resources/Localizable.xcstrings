@@ -767,6 +767,26 @@
         }
       }
     },
+    "Claude Code Skill": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skill Claude Code"
+          }
+        }
+      }
+    },
+    "Claude Code skill": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skill Claude Code"
+          }
+        }
+      }
+    },
     "Claude Session": {
       "localizations": {
         "fr": {
@@ -1117,6 +1137,16 @@
         }
       }
     },
+    "Install Skill": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installer le skill"
+          }
+        }
+      }
+    },
     "Install with Homebrew": {
       "localizations": {
         "fr": {
@@ -1137,12 +1167,42 @@
         }
       }
     },
+    "Installed, differs from this version": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installé, différent de cette version"
+          }
+        }
+      }
+    },
+    "Installed, up to date": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installé, à jour"
+          }
+        }
+      }
+    },
     "Installing…": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Installation…"
+          }
+        }
+      }
+    },
+    "It differs from the skill of Tickler %@: it was edited, or comes from another version. Edits are lost.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il diffère du skill de Tickler %@ : il a été modifié, ou vient d'une autre version. Les modifications seront perdues."
           }
         }
       }
@@ -1473,6 +1533,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aucun"
+          }
+        }
+      }
+    },
+    "Not installed": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non installé"
           }
         }
       }
@@ -1877,6 +1947,36 @@
         }
       }
     },
+    "Replace": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remplacer"
+          }
+        }
+      }
+    },
+    "Replace the installed skill?": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remplacer le skill installé ?"
+          }
+        }
+      }
+    },
+    "Replace…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remplacer…"
+          }
+        }
+      }
+    },
     "Reschedule": {
       "localizations": {
         "fr": {
@@ -2217,6 +2317,16 @@
         }
       }
     },
+    "Teaches Claude Code when and how to create reminders, with the session, the links and the prompt to resume with.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apprend à Claude Code quand et comment créer des rappels, avec la session, les liens et le prompt de reprise."
+          }
+        }
+      }
+    },
     "Terminal": {
       "localizations": {
         "fr": {
@@ -2423,6 +2533,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Non assigné"
+          }
+        }
+      }
+    },
+    "Version": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
           }
         }
       }

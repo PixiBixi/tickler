@@ -90,6 +90,10 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Claude Code Skill") {
+                SkillInstallRow()
+            }
+
             Section("General") {
                 Picker("Language", selection: Binding(
                     get: { preferences.language },
@@ -121,6 +125,7 @@ struct SettingsView: View {
                     get: { launchAtLogin },
                     set: { preferences.launchAtLogin = $0; launchAtLogin = preferences.launchAtLogin }
                 ))
+                LabeledContent("Version") { Text(verbatim: Tickler.version).textSelection(.enabled) }
             }
         }
         .formStyle(.grouped)
