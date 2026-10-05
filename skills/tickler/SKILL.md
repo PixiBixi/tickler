@@ -20,6 +20,8 @@ Every reminder Claude creates goes through the `tickler` CLI ([PixiBixi/tickler]
 | `tickler resume <id>` | Reopens the reminder's Claude session in WezTerm, Ghostty or iTerm2 |
 | `tickler status <id> --json` | Live state of the linked MRs, Jira issues and PRs: pipeline, approvals, ticket status |
 
+`list --json` returns an array, `show --json` one object, keys sorted, absent values `null`: `id`, `title`, `notes`, `due` (`YYYY-MM-DD HH:MM`, local), `dueISO` (ISO 8601 with offset), `originalDue`, `rescheduleCount`, `status` (`open`, `done`, `deleted`), `source` (`claude`, `human`), `sessionId`, `cwd`, `project`, `resumePrompt`, `overdue` (bool), `links` (`[{kind, label, url}]`). There is no `date` key: filter on `due` (`select(.due | startswith("2026-10-12"))`).
+
 `add` records the creating session and folder from `CLAUDE_CODE_SESSION_ID` and the cwd. Pass `--session <uuid> --cwd <dir>` to point at another session. Links in the notes are detected (MR, Jira, Slack, Grafana, PR) and become buttons in the app and in the notification, so put the full URLs in the notes.
 
 ## Creating
