@@ -1,10 +1,11 @@
 name: CodeQL
 
-# Swift analysis traces a full build (about 14 min): only pull requests that touch code, plus a weekly run.
+# Swift analysis traces a full build (about 14 min): only pushes to main that touch code, plus a weekly run.
+# Not on pull requests: nothing waits for it before merging, and it held a macOS runner while CI and App queued.
 # A traced build cannot come from a cache, CodeQL would see nothing compiled.
 # Dependency bumps (Package.*) do not change our code: dependency review covers them.
 on:
-  pull_request:
+  push:
     branches: [main]
     paths:
       - "Sources/**"
