@@ -86,24 +86,28 @@ final class NotificationService: NSObject {
     func catchUp(reminders: [Reminder], links: [String: [ReminderLink]]) async -> [String] {
         let delivered = await center.deliveredNotifications().map(\.request.identifier)
         let pending = await center.pendingNotificationRequests().map(\.identifier)
-        switch NotificationPlanner.catchUp(reminders: reminders, alreadyShownIds: Set(delivered + pending), now: Date()) {
-        case .none:
-            return []
-        case let .individual(missed):
-            for reminder in missed {
-                let category = NotificationCategory.for(links: links[reminder.id] ?? [])
-                let request = UNNotificationRequest(
-                    identifier: NotificationPlanner.requestId(for: reminder),
-                    content: content(for: reminder, category: category),
-                    trigger: nil
-                )
-                try? await center.add(request)
-            }
-            return missed.map(\.id)
-        case let .summary(missed):
+        let plan = NotificationPlanner.catchUp(reminders: reminders, alreadyShownIds: Set(delivered + pending), now: Date())
+        var individual: [Reminder] = []
+        var summary: [Reminder] = []
+        switch plan {
+        case .none: return []
+        case let .individual(missed): individual = missed
+        case let .summary(missed): summary = missed
+        case let .summaryAndIndividual(summarized, single): (summary, individual) = (summarized, single)
+        }
+        for reminder in individual {
+            let category = NotificationCategory.for(links: links[reminder.id] ?? [])
+            let request = UNNotificationRequest(
+                identifier: NotificationPlanner.requestId(for: reminder),
+                content: content(for: reminder, category: category),
+                trigger: nil
+            )
+            try? await center.add(request)
+        }
+        if !summary.isEmpty {
             let content = UNMutableNotificationContent()
-            content.title = String(localized: "\(missed.count) overdue reminders")
-            content.body = missed.prefix(4).map(\.title).joined(separator: "\n")
+            content.title = String(localized: "\(summary.count) overdue reminders")
+            content.body = summary.prefix(4).map(\.title).joined(separator: "\n")
             content.sound = .default
             content.categoryIdentifier = NotificationCategory.summaryIdentifier
             let request = UNNotificationRequest(
@@ -112,8 +116,8 @@ final class NotificationService: NSObject {
                 trigger: nil
             )
             try? await center.add(request)
-            return missed.map(\.id)
         }
+        return (individual + summary).map(\.id)
     }
 
     /// "Claude added a reminder": one banner each, a single summary beyond three (an import, a burst of follow-ups).

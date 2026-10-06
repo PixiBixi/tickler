@@ -30,7 +30,10 @@ final class TriggerWatcher {
         guard !waiting.isEmpty else { return }
         checking = true
         Task {
-            let statuses = await model.liveStatus.fetchNow(waiting.flatMap { model.links(of: $0) })
+            // Only the links the trigger reads: a Jira link on a `merged` reminder is not worth a fetch.
+            let statuses = await model.liveStatus.fetchNow(waiting.flatMap { reminder in
+                model.links(of: reminder).filter { link in reminder.parsedTrigger?.supports(link.kind) == true }
+            })
             let checked = Set(waiting.map(\.id))
             var fired = false
             var failure: String?
@@ -40,7 +43,7 @@ final class TriggerWatcher {
                       case let .fired(reason) = TriggerEvaluator.evaluate(trigger, links: model.links(of: reminder), statuses: statuses)
                 else { continue }
                 do {
-                    fired = try store.fire(reminder.id, reason: reason, at: Date()) || fired
+                    fired = try store.fire(reminder.id, expected: trigger, reason: reason, at: Date()) || fired
                 } catch {
                     failure = String(describing: error)
                 }
