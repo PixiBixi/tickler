@@ -16,6 +16,7 @@ Every reminder Claude creates goes through the `tickler` CLI ([PixiBixi/tickler]
 | `tickler show <id> --json` | One reminder with notes, links, session and folder |
 | `tickler done <id>` | Marks it done |
 | `tickler edit <id> --at "YYYY-MM-DD HH:MM"` | Reschedules it (also `--title`, `--notes`, `--prompt`) |
+| `tickler edit <id> --when <event>` | Sets or replaces the trigger; `--when ""` removes it |
 | `tickler snooze <id> --for 1h` | Pushes it back from now (`15m`, `1h`, `2d`) |
 | `tickler rm <id>` | Deletes an obsolete reminder |
 | `tickler resume <id>` | Reopens the reminder's Claude session in WezTerm, Ghostty or iTerm2 |
