@@ -16,7 +16,7 @@ Tickler is a macOS reminder tool driven by Claude Code: a CLI (`tickler`) that C
 | `.build/debug/tickler <cmd>` | The branch's CLI; the `tickler` on PATH is the Homebrew release |
 | `TICKLER_DB=<path>` | Points CLI and app at another SQLite file |
 
-Lefthook runs SwiftFormat, SwiftLint, gitleaks, markdownlint and actionlint on commit, and checks Conventional Commits. Releases: `scripts/bump.sh` (cocogitto writes `CHANGELOG.md`, never edit it by hand).
+Lefthook runs SwiftFormat, SwiftLint, gitleaks, markdownlint and actionlint on commit, and checks Conventional Commits; on push it runs `swift test`, and `make app` when `App/`, the core or `project.yml` changed. Releases: `scripts/bump.sh` (cocogitto writes `CHANGELOG.md`, never edit it by hand).
 
 ## Architecture
 
