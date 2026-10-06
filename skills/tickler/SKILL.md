@@ -9,9 +9,10 @@ Every reminder Claude creates goes through the `tickler` CLI ([PixiBixi/tickler]
 
 | Command | Does |
 |---|---|
-| `tickler add "<title>" --at "YYYY-MM-DD HH:MM" [--notes -] [--link <url>]... [--prompt "<text>"]` | Creates the reminder, prints `id<TAB>title<TAB>date` |
+| `tickler add "<title>" --at "YYYY-MM-DD HH:MM" [--when <event>] [--notes -] [--link <url>]... [--prompt "<text>"]` | Creates the reminder, prints `id<TAB>title<TAB>date` |
 | `tickler list --due today --json` | Open reminders due up to the end of today, overdue included |
 | `tickler list --due all --json` | Every open reminder |
+| `tickler list --waiting --json` | Reminders waiting for an event, whatever their date |
 | `tickler show <id> --json` | One reminder with notes, links, session and folder |
 | `tickler done <id>` | Marks it done |
 | `tickler edit <id> --at "YYYY-MM-DD HH:MM"` | Reschedules it (also `--title`, `--notes`, `--prompt`) |
@@ -20,7 +21,7 @@ Every reminder Claude creates goes through the `tickler` CLI ([PixiBixi/tickler]
 | `tickler resume <id>` | Reopens the reminder's Claude session in WezTerm, Ghostty or iTerm2 |
 | `tickler status <id> --json` | Live state of the linked MRs, Jira issues and PRs: pipeline, approvals, ticket status |
 
-`list --json` returns an array, `show --json` one object, keys sorted, absent values `null`: `id`, `title`, `notes`, `due` (`YYYY-MM-DD HH:MM`, local), `dueISO` (ISO 8601 with offset), `originalDue`, `rescheduleCount`, `status` (`open`, `done`, `deleted`), `source` (`claude`, `human`), `sessionId`, `cwd`, `project`, `resumePrompt`, `overdue` (bool), `links` (`[{kind, label, url}]`). There is no `date` key: filter on `due` (`select(.due | startswith("2026-10-12"))`).
+`list --json` returns an array, `show --json` one object, keys sorted, absent values `null`: `id`, `title`, `notes`, `due` (`YYYY-MM-DD HH:MM`, local), `dueISO` (ISO 8601 with offset), `originalDue`, `rescheduleCount`, `status` (`open`, `done`, `deleted`), `source` (`claude`, `human`), `sessionId`, `cwd`, `project`, `resumePrompt`, `overdue` (bool), `links` (`[{kind, label, url}]`), `trigger` (awaited event or null), `waiting`, `firedAt`, `firedReason` (why the event fired). There is no `date` key: filter on `due` (`select(.due | startswith("2026-10-12"))`).
 
 `add` records the creating session and folder from `CLAUDE_CODE_SESSION_ID` and the cwd. Pass `--session <uuid> --cwd <dir>` to point at another session. Links in the notes are detected (MR, Jira, Slack, Grafana, PR) and become buttons in the app and in the notification, so put the full URLs in the notes.
 
@@ -32,13 +33,31 @@ Every reminder Claude creates goes through the `tickler` CLI ([PixiBixi/tickler]
 - Confirm in one line: title and date.
 - Rescheduling: `tickler edit <id> --at ...`, never add plus delete (the app counts reschedules). Dropping one: `tickler rm <id>`. Never `done` for either: a completed reminder reads as work actually done.
 
+## Waiting for an event
+
+When the action depends on an event rather than a time, pass `--when` with the link it watches. Tickler.app checks every 5 minutes; when the event happens, the reminder becomes due now and notifies, with the reason first in the resume message. It is never marked done for you.
+
+| The user says | Pass |
+|---|---|
+| "quand la MR est mergée", "once it's merged" | `--when merged` |
+| "dès que la pipeline passe" | `--when pipeline-green` |
+| "préviens-moi si la pipeline casse" | `--when pipeline-failed` |
+| "quand j'ai les approvals" | `--when approved` |
+| "quand PE-1685 est Done", "when it moves to In Review" | `--when jira:done`, `--when "jira:In Review"` |
+| "si c'est pas mergé d'ici jeudi" | `--when merged --at "<thursday> 09:30"` |
+
+- The link must be on the reminder (`--link` or in the notes): MR or PR for `merged`, `pipeline-*` and `approved`, a Jira issue for `jira:*`. With several, all must reach the state, except `pipeline-failed`, which fires on the first failure.
+- Without a stated deadline, omit `--at`: the CLI sets 3 working days at 09:30. Do not invent one.
+- The event fires only while Tickler.app runs; the deadline is the safety net.
+- At check time, a reminder with `firedReason` set says what happened: start from it.
+
 ## Follow-ups to propose unasked
 
 Offer these in one line at the moment they arise, create on a yes:
 
 | Moment | Reminder | Note carries |
 |---|---|---|
-| An MR was just opened | Two working days later, 10:00: chase the review if still unreviewed | MR URL, reviewer, ticket key |
+| An MR was just opened | Once approved, to merge it: `--when approved` with the MR link, instead of chasing the review after a delay. When the project has no approval rule, keep the dated chase: two working days later, 10:00, if still unreviewed | MR URL, reviewer, ticket key |
 | A change expected to move CPU, memory, latency or cost was merged or rolled out | 24h after the end of the rollout (7 days for cost): re-measure against the baseline | The metric or dashboard, the baseline value and when it was taken, where to post the result |
 
 At check time, look at the live state first (`tickler status <id> --json` for linked MRs and tickets, the metric for re-measures) so the report says whether the action is still needed.
