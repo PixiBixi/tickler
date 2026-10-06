@@ -63,11 +63,12 @@ public enum TriggerEvaluator {
     }
 
     private static func ticketReason(_ trigger: Trigger, _ ticket: TicketStatus) -> String? {
-        let reached = switch trigger {
-        case .jiraDone: ticket.category == .done
-        case let .jiraStatus(name): ticket.status.caseInsensitiveCompare(name) == .orderedSame
-        case .merged, .pipelineGreen, .pipelineFailed, .approved: false
+        // The reason is the resume message sent to Claude: fixed text, the key and the user's own trigger only.
+        switch trigger {
+        case .jiraDone: ticket.category == .done ? "\(ticket.key) is done" : nil
+        case let .jiraStatus(name):
+            ticket.status.caseInsensitiveCompare(name) == .orderedSame ? "\(ticket.key) is \(name)" : nil
+        case .merged, .pipelineGreen, .pipelineFailed, .approved: nil
         }
-        return reached ? "\(ticket.key) is \(ticket.status)" : nil
     }
 }
