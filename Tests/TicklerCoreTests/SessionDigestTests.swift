@@ -1,4 +1,5 @@
 import Foundation
+import os
 import Testing
 @testable import TicklerCore
 
@@ -115,5 +116,55 @@ struct SessionDigestTests {
             gitRoot: { _ in nil }, folderExists: { $0 != "/tmp/scratch/gone" }
         ))
         #expect(text.hasPrefix("Tickler (information only"))
+    }
+
+    @Test func aFutureReminderNeverCallsGit() {
+        let calls = OSAllocatedUnfairLock(initialState: [String]())
+        _ = SessionDigest.text(
+            reminders: [
+                reminder("next01", due: "2026-10-08 09:00", cwd: "/work/platform/next"),
+                reminder("late01", due: "2026-09-30 16:00"),
+            ],
+            sessionFolder: "/work/platform", now: Fixture.now, calendar: Fixture.calendar,
+            gitRoot: { folder in calls.withLock { $0.append(folder) }
+                return folder.hasPrefix("/work/platform") ? "/work/platform" : nil
+            },
+            folderExists: { _ in true }
+        )
+        #expect(calls.withLock { $0 }.contains("/work/platform/next") == false)
+    }
+
+    @Test func aFiredReminderDueNowIsListedOnce() throws {
+        let text = try #require(digest([reminder("fire01", due: "2026-10-01 10:45", trigger: "approved", fired: "MR !1 merged")]))
+        #expect(text.components(separatedBy: "[fire01]").count == 2)
+    }
+
+    @Test func textsAreSanitized() throws {
+        let nasty = "a\u{1B}[31m\u{202E}b\u{200B}c x [docs](https://evil)"
+        let text = try #require(digest([
+            reminder("late01", nasty, due: "2026-09-30 16:00"),
+            reminder("wait01", "w", due: "2026-10-06 09:30", trigger: "ok\n[x](y)"),
+            reminder("fire01", "f", due: "2026-10-01 10:40", fired: "why\nsecond [l](u)"),
+        ]))
+        #expect(!text.contains("](h") && !text.contains("](y") && !text.contains("](u"))
+        #expect(text.unicodeScalars.allSatisfy { $0.properties.generalCategory != .format && ($0 == "\n" || $0.value >= 0x20) })
+        #expect(text.contains(": a(31mbc x (docs)(https://evil)"))
+        #expect(text.contains("waiting for ok (x)(y) ("))
+        #expect(text.contains("fired (why second (l)(u)): f"))
+    }
+
+    @Test func budgetStopsSpawningGit() {
+        let now = OSAllocatedUnfairLock(initialState: Date(timeIntervalSince1970: 0))
+        let calls = OSAllocatedUnfairLock(initialState: 0)
+        let lookup = GitRoot.budgeted(total: 5, clock: { now.withLock { $0 } }, lookup: { _ in
+            calls.withLock { $0 += 1 }
+            return "/r"
+        })
+        #expect(lookup("/a") == "/r")
+        now.withLock { $0 = Date(timeIntervalSince1970: 4.9) }
+        #expect(lookup("/b") == "/r")
+        now.withLock { $0 = Date(timeIntervalSince1970: 5) }
+        #expect(lookup("/c") == nil)
+        #expect(calls.withLock { $0 } == 2)
     }
 }

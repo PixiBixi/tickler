@@ -4,7 +4,7 @@ import Foundation
 public enum ClaudeHook {
     public enum State: Equatable, Sendable {
         case notInstalled
-        /// Tickler's group is there with another command (an older path) or matcher: install rewrites it in place.
+        /// Tickler's group is there with another command (an older path): install rewrites it in place.
         case outdated
         case upToDate
     }
@@ -13,12 +13,15 @@ public enum ClaudeHook {
         case invalidSettings(String)
         case unreadable(String)
         case unexpectedShape(String)
+        case danglingSymlink(String)
 
         public var description: String {
             switch self {
             case let .invalidSettings(path): "\(path) is not valid JSON: fix it, then run tickler hook install again"
             case let .unreadable(path): "\(path) is unreadable: fix it, then run tickler hook install again"
             case let .unexpectedShape(path): "\(path) has an unexpected shape: fix it, then run tickler hook install again"
+            case let .danglingSymlink(path):
+                "\(path) is a symlink to a missing file: restore the target, then run tickler hook install again"
             }
         }
     }
@@ -174,8 +177,17 @@ public enum ClaudeHook {
         return true
     }
 
+    /// A link whose target is gone is never replaced by a regular file: the owner restores the target.
+    static func refuseDanglingSymlink(_ settings: URL) throws {
+        let manager = FileManager.default
+        guard let destination = try? manager.destinationOfSymbolicLink(atPath: settings.path) else { return }
+        let target = URL(fileURLWithPath: destination, relativeTo: settings.deletingLastPathComponent())
+        guard manager.fileExists(atPath: target.path) else { throw InstallError.danglingSymlink(settings.path) }
+    }
+
     /// A missing file is an empty object; anything unreadable or unparsable is refused, never overwritten.
     static func load(_ settings: URL) throws -> OrderedJSON {
+        try refuseDanglingSymlink(settings)
         let target = settings.resolvingSymlinksInPath()
         guard FileManager.default.fileExists(atPath: target.path) else { return .object([]) }
         guard let text = try? String(contentsOf: target, encoding: .utf8) else { throw InstallError.unreadable(settings.path) }
@@ -188,6 +200,7 @@ public enum ClaudeHook {
 
     /// Writes the symlink's target, so a settings file kept in a dotfiles repository stays linked.
     static func save(_ root: OrderedJSON, to settings: URL) throws {
+        try refuseDanglingSymlink(settings)
         let target = settings.resolvingSymlinksInPath()
         try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
         let permissions = (try? FileManager.default.attributesOfItem(atPath: target.path))?[.posixPermissions]

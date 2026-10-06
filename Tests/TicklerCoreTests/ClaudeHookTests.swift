@@ -263,4 +263,17 @@ struct ClaudeHookTests {
         let mode = try FileManager.default.attributesOfItem(atPath: settings.path)[.posixPermissions] as? Int
         #expect(mode == 0o600)
     }
+
+    @Test func aDanglingSymlinkIsNeverReplaced() throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(atPath: settings.path, withDestinationPath: "missing.json")
+        #expect(ClaudeHook.state(settings: settings, command: command) == .notInstalled)
+        #expect(throws: ClaudeHook.InstallError.danglingSymlink(settings.path)) { try ClaudeHook.install(
+            settings: settings,
+            command: command
+        ) }
+        #expect(throws: ClaudeHook.InstallError.danglingSymlink(settings.path)) { try ClaudeHook.uninstall(settings: settings) }
+        #expect(try FileManager.default.destinationOfSymbolicLink(atPath: settings.path) == "missing.json")
+        #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("missing.json").path))
+    }
 }
