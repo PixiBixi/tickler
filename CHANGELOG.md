@@ -4,6 +4,26 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.4.0](https://github.com/PixiBixi/tickler/compare/v0.3.0..v0.4.0) - 2026-10-06
+#### Features
+- (**app**) waiting group, trigger row and fired reason in notifications - ([50d407d](https://github.com/PixiBixi/tickler/commit/50d407daf7579be09585c04c9108c0030742cab8)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) watch waiting reminders and fire their triggers every 5 minutes - ([7350000](https://github.com/PixiBixi/tickler/commit/735000093e458eb60da7ed50fd3a97573614b1e7)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**cli**) show the trigger, the fired reason and the resume message on the card - ([c75758a](https://github.com/PixiBixi/tickler/commit/c75758a750a7518f50e9ed1f80944c85720c3aed)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**cli**) --when on add and edit, list --waiting, trigger fields in JSON - ([f886f2e](https://github.com/PixiBixi/tickler/commit/f886f2e8593e84882da7969833c8b366963a6331)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) store a trigger and fire it once - ([f8b69a6](https://github.com/PixiBixi/tickler/commit/f8b69a68778c1d6c15faacdfdca11412f8a07abf)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) evaluate a trigger against the live status of the links - ([21a0503](https://github.com/PixiBixi/tickler/commit/21a050313cf2dc2a67ecd657d8a5b94dd249d6f8)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) trigger type with a default deadline - ([3d3e17b](https://github.com/PixiBixi/tickler/commit/3d3e17b558d5a30d56dfd8f4aa72e38d82d36fef)) - [@PixiBixi](https://github.com/PixiBixi)
+#### Bug Fixes
+- (**app**) fire only the evaluated trigger and fetch only the links it reads - ([8f6ce8e](https://github.com/PixiBixi/tickler/commit/8f6ce8e5d7c84899e5a427417450559f6cc3a06d)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) surface trigger write errors and rerun a check that arrived mid-flight - ([f3a1ef6](https://github.com/PixiBixi/tickler/commit/f3a1ef6316017dd141a6b5c4265952d1a1f819b3)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**cli**) check the trigger against the links an edit leaves - ([ae75534](https://github.com/PixiBixi/tickler/commit/ae7553438f7b2aa527d170ab3cac4164af17466c)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) re-arm notification ids on trigger change and fire only the evaluated trigger - ([5ee43cc](https://github.com/PixiBixi/tickler/commit/5ee43ccc301f38ce79018f7d824329fbaccf1040)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) prefix the kind in fired reasons and take the Jira key from the link - ([353edae](https://github.com/PixiBixi/tickler/commit/353edaead3f323cc3ee5e2540041b966066016d5)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) time out a tool call that never returns - ([c5c2bf5](https://github.com/PixiBixi/tickler/commit/c5c2bf539397e7ff7a0ce77d96543ed5646d1cba)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) build the Jira fired reason from fixed text only - ([fb462a2](https://github.com/PixiBixi/tickler/commit/fb462a2821769c85070aa4e42d1a76c691d3eed8)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.3.0](https://github.com/PixiBixi/tickler/compare/v0.2.0..v0.3.0) - 2026-10-03
 #### Features
 - (**app**) update an outdated skill in one click - ([5e9a97e](https://github.com/PixiBixi/tickler/commit/5e9a97ea9991bf88368656c2586aea0b921fa504)) - [@PixiBixi](https://github.com/PixiBixi)
