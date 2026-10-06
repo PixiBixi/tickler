@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 public protocol CommandRunning: Sendable {
     /// Runs `tool` with `arguments` and returns its standard output.
@@ -9,9 +10,11 @@ public protocol CommandRunning: Sendable {
 /// nor tokens such as JIRA_API_TOKEN. Arguments go in as positional parameters, never into the script text.
 public struct LoginShellRunner: CommandRunning {
     let shell: String
+    let timeout: TimeInterval
 
-    public init(shell: String = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh") {
+    public init(shell: String = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh", timeout: TimeInterval = 60) {
         self.shell = shell
+        self.timeout = timeout
     }
 
     static func command(shell: String, tool: String, arguments: [String]) -> [String] {
@@ -20,27 +23,20 @@ public struct LoginShellRunner: CommandRunning {
 
     public func run(_ tool: String, _ arguments: [String]) async throws -> Data {
         let command = Self.command(shell: shell, tool: tool, arguments: arguments)
+        let timeout = timeout
         return try await Task.detached {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: command[0])
             process.arguments = Array(command.dropFirst())
-            process.standardInput = FileHandle.nullDevice
-            let out = Pipe()
-            let err = Pipe()
-            process.standardOutput = out
-            process.standardError = err
-            try process.run()
-            let output = out.fileHandleForReading.readDataToEndOfFile()
-            let errors = err.fileHandleForReading.readDataToEndOfFile()
-            process.waitUntilExit()
-            let message = LiveError.failureMessage(errors)
-            if process.terminationStatus == 127 || message.contains("command not found") {
+            let result = try ProcessOutcome.run(process, tool: tool, timeout: timeout)
+            let message = LiveError.failureMessage(result.errors)
+            if result.status == 127 || message.contains("command not found") {
                 throw LiveError.toolMissing(tool)
             }
-            guard process.terminationStatus == 0 else {
+            guard result.status == 0 else {
                 throw LiveError.failed(tool: tool, message: message)
             }
-            return output
+            return result.output
         }.value
     }
 }
@@ -133,13 +129,18 @@ public struct AppToolRunner: CommandRunning {
     public static let searchPath = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"]
 
     let shell: LoginShellRunner
+    /// A tool still running after this long is stopped: one hung call must not hold back every other link.
+    let timeout: TimeInterval
     /// Extra variables for one tool, read on every run: the app hands jira the token it keeps in its keychain.
     let environment: @Sendable (String) -> [String: String]
 
-    public init(shell: LoginShellRunner = LoginShellRunner(), environment: @escaping @Sendable (String) -> [String: String] = { _ in
-        [:]
-    }) {
+    public init(
+        shell: LoginShellRunner = LoginShellRunner(),
+        timeout: TimeInterval = 60,
+        environment: @escaping @Sendable (String) -> [String: String] = { _ in [:] }
+    ) {
         self.shell = shell
+        self.timeout = timeout
         self.environment = environment
     }
 
@@ -163,6 +164,7 @@ public struct AppToolRunner: CommandRunning {
 
     private func direct(_ tool: String, _ arguments: [String], _ extra: [String: String]) async throws -> Data {
         guard let binary = Self.locate(tool) else { throw LiveError.toolMissing(tool) }
+        let timeout = timeout
         return try await Task.detached {
             let process = Process()
             process.executableURL = binary
@@ -171,19 +173,54 @@ public struct AppToolRunner: CommandRunning {
             environment["PATH"] = Self.searchPath.joined(separator: ":")
             environment.merge(extra) { _, new in new }
             process.environment = environment
-            process.standardInput = FileHandle.nullDevice
-            let out = Pipe()
-            let err = Pipe()
-            process.standardOutput = out
-            process.standardError = err
-            try process.run()
-            let output = out.fileHandleForReading.readDataToEndOfFile()
-            let errors = err.fileHandleForReading.readDataToEndOfFile()
-            process.waitUntilExit()
-            guard process.terminationStatus == 0 else {
-                throw LiveError.failed(tool: tool, message: LiveError.failureMessage(errors))
+            let result = try ProcessOutcome.run(process, tool: tool, timeout: timeout)
+            guard result.status == 0 else {
+                throw LiveError.failed(tool: tool, message: LiveError.failureMessage(result.errors))
             }
-            return output
+            return result.output
         }.value
+    }
+}
+
+/// What a finished tool left: exit status and both outputs.
+struct ProcessOutcome {
+    let status: Int32
+    let output: Data
+    let errors: Data
+
+    /// Blocking: drains both pipes while the tool runs, so a large output cannot fill a pipe and stall it.
+    /// Past `timeout` the tool is terminated, killed if it ignores that, and the call throws `LiveError.timedOut`.
+    static func run(_ process: Process, tool: String, timeout: TimeInterval) throws -> ProcessOutcome {
+        let out = Pipe()
+        let err = Pipe()
+        process.standardInput = FileHandle.nullDevice
+        process.standardOutput = out
+        process.standardError = err
+        let exited = DispatchSemaphore(value: 0)
+        process.terminationHandler = { _ in exited.signal() }
+        try process.run()
+
+        let output = OSAllocatedUnfairLock(initialState: Data())
+        let errors = OSAllocatedUnfairLock(initialState: Data())
+        let drained = DispatchGroup()
+        for (handle, sink) in [(out.fileHandleForReading, output), (err.fileHandleForReading, errors)] {
+            DispatchQueue.global().async(group: drained) {
+                let data = handle.readDataToEndOfFile()
+                sink.withLock { $0 = data }
+            }
+        }
+
+        let deadline = DispatchTime.now() + timeout
+        guard exited.wait(timeout: deadline) == .success, drained.wait(timeout: deadline) == .success else {
+            if process.isRunning {
+                process.terminate()
+                if exited.wait(timeout: .now() + 2) == .timedOut {
+                    kill(process.processIdentifier, SIGKILL)
+                    exited.wait()
+                }
+            }
+            throw LiveError.timedOut(tool: tool, seconds: timeout)
+        }
+        return ProcessOutcome(status: process.terminationStatus, output: output.withLock { $0 }, errors: errors.withLock { $0 })
     }
 }

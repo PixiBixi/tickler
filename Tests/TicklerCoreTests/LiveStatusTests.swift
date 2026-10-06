@@ -198,6 +198,19 @@ struct LiveStatusFetcherTests {
         #expect(output.contains("TICKLER_PROBE=token-value"))
     }
 
+    @Test func appRunnerStopsAToolThatNeverReturns() async {
+        let runner = AppToolRunner(timeout: 0.5)
+        let start = Date()
+        await #expect(throws: LiveError.timedOut(tool: "sleep", seconds: 0.5)) {
+            try await runner.run("sleep", ["5"])
+        }
+        #expect(Date().timeIntervalSince(start) < 3)
+    }
+
+    @Test func timeoutReadsAsAFailureOfTheTool() {
+        #expect(LiveError.timedOut(tool: "glab", seconds: 60).description == "glab: timed out after 60 s")
+    }
+
     @Test func failureMessageDropsColorCodesAndTrailingResets() {
         let stderr = "\u{1B}[31m\u{1B}[1mError:\u{1B}[0m 401 Unauthorized\n\u{1B}[0m\n"
         #expect(LiveError.failureMessage(Data(stderr.utf8)) == "Error: 401 Unauthorized")

@@ -150,6 +150,7 @@ public struct FinishedCounts: Equatable, Sendable {
 public enum LiveError: Error, Equatable, CustomStringConvertible {
     case toolMissing(String)
     case failed(tool: String, message: String)
+    case timedOut(tool: String, seconds: TimeInterval)
     case unreadable(String)
     case unsupported
 
@@ -157,6 +158,7 @@ public enum LiveError: Error, Equatable, CustomStringConvertible {
         switch self {
         case let .toolMissing(tool): "\(tool) is not installed"
         case let .failed(tool, message): message.isEmpty ? "\(tool) failed" : "\(tool): \(message)"
+        case let .timedOut(tool, seconds): "\(tool): timed out after \(String(format: "%g", seconds)) s"
         case let .unreadable(what): "unexpected answer for \(what)"
         case .unsupported: "only GitLab merge requests can be approved or merged"
         }
