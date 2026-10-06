@@ -24,7 +24,7 @@ struct TriggerStoreTests {
         let store = try Fixture.store()
         let reminder = try waiting(store)
         try store.markNotified([reminder.id], at: Fixture.now)
-        #expect(try store.fire(reminder.id, reason: "!412 merged", at: Fixture.now))
+        #expect(try store.fire(reminder.id, reason: "MR !412 merged", at: Fixture.now))
         let fired = try store.require(reminder.id)
         #expect(fired.dueAt == Fixture.now)
         #expect(fired.originalDueAt == Fixture.date("2026-10-06 09:30"))
@@ -33,14 +33,14 @@ struct TriggerStoreTests {
         #expect(fired.trigger == nil)
         #expect(!fired.isWaiting)
         #expect(fired.firedAt == Fixture.now)
-        #expect(fired.firedReason == "!412 merged")
+        #expect(fired.firedReason == "MR !412 merged")
     }
 
     @Test func fireTwiceIsANoOp() throws {
         let store = try Fixture.store()
         let reminder = try waiting(store)
-        #expect(try store.fire(reminder.id, reason: "!412 merged", at: Fixture.now))
-        #expect(try !store.fire(reminder.id, reason: "!412 merged", at: Fixture.now.addingTimeInterval(300)))
+        #expect(try store.fire(reminder.id, reason: "MR !412 merged", at: Fixture.now))
+        #expect(try !store.fire(reminder.id, reason: "MR !412 merged", at: Fixture.now.addingTimeInterval(300)))
         #expect(try store.require(reminder.id).firedAt == Fixture.now)
     }
 
@@ -57,7 +57,7 @@ struct TriggerStoreTests {
     @Test func setTriggerReplacesAndRemoves() throws {
         let store = try Fixture.store()
         let reminder = try waiting(store)
-        try store.fire(reminder.id, reason: "!412 merged", at: Fixture.now)
+        try store.fire(reminder.id, reason: "MR !412 merged", at: Fixture.now)
         let rearmed = try store.setTrigger(reminder.id, .approved)
         #expect(rearmed.trigger == "approved")
         #expect(rearmed.firedReason == nil)
@@ -74,10 +74,11 @@ struct TriggerStoreTests {
         let reminder = try store.add(draft)
         #expect(reminder.resumeMessage == "Rebase feat/x on main")
         var fired = reminder
-        fired.firedReason = "!412 merged"
-        #expect(fired.resumeMessage == "!412 merged. Rebase feat/x on main")
+        fired.firedReason = "MR !412 merged"
+        #expect(fired.resumeMessage == "MR !412 merged. Rebase feat/x on main")
+        #expect(fired.resumeMessage?.first != "!")
         fired.resumePrompt = nil
-        #expect(fired.resumeMessage == "!412 merged")
+        #expect(fired.resumeMessage == "MR !412 merged")
     }
 
     @Test func waitingRemindersDueLaterGetTheirOwnBucket() throws {

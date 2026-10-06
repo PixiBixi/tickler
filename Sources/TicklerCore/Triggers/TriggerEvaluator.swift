@@ -8,7 +8,8 @@ public enum TriggerOutcome: Equatable, Sendable {
 /// Pure: whether the live state of a reminder's links satisfies its trigger. `statuses` is keyed by link URL; missing means unknown.
 public enum TriggerEvaluator {
     public static func evaluate(_ trigger: Trigger, links: [ReminderLink], statuses: [String: LiveStatus]) -> TriggerOutcome {
-        let reasons = links.filter { trigger.supports($0.kind) }.map { link in statuses[link.url].flatMap { reason(trigger, $0) } }
+        let reasons = links.filter { trigger.supports($0.kind) }
+            .map { link in statuses[link.url].flatMap { reason(trigger, $0, link: link) } }
         guard !reasons.isEmpty else { return .waiting }
         // A failure anywhere is news; every other trigger waits for all of its links.
         if trigger == .pipelineFailed {
@@ -20,16 +21,16 @@ public enum TriggerEvaluator {
     }
 
     /// Why this status satisfies the trigger, nil when it does not.
-    static func reason(_ trigger: Trigger, _ status: LiveStatus) -> String? {
+    static func reason(_ trigger: Trigger, _ status: LiveStatus, link: ReminderLink) -> String? {
         switch status {
         case let .mergeRequest(mr): mergeRequestReason(trigger, mr)
         case let .pullRequest(pr): pullRequestReason(trigger, pr)
-        case let .ticket(ticket): ticketReason(trigger, ticket)
+        case let .ticket(ticket): ticketReason(trigger, ticket, link: link)
         }
     }
 
     private static func mergeRequestReason(_ trigger: Trigger, _ mr: MergeRequestStatus) -> String? {
-        let name = "!\(mr.iid)"
+        let name = "MR !\(mr.iid)"
         if mr.state == "merged" {
             return "\(name) merged"
         }
@@ -46,7 +47,7 @@ public enum TriggerEvaluator {
     }
 
     private static func pullRequestReason(_ trigger: Trigger, _ pr: PullRequestStatus) -> String? {
-        let name = "#\(pr.number)"
+        let name = "PR #\(pr.number)"
         if pr.state == "MERGED" {
             return "\(name) merged"
         }
@@ -62,13 +63,14 @@ public enum TriggerEvaluator {
         }
     }
 
-    private static func ticketReason(_ trigger: Trigger, _ ticket: TicketStatus) -> String? {
-        // The reason is the resume message sent to Claude: fixed text, the key and the user's own trigger only.
+    private static func ticketReason(_ trigger: Trigger, _ ticket: TicketStatus, link: ReminderLink) -> String? {
+        // The reason is the resume message sent to Claude: the key comes from the validated link, never from the response.
+        guard case let .jira(key)? = LiveTarget(link: link) else { return nil }
         switch trigger {
-        case .jiraDone: ticket.category == .done ? "\(ticket.key) is done" : nil
+        case .jiraDone: return ticket.category == .done ? "\(key) is done" : nil
         case let .jiraStatus(name):
-            ticket.status.caseInsensitiveCompare(name) == .orderedSame ? "\(ticket.key) is \(name)" : nil
-        case .merged, .pipelineGreen, .pipelineFailed, .approved: nil
+            return ticket.status.caseInsensitiveCompare(name) == .orderedSame ? "\(key) is \(name)" : nil
+        case .merged, .pipelineGreen, .pipelineFailed, .approved: return nil
         }
     }
 }
