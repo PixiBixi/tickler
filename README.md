@@ -66,7 +66,7 @@ The setup assistant and Settings offer the same button. The skill ships with eac
 | "remind me to merge this tomorrow 10am" | `tickler add` with the session, folder, MR link and a resume prompt |
 | "check yesterday's reminders" | `tickler list --due today --json`, then `tickler status` on linked MRs and tickets before acting |
 | "push it to Monday" / "it's done" | `tickler edit --at` / `tickler done` |
-| (after opening an MR or rolling out a change) | Offers a follow-up: chase the review, re-measure against the baseline |
+| (after opening an MR or rolling out a change) | Offers a follow-up: `--when approved` once the MR is open (a dated chase when the project has no approval rule), a re-measure against the baseline after a rollout |
 
 ## CLI
 
@@ -120,7 +120,7 @@ The setup assistant and Settings offer the same button. The skill ships with eac
 }
 ```
 
-`trigger` is the awaited event; once it fires, `firedReason` says why (`!412 merged`) and the reminder is due at `firedAt`.
+`trigger` is the awaited event; once it fires, `firedReason` says why (`MR !412 merged`) and the reminder is due at `firedAt`.
 
 Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 
