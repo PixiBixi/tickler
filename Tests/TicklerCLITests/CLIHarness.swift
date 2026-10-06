@@ -27,12 +27,14 @@ struct CLIHarness {
 
     static let now = StrictDate.parse("2026-10-01 10:45", calendar: calendar)!
 
-    let database = FileManager.default.temporaryDirectory
+    var database = FileManager.default.temporaryDirectory
         .appendingPathComponent("tickler-cli-\(UUID().uuidString)/tickler.sqlite").path
     var environment: [String: String] = [:]
     var stdin = ""
     var fetchApple: @Sendable (String) throws -> Data = { _ in Data("[]".utf8) }
     var liveRunner: CommandRunning = StubRunner(responses: [:])
+    var gitRoot: @Sendable (String) -> String? = { _ in nil }
+    var folderExists: @Sendable (String) -> Bool = { _ in true }
 
     func run(_ arguments: String...) -> CLIResult {
         let out = Output()
@@ -44,6 +46,8 @@ struct CLIHarness {
             readStdin: { input }, notifyChange: {}, makeDriver: { nil }, fetchAppleReminders: apple, stdout: out, stderr: err
         )
         context.liveRunner = liveRunner
+        context.gitRoot = gitRoot
+        context.folderExists = folderExists
         let code = TicklerCommand.run(arguments + ["--db", database], context: context)
         return CLIResult(code: code, out: out.captured, err: err.captured)
     }

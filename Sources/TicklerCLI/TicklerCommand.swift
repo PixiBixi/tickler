@@ -26,7 +26,7 @@ public struct TicklerCommand: ParsableCommand {
         subcommands: [
             AddCommand.self, ListCommand.self, ShowCommand.self, DoneCommand.self, SnoozeCommand.self,
             EditCommand.self, RemoveCommand.self, ResumeCommand.self, StatusCommand.self, CompletionCommand.self,
-            ImportAppleCommand.self, SkillCommand.self, VersionCommand.self,
+            ImportAppleCommand.self, SkillCommand.self, HookCommand.self, VersionCommand.self,
         ]
     )
 

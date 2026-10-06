@@ -41,6 +41,9 @@ public struct CLIContext: Sendable {
     public var stdout: Output
     public var stderr: Output
     public var liveRunner: CommandRunning = DirectRunner()
+    /// Injected so tests need no real repository.
+    public var gitRoot: @Sendable (String) -> String? = { GitRoot.lookup($0) }
+    public var folderExists: @Sendable (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
     /// A terminal gets the table; a pipe, a test or Claude gets one plain line per reminder.
     public var terminalWidth: Int? = Terminal.isInteractive ? Terminal.width : nil
 
