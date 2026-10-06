@@ -17,7 +17,7 @@ struct ResumeCommand: TicklerSubcommand {
         guard let sessionId = reminder.sessionId else { throw CLIError.runtime("reminder \(id) has no Claude session") }
         guard let driver = context.makeDriver() else { throw CLIError.runtime("no supported terminal found (WezTerm, Ghostty or iTerm2)") }
         let outcome = try SessionResumer(driver: driver)
-            .resume(sessionId: sessionId, fallbackCwd: reminder.cwd, prompt: reminder.resumePrompt)
+            .resume(sessionId: sessionId, fallbackCwd: reminder.cwd, prompt: reminder.resumeMessage)
         context.stdout.line(Self.describe(outcome))
         if let pane = Self.callingPaneToClose(after: outcome, environment: context.environment) {
             // The pane the user typed in is now redundant; failing to close it must not fail the resume.

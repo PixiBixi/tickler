@@ -58,11 +58,15 @@ struct EditCommand: TicklerSubcommand {
     @Option(help: "New due date, \"YYYY-MM-DD HH:MM\" in local time.") var at: String?
     @Option(help: "New notes, or - to read them from stdin.") var notes: String?
     @Option(help: "First message sent to Claude on resume; an empty string removes it.") var prompt: String?
+    @Option(help: "Event that makes it due now: \(Trigger.usage); an empty string removes it.") var when: String?
     @Flag(help: "Print the reminder as JSON.") var json = false
 
     func validate() throws {
-        guard title != nil || at != nil || notes != nil || prompt != nil else {
-            throw ValidationError("nothing to change: pass --title, --at, --notes or --prompt")
+        guard title != nil || at != nil || notes != nil || prompt != nil || when != nil else {
+            throw ValidationError("nothing to change: pass --title, --at, --notes, --prompt or --when")
+        }
+        if let when, !when.isEmpty, Trigger(when) == nil {
+            throw ValidationError("--when expects \(Trigger.usage), got \"\(when)\"")
         }
         if let title, title.trimmingCharacters(in: .whitespaces).isEmpty {
             throw ValidationError("the title is empty")
@@ -73,7 +77,18 @@ struct EditCommand: TicklerSubcommand {
         let store = try context.openStore(options)
         _ = try context.loadReminder(id, from: store)
         let due = try at.map { try context.parseFutureDate($0, flag: "--at") }
-        let updated = try store.update(id, title: title, notes: notes.map(context.readNotes), dueAt: due, resumePrompt: prompt)
+        let newNotes = notes.map(context.readNotes)
+        let trigger = when.flatMap(Trigger.init)
+        // Checked before any write, against the links the edit leaves.
+        if let trigger {
+            let current = try store.links(for: id)
+            let links = newNotes.map { LinkExtractor.links(reminderId: id, notes: $0, explicit: current.map(\.url)) } ?? current
+            try requireSupportedLink(trigger, links)
+        }
+        var updated = try store.update(id, title: title, notes: newNotes, dueAt: due, resumePrompt: prompt)
+        if when != nil {
+            updated = try store.setTrigger(id, trigger)
+        }
         try context.printResult(updated, store: store, json: json)
     }
 }

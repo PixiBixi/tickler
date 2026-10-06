@@ -5,7 +5,8 @@ import TicklerCore
 ///
 /// `id`, `title`, `notes`, `due` ("YYYY-MM-DD HH:MM", local), `dueISO` (ISO 8601 with UTC offset), `originalDue`,
 /// `rescheduleCount`, `status` (open|done|deleted), `source` (claude|human), `sessionId`, `cwd`, `project`,
-/// `resumePrompt` (first message on resume), `overdue` (open and past due), `links` (`[{kind, label, url}]`).
+/// `resumePrompt` (first message on resume), `overdue` (open and past due), `links` (`[{kind, label, url}]`),
+/// `trigger` (awaited event or null), `waiting` (open and waiting), `firedAt`, `firedReason` (why the trigger fired).
 struct ReminderJSON: Encodable {
     struct Link: Encodable {
         let kind: String
@@ -28,6 +29,10 @@ struct ReminderJSON: Encodable {
     let resumePrompt: String?
     let overdue: Bool
     let links: [Link]
+    let trigger: String?
+    let waiting: Bool
+    let firedAt: String?
+    let firedReason: String?
 
     init(_ reminder: Reminder, links: [ReminderLink], context: CLIContext) {
         let formatter = ISO8601DateFormatter()
@@ -47,13 +52,17 @@ struct ReminderJSON: Encodable {
         resumePrompt = reminder.resumePrompt
         overdue = reminder.status == .open && reminder.dueAt < context.now()
         self.links = links.map { Link(kind: $0.kind.rawValue, label: $0.label, url: $0.url) }
+        trigger = reminder.trigger
+        waiting = reminder.isWaiting
+        firedAt = reminder.firedAt.map { StrictDate.format($0, calendar: context.calendar) }
+        firedReason = reminder.firedReason
     }
 
     /// Explicit so that nil values are written as null instead of dropped.
     func encode(to encoder: Encoder) throws {
         enum Key: String, CodingKey {
             case id, title, notes, due, dueISO, originalDue, rescheduleCount, status, source
-            case sessionId, cwd, project, resumePrompt, overdue, links
+            case sessionId, cwd, project, resumePrompt, overdue, links, trigger, waiting, firedAt, firedReason
         }
         var container = encoder.container(keyedBy: Key.self)
         try container.encode(id, forKey: .id)
@@ -71,6 +80,10 @@ struct ReminderJSON: Encodable {
         try container.encode(resumePrompt, forKey: .resumePrompt)
         try container.encode(overdue, forKey: .overdue)
         try container.encode(links, forKey: .links)
+        try container.encode(trigger, forKey: .trigger)
+        try container.encode(waiting, forKey: .waiting)
+        try container.encode(firedAt, forKey: .firedAt)
+        try container.encode(firedReason, forKey: .firedReason)
     }
 }
 
@@ -130,6 +143,12 @@ extension CLIContext {
         }
         if let prompt = reminder.resumePrompt {
             lines.append("resume prompt: \(prompt)")
+        }
+        if let trigger = reminder.trigger {
+            lines.append("waiting for: \(trigger)")
+        }
+        if let reason = reminder.firedReason, let firedAt = reminder.firedAt {
+            lines.append("fired: \(reason) (\(StrictDate.format(firedAt, calendar: calendar)))")
         }
         if !reminder.notes.isEmpty {
             lines.append("notes:")

@@ -12,9 +12,9 @@ struct ReminderTable {
     func render(_ reminders: [Reminder]) -> String {
         guard !reminders.isEmpty else { return style("No reminders.", .dim) }
         let groups = Dictionary(grouping: reminders) { reminder -> DueBucket? in
-            reminder.status == .done ? nil : DueBucket.of(reminder.dueAt, now: now, calendar: calendar)
+            reminder.status == .done ? nil : DueBucket.of(reminder, now: now, calendar: calendar)
         }
-        let order: [DueBucket?] = [.overdue, .today, .tomorrow, .later, nil]
+        let order: [DueBucket?] = [.overdue, .today, .tomorrow, .later, .waiting, nil]
         let dueWidth = reminders.map { due($0).count }.max() ?? 0
         let projectWidth = min(reminders.map { ($0.project ?? "").count }.max() ?? 0, 24)
         // id (6) + gaps (3 x 2) + due + project: the title gets what is left, never less than 20.
@@ -28,7 +28,8 @@ struct ReminderTable {
             lines.append(style("\(title(bucket)) (\(items.count))", bucket == .overdue ? .redBold : .bold))
             for reminder in items {
                 let dueText = pad(due(reminder), dueWidth)
-                let dueStyle: Ansi.Style = bucket == .overdue ? .red : (bucket == .later || bucket == nil ? .dim : .plain)
+                let dimmed = bucket == .later || bucket == .waiting || bucket == nil
+                let dueStyle: Ansi.Style = bucket == .overdue ? .red : (dimmed ? .dim : .plain)
                 let titleText = pad(truncate(reminder.title, titleWidth), titleWidth)
                 lines.append([
                     link(style(reminder.id, .accent), to: CalendarMarker.link(for: reminder.id)),

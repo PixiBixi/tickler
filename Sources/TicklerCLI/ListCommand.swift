@@ -34,11 +34,13 @@ struct ListCommand: TicklerSubcommand {
     @Option(help: "today (default, overdue included), week, overdue or all.") var due: DueOption = .today
     @Option(help: "Only this project (last folder name of the session).") var project: String?
     @Option(help: "open (default) or done.") var status: StatusOption = .open
+    @Flag(help: "Only reminders waiting for an event, whatever their date.") var waiting = false
     @Flag(help: "Print a JSON array.") var json = false
 
     func execute(_ context: CLIContext) throws {
         let store = try context.openStore(options)
-        let reminders = try store.list(ReminderFilter(due: due.filter, status: status.status, project: project))
+        let filter = ReminderFilter(due: waiting ? .all : due.filter, status: status.status, project: project)
+        let reminders = try store.list(filter).filter { !waiting || $0.isWaiting }
         if json {
             try context.stdout.line(context.encodeJSON(reminders.map { try context.json($0, store: store) }))
         } else if let width = context.terminalWidth {
