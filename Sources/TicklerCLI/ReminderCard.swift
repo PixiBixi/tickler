@@ -17,6 +17,14 @@ struct ReminderCard {
             lines.append(Ansi.style(abbreviate(cwd), .dim))
         }
 
+        if let trigger = reminder.trigger {
+            lines.append("\(Ansi.style("waiting for", .dim)) \(Ansi.style(trigger, .accent))")
+        }
+        if let reason = reminder.firedReason, let firedAt = reminder.firedAt {
+            lines
+                .append("\(Ansi.style("fired", .dim)) \(reason) \(Ansi.style("(\(StrictDate.format(firedAt, calendar: calendar)))", .dim))")
+        }
+
         if !reminder.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             lines += ["", Ansi.style("Notes", .heading)]
             lines += MarkdownNotes.blocks(from: reminder.notes).map(render)
@@ -39,7 +47,7 @@ struct ReminderCard {
             case nil: ""
             }
             lines.append("  \(state)  \(Ansi.style(session, .dim))")
-            if let prompt = reminder.resumePrompt {
+            if let prompt = reminder.resumeMessage {
                 lines.append("  says \(Ansi.style("\u{201C}\(prompt)\u{201D}", .bold)) on resume")
             }
             lines.append("  \(Ansi.style("tickler resume \(reminder.id)", .accent))")

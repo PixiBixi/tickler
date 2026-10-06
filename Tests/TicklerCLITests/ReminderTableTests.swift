@@ -60,4 +60,26 @@ struct ReminderCardTests {
         #expect(output.contains("tickler resume abc234"))
         #expect(!output.contains("**"))
     }
+
+    @Test func showsTheTriggerTheFiredReasonAndWhatResumeSends() throws {
+        let date = try #require(StrictDate.parse("2026-10-01 11:00", calendar: CLIHarness.calendar))
+        var reminder = Reminder(
+            id: "abc234", title: "Rebase", notes: "", dueAt: date, originalDueAt: date, rescheduleCount: 0, status: .open,
+            sessionId: "5b26f281-1806-47aa-8842-0e264f7b9d35", cwd: nil, resumePrompt: "Rebase feat/x", source: .claude,
+            externalRef: nil, notifiedAt: nil, doneAt: nil, createdAt: date, updatedAt: date
+        )
+        let card = ReminderCard(now: CLIHarness.now, calendar: CLIHarness.calendar, width: 100, sessionRunning: false)
+        reminder.trigger = "merged"
+        let waiting = card.render(reminder, links: [])
+        #expect(waiting.contains("waiting for"))
+        #expect(waiting.contains("merged"))
+        reminder.trigger = nil
+        reminder.firedAt = date
+        reminder.firedReason = "MR !412 merged"
+        let fired = card.render(reminder, links: [])
+        #expect(fired.contains("fired"))
+        #expect(fired.contains("MR !412 merged"))
+        #expect(fired.contains("(2026-10-01 11:00)"))
+        #expect(fired.contains("MR !412 merged. Rebase feat/x"))
+    }
 }
