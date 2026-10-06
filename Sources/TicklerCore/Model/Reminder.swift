@@ -33,10 +33,10 @@ public struct Reminder: Codable, Hashable, Sendable, Identifiable, FetchableReco
     public var createdAt: Date
     public var updatedAt: Date
     /// The event that makes it due now, as typed (`merged`, `jira:In Review`); nil once fired.
-    public var trigger: String? = nil // swiftlint:disable:this redundant_optional_initialization
-    public var firedAt: Date? = nil // swiftlint:disable:this redundant_optional_initialization
+    public var trigger: String? = nil // swiftlint:disable:this implicit_optional_initialization
+    public var firedAt: Date? = nil // swiftlint:disable:this implicit_optional_initialization
     /// Why the trigger fired, built from the live data: `!412 merged`.
-    public var firedReason: String? = nil // swiftlint:disable:this redundant_optional_initialization
+    public var firedReason: String? = nil // swiftlint:disable:this implicit_optional_initialization
 
     public var parsedTrigger: Trigger? {
         trigger.flatMap(Trigger.init)
