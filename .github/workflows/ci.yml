@@ -1,10 +1,23 @@
 name: CI
 
+# Only what swift test builds or reads: SkillVersionTests compares skills/tickler/SKILL.md with the embedded copy.
 on:
   push:
     branches: [main]
+    paths:
+      - "Sources/**"
+      - "Tests/**"
+      - "Package.*"
+      - "skills/tickler/**"
+      - ".github/workflows/ci.yml"
   pull_request:
     branches: [main]
+    paths:
+      - "Sources/**"
+      - "Tests/**"
+      - "Package.*"
+      - "skills/tickler/**"
+      - ".github/workflows/ci.yml"
 
 permissions:
   contents: read
