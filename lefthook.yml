@@ -32,6 +32,17 @@ pre-commit:
       glob: ".github/workflows/*.{yml,yaml}"
       run: actionlint {staged_files}
 
+pre-push:
+  jobs:
+    - name: swift-test
+      glob: "{Sources,Tests}/**/*.swift"
+      run: swift test
+
+    - name: app-build
+      # make test never compiles App/: a core change can still break it.
+      glob: "{App/**/*,Sources/TicklerCore/**/*.swift,project.yml}"
+      run: make app CONFIGURATION=Debug
+
 commit-msg:
   jobs:
     - name: conventional-commit
