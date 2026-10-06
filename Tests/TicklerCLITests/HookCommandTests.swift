@@ -41,10 +41,14 @@ struct HookCommandTests {
         #expect(result.out.isEmpty)
     }
 
-    @Test func garbageStdinFallsBackToTheCurrentDirectory() {
-        let result = cli(stdin: "not json").run("hook", "session-start")
+    @Test func garbageStdinFallsBackToTheCurrentDirectory() throws {
+        var cli = cli(stdin: "not json")
+        cli.gitRoot = { $0 == "/work/current" ? "/work/current" : nil }
+        _ = cli.run("add", "from the current folder", "--at", "2026-10-01 17:30", "--session", "s1", "--cwd", "/work/current")
+        let result = cli.run("hook", "session-start")
         #expect(result.code == 0)
         #expect(result.err.isEmpty)
+        #expect(try context(result).contains("due today 17:30: from the current folder"))
     }
 
     @Test func aBrokenDatabaseStillExitsZeroSilently() {

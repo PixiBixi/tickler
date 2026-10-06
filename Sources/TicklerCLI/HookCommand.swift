@@ -26,12 +26,12 @@ struct HookSessionStartCommand: TicklerSubcommand {
               let reminders = try? store.list(ReminderFilter(due: .all)),
               let text = SessionDigest.text(
                   reminders: reminders, sessionFolder: folder, now: context.now(), calendar: context.calendar,
-                  gitRoot: context.gitRoot, folderExists: context.folderExists
+                  gitRoot: GitRoot.budgeted(lookup: context.gitRoot), folderExists: context.folderExists
               )
         else { return }
         let output = ["hookSpecificOutput": ["hookEventName": "SessionStart", "additionalContext": text]]
-        let options: JSONSerialization.WritingOptions = [.sortedKeys, .withoutEscapingSlashes]
-        guard let data = try? JSONSerialization.data(withJSONObject: output, options: options) else { return }
+        let writing: JSONSerialization.WritingOptions = [.sortedKeys, .withoutEscapingSlashes]
+        guard let data = try? JSONSerialization.data(withJSONObject: output, options: writing) else { return }
         context.stdout.line(String(decoding: data, as: UTF8.self))
     }
 }
