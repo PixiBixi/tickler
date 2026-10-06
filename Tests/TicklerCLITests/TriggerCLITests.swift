@@ -75,4 +75,26 @@ struct TriggerCLITests {
         #expect(table.contains("Waiting (1)"))
         #expect(!table.contains("Later"))
     }
+
+    @Test func editRefusesATriggerWhenNewNotesDropTheOnlyLink() throws {
+        let cli = CLIHarness()
+        let id = try #require(cli.run("add", "rebase", "--notes", "see \(mr)", "--at", "2026-10-02 10:00", "--json")
+            .jsonObject()["id"] as? String)
+        let refused = cli.run("edit", id, "--notes", "no link", "--when", "merged")
+        #expect(refused.code == 2)
+        #expect(refused.err.contains("merged"))
+        let object = try cli.run("show", id, "--json").jsonObject()
+        #expect(object["notes"] as? String == "see \(mr)")
+        #expect((object["links"] as? [[String: Any]])?.count == 1)
+        #expect(object["trigger"] is NSNull)
+    }
+
+    @Test func editRefusesAnUnsupportedTriggerWithoutTouchingTheTitle() throws {
+        let cli = CLIHarness()
+        let id = try #require(cli.run("add", "rebase", "--link", mr, "--at", "2026-10-02 10:00", "--json").jsonObject()["id"] as? String)
+        let refused = cli.run("edit", id, "--title", "X", "--when", "jira:done")
+        #expect(refused.code == 2)
+        #expect(refused.err.contains("jira:done"))
+        #expect(try cli.run("show", id, "--json").jsonObject()["title"] as? String == "rebase")
+    }
 }

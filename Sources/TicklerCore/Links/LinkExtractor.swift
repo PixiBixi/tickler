@@ -67,4 +67,13 @@ public enum LinkExtractor {
             return ReminderLink(reminderId: reminderId, position: position, url: url.absoluteString, kind: kind, label: label)
         }
     }
+
+    /// Links left after the notes change: explicit ones stay, those found in the old notes go, the new notes' are added.
+    public static func linksAfterNotesChange(
+        reminderId: String, oldNotes: String, newNotes: String, current: [ReminderLink]
+    ) -> [ReminderLink] {
+        let fromOldNotes = Set(extract(from: oldNotes).map(\.absoluteString))
+        let explicit = current.sorted { $0.position < $1.position }.map(\.url).filter { !fromOldNotes.contains($0) }
+        return links(reminderId: reminderId, notes: newNotes, explicit: explicit)
+    }
 }

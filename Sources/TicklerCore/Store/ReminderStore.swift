@@ -153,11 +153,12 @@ public final class ReminderStore: Sendable {
             }
         } afterSave: { db, before, after in
             guard before.notes != after.notes else { return }
-            let fromOldNotes = Set(LinkExtractor.extract(from: before.notes).map(\.absoluteString))
-            let explicit = try ReminderLink.filter(Column("reminderId") == id).order(Column("position")).fetchAll(db)
-                .map(\.url).filter { !fromOldNotes.contains($0) }
+            let current = try ReminderLink.filter(Column("reminderId") == id).order(Column("position")).fetchAll(db)
+            let kept = LinkExtractor.linksAfterNotesChange(
+                reminderId: id, oldNotes: before.notes, newNotes: after.notes, current: current
+            )
             try ReminderLink.filter(Column("reminderId") == id).deleteAll(db)
-            for link in LinkExtractor.links(reminderId: id, notes: after.notes, explicit: explicit) {
+            for link in kept {
                 try link.insert(db)
             }
         }

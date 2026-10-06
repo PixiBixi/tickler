@@ -75,14 +75,16 @@ struct EditCommand: TicklerSubcommand {
 
     func execute(_ context: CLIContext) throws {
         let store = try context.openStore(options)
-        _ = try context.loadReminder(id, from: store)
+        let existing = try context.loadReminder(id, from: store)
         let due = try at.map { try context.parseFutureDate($0, flag: "--at") }
         let newNotes = notes.map(context.readNotes)
         let trigger = when.flatMap(Trigger.init)
         // Checked before any write, against the links the edit leaves.
         if let trigger {
             let current = try store.links(for: id)
-            let links = newNotes.map { LinkExtractor.links(reminderId: id, notes: $0, explicit: current.map(\.url)) } ?? current
+            let links = newNotes.map {
+                LinkExtractor.linksAfterNotesChange(reminderId: id, oldNotes: existing.notes, newNotes: $0, current: current)
+            } ?? current
             try requireSupportedLink(trigger, links)
         }
         var updated = try store.update(id, title: title, notes: newNotes, dueAt: due, resumePrompt: prompt)
