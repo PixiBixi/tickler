@@ -77,6 +77,46 @@ final class LiveStatusStore {
         return statuses
     }
 
+    /// Fetches every supported link now, in parallel, updates the cards, and returns what answered, by URL.
+    func fetchNow(_ links: [ReminderLink]) async -> [String: LiveStatus] {
+        var targets: [String: LiveTarget] = [:]
+        for link in supported(links) {
+            targets[link.url] = LiveTarget(link: link)
+        }
+        let fetcher = fetcher
+        let results = await withTaskGroup(of: (String, Result<LiveStatus, Error>).self) { group in
+            for (url, target) in targets {
+                group.addTask {
+                    do {
+                        return try await (url, .success(fetcher.fetch(target)))
+                    } catch {
+                        return (url, .failure(error))
+                    }
+                }
+            }
+            var collected: [String: Result<LiveStatus, Error>] = [:]
+            for await (url, result) in group {
+                collected[url] = result
+            }
+            return collected
+        }
+        var statuses: [String: LiveStatus] = [:]
+        for (url, result) in results {
+            var entry = entries[url] ?? Entry()
+            switch result {
+            case let .success(status):
+                entry.status = status
+                entry.error = nil
+                statuses[url] = status
+            case let .failure(error):
+                entry.error = String(describing: error)
+            }
+            entry.fetchedAt = Date()
+            entries[url] = entry
+        }
+        return statuses
+    }
+
     /// Returns whether GitLab accepted the approval; the card refreshes either way.
     func approve(_ link: ReminderLink) async -> Result<Void, Error> {
         guard let target = LiveTarget(link: link) else { return .failure(LiveError.unsupported) }

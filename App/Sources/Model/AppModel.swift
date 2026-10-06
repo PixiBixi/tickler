@@ -37,6 +37,7 @@ final class AppModel {
     let notifications = NotificationService()
     let calendarSync = CalendarService()
     let liveStatus = LiveStatusStore()
+    let triggerWatcher = TriggerWatcher()
     private(set) var store: ReminderStore?
     private(set) var loadError: String?
 
@@ -127,6 +128,7 @@ final class AppModel {
             Task { @MainActor in
                 AppModel.shared.reload()
                 AppModel.shared.requestReconcile(catchUp: true)
+                AppModel.shared.triggerWatcher.check()
             }
         }
         // Permissions granted in System Settings take effect when the user comes back.
@@ -142,6 +144,7 @@ final class AppModel {
             await calendarSync.prepare(calendarId: preferences.calendarId)
             requestReconcile(catchUp: true)
         }
+        triggerWatcher.start()
     }
 
     // MARK: Loading
@@ -162,12 +165,16 @@ final class AppModel {
     /// A write from outside the app (Claude, the CLI): new reminders are announced if the user wants it.
     private func externalChange() {
         let before = Set((open + done).map(\.id))
+        let waitingBefore = Set(open.filter(\.isWaiting).map(\.id))
         reload()
         if preferences.announceNewReminders, !isDemo {
             let added = NotificationPlanner.newlyAdded(previousIds: before, reminders: open)
             Task { await notifications.announce(added) }
         }
         requestReconcile()
+        if !Set(open.filter(\.isWaiting).map(\.id)).isSubset(of: waitingBefore) {
+            triggerWatcher.check()
+        }
     }
 
     /// Moves the clock for relative times and overdue colors, and rereads the store in case a change signal was missed.
@@ -339,6 +346,13 @@ final class AppModel {
         perform {
             try $0.update(id, title: title, notes: notes, resumePrompt: resumePrompt)
             return nil
+        }
+    }
+
+    func setTrigger(_ id: String, _ trigger: Trigger?) {
+        perform {
+            try $0.setTrigger(id, trigger)
+            return trigger == nil ? String(localized: "No longer waiting") : nil
         }
     }
 
