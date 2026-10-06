@@ -251,7 +251,7 @@ final class AppModel {
     }
 
     var nextReminder: Reminder? {
-        open.first { $0.dueAt >= now }
+        open.first { $0.dueAt >= now && DueBucket.of($0, now: now, calendar: calendar) != .waiting }
     }
 
     var selectedReminder: Reminder? {
@@ -294,7 +294,7 @@ final class AppModel {
         }
         // Day views, today included, also list what was done that day, after what is still open.
         let finished = items.filter { $0.status == .done }
-        let grouped = Dictionary(grouping: items.filter { $0.status == .open }) { DueBucket.of($0.dueAt, now: now, calendar: calendar) }
+        let grouped = Dictionary(grouping: items.filter { $0.status == .open }) { DueBucket.of($0, now: now, calendar: calendar) }
         let openGroups = DueBucket.allCases.compactMap { bucket in grouped[bucket].map { ReminderGroup(bucket: bucket, reminders: $0) } }
         return openGroups + (finished.isEmpty ? [] : [ReminderGroup(bucket: nil, reminders: finished)])
     }
@@ -385,7 +385,7 @@ final class AppModel {
         guard let sessionId = reminder.sessionId else { return }
         let driver = preferences.terminal.driver(weztermPath: preferences.weztermPath)
         let cwd = reminder.cwd
-        let prompt = reminder.resumePrompt
+        let prompt = reminder.resumeMessage
         Task {
             let result = await Task.detached {
                 Result { try SessionResumer(driver: driver).resume(sessionId: sessionId, fallbackCwd: cwd, prompt: prompt) }

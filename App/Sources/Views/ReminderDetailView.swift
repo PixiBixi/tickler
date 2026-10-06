@@ -32,6 +32,7 @@ struct ReminderDetailView: View {
                         }
                         .frame(maxWidth: 820, alignment: .leading)
                         VStack(alignment: .leading, spacing: 18) {
+                            TriggerRow(reminder: reminder)
                             LiveStatusSection(reminder: reminder)
                             linksSection
                             sessionSection
@@ -45,6 +46,7 @@ struct ReminderDetailView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         header
                         actions
+                        TriggerRow(reminder: reminder)
                         LiveStatusSection(reminder: reminder)
                         notesSection(minHeight: 120)
                         linksSection
@@ -193,7 +195,7 @@ struct ReminderDetailView: View {
         return FlowLayout(spacing: 8) {
             if reminder.sessionId != nil {
                 Button { model.resume(reminder) } label: {
-                    if let prompt = reminder.resumePrompt {
+                    if let prompt = reminder.resumeMessage {
                         Label("Resume and say “\(prompt)”", systemImage: "terminal")
                             .lineLimit(1)
                             .truncationMode(.tail)
@@ -203,7 +205,7 @@ struct ReminderDetailView: View {
                     }
                 }
                 .buttonStyle(PrimaryButtonStyle())
-                .help(reminder.resumePrompt.map { "⌘R: \($0)" } ?? "⌘R")
+                .help(reminder.resumeMessage.map { "⌘R: \($0)" } ?? "⌘R")
             }
             if reminder.status == .open {
                 SnoozeMenu(reminderId: reminder.id) { startRescheduling() }

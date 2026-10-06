@@ -211,7 +211,7 @@ struct ReminderRow: View {
     let reminder: Reminder
 
     var body: some View {
-        let bucket = reminder.status == .done ? DueBucket.later : DueBucket.of(reminder.dueAt, now: model.now)
+        let bucket = reminder.status == .done ? DueBucket.later : DueBucket.of(reminder, now: model.now)
         let soon = reminder.isSoon(now: model.now)
         HStack(spacing: 10) {
             Circle().fill(Theme.dot(for: bucket, soon: soon)).frame(width: 8, height: 8)

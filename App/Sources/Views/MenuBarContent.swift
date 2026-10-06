@@ -141,7 +141,7 @@ struct MenuBarContent: View {
 extension AppModel {
     /// The popover always shows overdue, today, tomorrow and later, whatever the window's filter is.
     var visibleGroupsForPopover: [ReminderGroup] {
-        let grouped = Dictionary(grouping: open.filter { $0.id != nextReminder?.id }) { DueBucket.of($0.dueAt, now: now) }
+        let grouped = Dictionary(grouping: open.filter { $0.id != nextReminder?.id }) { DueBucket.of($0, now: now) }
         return DueBucket.allCases.compactMap { bucket in grouped[bucket].map { ReminderGroup(bucket: bucket, reminders: $0) } }
     }
 }
@@ -196,7 +196,7 @@ private struct CompactRow: View {
     @State private var hovering = false
 
     var body: some View {
-        let bucket = DueBucket.of(reminder.dueAt, now: model.now)
+        let bucket = DueBucket.of(reminder, now: model.now)
         HStack(spacing: 10) {
             Circle().fill(Theme.dot(for: bucket, soon: reminder.isSoon(now: model.now))).frame(width: 8, height: 8)
             VStack(alignment: .leading, spacing: 2) {

@@ -1247,6 +1247,16 @@
         }
       }
     },
+    "Keep the reminder at its date, without the event": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garder le rappel à sa date, sans l'événement"
+          }
+        }
+      }
+    },
     "Language": {
       "localizations": {
         "fr": {
@@ -1493,6 +1503,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prochain, %@"
+          }
+        }
+      }
+    },
+    "No longer waiting": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus en attente"
           }
         }
       }
@@ -2297,6 +2317,26 @@
         }
       }
     },
+    "Still waiting: %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toujours en attente : %@"
+          }
+        }
+      }
+    },
+    "Stop Waiting": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne plus attendre"
+          }
+        }
+      }
+    },
     "Switch to Persistent alerts ›": {
       "localizations": {
         "fr": {
@@ -2573,6 +2613,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vues"
+          }
+        }
+      }
+    },
+    "Waiting": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En attente"
+          }
+        }
+      }
+    },
+    "Waiting for: %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En attente de : %@"
           }
         }
       }

@@ -158,7 +158,15 @@ final class NotificationService: NSObject {
         let content = UNMutableNotificationContent()
         content.title = reminder.title
         content.subtitle = [Format.time(reminder.dueAt), reminder.project].compactMap(\.self).joined(separator: " · ")
-        content.body = Format.preview(reminder.notes)
+        // The reason leads only on the firing itself; a later reschedule notifies like any reminder.
+        let lead: String? = if let trigger = reminder.trigger {
+            String(localized: "Still waiting: \(trigger)")
+        } else if let reason = reminder.firedReason, reminder.firedAt == reminder.dueAt {
+            reason
+        } else {
+            nil
+        }
+        content.body = [lead, Format.preview(reminder.notes)].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: "\n")
         content.sound = .default
         content.categoryIdentifier = category.rawValue
         content.threadIdentifier = "tickler"
