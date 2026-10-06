@@ -72,12 +72,12 @@ The setup assistant and Settings offer the same button. The skill ships with eac
 
 | Command | Does |
 |---|---|
-| `tickler add <title> --at "YYYY-MM-DD HH:MM"` | Creates a reminder. `--notes <text>` or `--notes -` (stdin), `--link <url>` (repeatable), `--session <uuid>`, `--cwd <dir>`, `--prompt <text>` (first message to Claude on resume), `--json` |
-| `tickler list` (alias `ls`) | Open reminders. `--due today` (default, overdue included), `week`, `overdue`, `all`; `--project <name>`; `--status done`; `--json` |
+| `tickler add <title> --at "YYYY-MM-DD HH:MM"` | Creates a reminder. `--when <event>` (`merged`, `pipeline-green`, `pipeline-failed`, `approved`, `jira:done`, `jira:<status>`; without `--at`, the deadline is 3 working days at 09:30), `--notes <text>` or `--notes -` (stdin), `--link <url>` (repeatable), `--session <uuid>`, `--cwd <dir>`, `--prompt <text>` (first message to Claude on resume), `--json` |
+| `tickler list` (alias `ls`) | Open reminders. `--due today` (default, overdue included), `week`, `overdue`, `all`; `--project <name>`; `--status done`; `--waiting`; `--json` |
 | `tickler show <id>` | One reminder with notes, links and session. `--json` |
 | `tickler done <id>` | Marks it done |
 | `tickler snooze <id> --for 1h` | Pushes it back from now: `15m`, `1h`, `2d`. Or `--to "YYYY-MM-DD HH:MM"` |
-| `tickler edit <id>` | `--title`, `--at`, `--notes <text>` or `--notes -`, `--prompt <text>` (`""` removes it) |
+| `tickler edit <id>` | `--title`, `--at`, `--notes <text>` or `--notes -`, `--prompt <text>` (`""` removes it), `--when <event>` (`""` removes it) |
 | `tickler rm <id>` | Deletes it |
 | `tickler resume <id>` | Focuses the tab of the reminder's Claude session in WezTerm, Ghostty or iTerm2, or reopens it with `claude --resume` in the reminder's folder. A resume prompt is sent as the first message of a reopened session, and typed without Return into a running one (WezTerm, iTerm2). `TICKLER_TERMINAL=wezterm\|ghostty\|iterm` picks where new tabs open |
 | `tickler status <id>` | Live state of the linked GitLab MRs, Jira issues and GitHub PRs (pipeline, approvals, ticket status, checks). `--json` |
@@ -104,6 +104,8 @@ The setup assistant and Settings offer the same button. The skill ships with eac
   "notes": "Epic https://acme.atlassian.net/browse/OPS-2204",
   "due": "2026-10-01 11:00",
   "dueISO": "2026-10-01T11:00:00+02:00",
+  "firedAt": null,
+  "firedReason": null,
   "originalDue": "2026-10-01 11:00",
   "rescheduleCount": 0,
   "status": "open",
@@ -112,9 +114,13 @@ The setup assistant and Settings offer the same button. The skill ships with eac
   "cwd": "/Users/you/src/platform-services",
   "project": "platform-services",
   "overdue": false,
+  "trigger": null,
+  "waiting": false,
   "links": [{ "kind": "jira", "label": "OPS-2204", "url": "https://acme.atlassian.net/browse/OPS-2204" }]
 }
 ```
+
+`trigger` is the awaited event; once it fires, `firedReason` says why (`!412 merged`) and the reminder is due at `firedAt`.
 
 Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 
@@ -123,9 +129,10 @@ Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 | Where | What |
 |---|---|
 | Menu bar | Count of today's reminders (overdue included); the glyph turns solid while one is overdue. The popover shows the next reminder with Resume, Snooze and Done, then overdue, today, tomorrow and later |
-| Window | Views (Today, Next 7 Days, Overdue, All, Done), projects from the session folder, a 7-day strip to filter on a day, search, and a detail pane where title, date, notes and resume prompt edit in place |
+| Window | Views (Today, Next 7 Days, Overdue, All, Done), projects from the session folder, a Waiting group, a 7-day strip to filter on a day, search, and a detail pane where title, date, notes and resume prompt edit in place |
 | Notifications | One per reminder at its time, with Resume Session, Snooze 15 min, Snooze 1 hour, Tomorrow 09:30, Reschedule (type "thursday 2pm" or "in 3h"), Open Ticket, Open Slack Thread or Open Link, Mark Done. Reminders missed while the Mac slept are notified on wake, as one summary beyond three |
 | Live status | For each linked GitLab MR, Jira issue or GitHub PR: pipeline, approvals, threads, conflicts, ticket status and assignee, checks. **Approve…** appears when GitLab says you may approve, and asks for confirmation first. Data from `glab`, `jira` and `gh`, refreshed when older than 2 minutes. The Jira API token goes in Settings > Live Status, kept in the keychain and passed to `jira` as `JIRA_API_TOKEN`; without it, `jira` falls back to its own config and your login shell |
+| Triggers | Every 5 minutes while the app runs, reminders waiting for an event check their links; when it happens the reminder becomes due now and notifies with the reason. **Stop Waiting** in the detail pane keeps the date and drops the event |
 | Calendar | Every open reminder from 7 days ago to 60 days ahead becomes a 15 min event marked Free, without alert, with a `tickler://open/<id>` link |
 
 Keyboard: `⌥⌘N` new reminder from any app (Settings to turn it off), `⌘N` new reminder, `⌘R` resume the session, `⌘↩` mark done, `⌘O` open the window from the popover.
