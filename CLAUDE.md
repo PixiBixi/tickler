@@ -40,7 +40,7 @@ Three products share one library, `Sources/TicklerCore`:
 
 ## Text that reaches Claude
 
-`Reminder.resumeMessage` (the reason a trigger fired, then the resume prompt) is sent or typed into a Claude Code session as a prompt.
+`Reminder.resumeMessage` (the reason a trigger fired, then the resume prompt) is sent or typed into a Claude Code session as a prompt. The SessionStart digest (`SessionDigest`) reaches Claude too, as session context, under the same rules: only Tickler-built text and sanitized titles (one line, no control or format characters, no brackets).
 
 - Build it only from fixed strings, validated ids (`LiveTarget` keys and numbers) and what the user typed. Never interpolate text returned by `glab`, `jira` or `gh` (status names, titles, even the issue key from the JSON response).
 - It must never start with `!` (Claude Code bash mode) or `/` (slash command): prefix the kind, as in `MR !412 merged`.
