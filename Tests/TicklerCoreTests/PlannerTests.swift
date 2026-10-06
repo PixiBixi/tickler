@@ -197,6 +197,35 @@ struct CalendarPlannerTests {
 }
 
 struct NotificationPlannerReviewTests {
+    @Test func aTriggerChangeYieldsANewRequestId() {
+        var waiting = reminder("wait01", at: "2026-10-08 09:30")
+        let none = NotificationPlanner.requestId(for: waiting)
+        waiting.trigger = "merged"
+        let merged = NotificationPlanner.requestId(for: waiting)
+        waiting.trigger = "approved"
+        let approved = NotificationPlanner.requestId(for: waiting)
+        #expect(Set([none, merged, approved]).count == 3)
+        #expect(NotificationPlanner.requestId(for: waiting) == approved)
+        #expect(NotificationPlanner.reminderId(fromRequestId: merged) == "wait01")
+        #expect(NotificationPlanner.isCurrent(requestId: approved, reminder: waiting))
+        #expect(!NotificationPlanner.isCurrent(requestId: merged, reminder: waiting))
+        let plan = NotificationPlanner.plan(reminders: [waiting], links: [:], pendingIds: [merged], now: Fixture.now)
+        #expect(plan.add.map(\.id) == [approved])
+        #expect(plan.remove == [merged])
+        #expect(NotificationPlanner.plan(reminders: [waiting], links: [:], pendingIds: [approved], now: Fixture.now).add.isEmpty)
+    }
+
+    @Test func aFreshlyFiredReminderKeepsItsOwnNotificationBeyondThree() {
+        let missed = (0 ..< 4).map { reminder("m\($0)", at: "2026-10-01 0\($0 + 5):00") }
+        var fired = reminder("fire01", at: "2026-10-01 10:00")
+        fired.firedAt = fired.dueAt
+        fired.firedReason = "MR !412 merged"
+        #expect(NotificationPlanner.catchUp(reminders: missed + [fired], alreadyShownIds: [], now: Fixture.now)
+            == .summaryAndIndividual(summary: missed, individual: [fired]))
+        #expect(NotificationPlanner.catchUp(reminders: Array(missed.prefix(1)) + [fired], alreadyShownIds: [], now: Fixture.now)
+            == .individual([missed[0], fired]))
+    }
+
     @Test func keepsAPendingRequestThatIsAboutToFire() {
         let due = reminder("wake01", at: "2026-10-01 10:44")
         let id = NotificationPlanner.requestId(for: due)

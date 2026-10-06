@@ -24,7 +24,7 @@ struct TriggerStoreTests {
         let store = try Fixture.store()
         let reminder = try waiting(store)
         try store.markNotified([reminder.id], at: Fixture.now)
-        #expect(try store.fire(reminder.id, reason: "MR !412 merged", at: Fixture.now))
+        #expect(try store.fire(reminder.id, expected: .merged, reason: "MR !412 merged", at: Fixture.now))
         let fired = try store.require(reminder.id)
         #expect(fired.dueAt == Fixture.now)
         #expect(fired.originalDueAt == Fixture.date("2026-10-06 09:30"))
@@ -39,25 +39,34 @@ struct TriggerStoreTests {
     @Test func fireTwiceIsANoOp() throws {
         let store = try Fixture.store()
         let reminder = try waiting(store)
-        #expect(try store.fire(reminder.id, reason: "MR !412 merged", at: Fixture.now))
-        #expect(try !store.fire(reminder.id, reason: "MR !412 merged", at: Fixture.now.addingTimeInterval(300)))
+        #expect(try store.fire(reminder.id, expected: .merged, reason: "MR !412 merged", at: Fixture.now))
+        #expect(try !store.fire(reminder.id, expected: .merged, reason: "MR !412 merged", at: Fixture.now.addingTimeInterval(300)))
         #expect(try store.require(reminder.id).firedAt == Fixture.now)
+    }
+
+    @Test func aReplacedTriggerIsNotFired() throws {
+        let store = try Fixture.store()
+        let reminder = try waiting(store)
+        try store.setTrigger(reminder.id, .approved)
+        #expect(try !store.fire(reminder.id, expected: .merged, reason: "MR !412 merged", at: Fixture.now))
+        #expect(try store.require(reminder.id).isWaiting)
+        #expect(try store.fire(reminder.id, expected: .approved, reason: "MR !412 approved", at: Fixture.now))
     }
 
     @Test func aDoneOrDeletedReminderNeverFires() throws {
         let store = try Fixture.store()
         let done = try waiting(store)
         try store.markDone(done.id)
-        #expect(try !store.fire(done.id, reason: "x", at: Fixture.now))
+        #expect(try !store.fire(done.id, expected: .merged, reason: "x", at: Fixture.now))
         let deleted = try waiting(store)
         try store.delete(deleted.id)
-        #expect(try !store.fire(deleted.id, reason: "x", at: Fixture.now))
+        #expect(try !store.fire(deleted.id, expected: .merged, reason: "x", at: Fixture.now))
     }
 
     @Test func setTriggerReplacesAndRemoves() throws {
         let store = try Fixture.store()
         let reminder = try waiting(store)
-        try store.fire(reminder.id, reason: "MR !412 merged", at: Fixture.now)
+        try store.fire(reminder.id, expected: .merged, reason: "MR !412 merged", at: Fixture.now)
         let rearmed = try store.setTrigger(reminder.id, .approved)
         #expect(rearmed.trigger == "approved")
         #expect(rearmed.firedReason == nil)

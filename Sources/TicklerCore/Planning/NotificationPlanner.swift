@@ -64,6 +64,8 @@ public enum CatchUp: Equatable, Sendable {
     case none
     case individual([Reminder])
     case summary([Reminder])
+    /// A summary plus one notification each for the freshly fired ones, whose reason a summary would drop.
+    case summaryAndIndividual(summary: [Reminder], individual: [Reminder])
 }
 
 /// Decides which notification requests should exist; the app applies the difference to UNUserNotificationCenter.
@@ -72,9 +74,17 @@ public enum NotificationPlanner {
     public static let pendingLimit = 64
     public static let individualCatchUpLimit = 3
 
-    /// Changes with the due date, so a rescheduled reminder gets a fresh request instead of a stale one.
+    /// `<id>@<trigger tag>@<due epoch>`: changes with the due date and the trigger, so a rescheduled or re-armed reminder
+    /// gets a fresh request instead of a stale one.
     public static func requestId(for reminder: Reminder) -> String {
-        "\(reminder.id)@\(Int(reminder.dueAt.timeIntervalSince1970))"
+        "\(reminder.id)@\(triggerTag(reminder.trigger))@\(Int(reminder.dueAt.timeIntervalSince1970))"
+    }
+
+    /// "-" without a trigger, else a stable FNV-1a hash of it (`hashValue` changes per launch).
+    private static func triggerTag(_ trigger: String?) -> String {
+        guard let trigger else { return "-" }
+        let hash = trigger.utf8.reduce(UInt32(2_166_136_261)) { ($0 ^ UInt32($1)) &* 16_777_619 }
+        return String(hash, radix: 16)
     }
 
     public static func reminderId(fromRequestId requestId: String) -> String {
@@ -135,6 +145,12 @@ public enum NotificationPlanner {
         if missed.isEmpty {
             return .none
         }
-        return missed.count <= individualCatchUpLimit ? .individual(missed) : .summary(missed)
+        // A freshly fired reminder carries its reason, which a summary would drop: it always gets its own notification.
+        let fired = missed.filter { $0.firedAt != nil && $0.firedAt == $0.dueAt }
+        let rest = missed.filter { !fired.contains($0) }
+        if rest.count <= individualCatchUpLimit {
+            return .individual(missed)
+        }
+        return fired.isEmpty ? .summary(rest) : .summaryAndIndividual(summary: rest, individual: fired)
     }
 }

@@ -187,14 +187,15 @@ public final class ReminderStore: Sendable {
         }
     }
 
-    /// Makes a waiting reminder due at `date`. Only an open reminder still waiting changes, so a second firing is a no-op.
+    /// Makes a waiting reminder due at `date`. Only an open reminder still waiting for `trigger` changes, so a second firing
+    /// or a trigger replaced meanwhile is a no-op.
     /// Not a reschedule: `rescheduleCount` and `originalDueAt` stay.
     @discardableResult
-    public func fire(_ id: String, reason: String, at date: Date) throws -> Bool {
+    public func fire(_ id: String, expected trigger: Trigger, reason: String, at date: Date) throws -> Bool {
         let stamp = now()
         let changed = try database.pool.write { db in
             try Reminder
-                .filter(Column("id") == id && Column("status") == Reminder.Status.open.rawValue && Column("trigger") != nil)
+                .filter(Column("id") == id && Column("status") == Reminder.Status.open.rawValue && Column("trigger") == trigger.rawValue)
                 .updateAll(
                     db,
                     Column("dueAt").set(to: date),
