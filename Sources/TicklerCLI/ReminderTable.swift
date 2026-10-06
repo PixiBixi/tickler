@@ -47,6 +47,7 @@ struct ReminderTable {
         case .today: "Today"
         case .tomorrow: "Tomorrow"
         case .later: "Later"
+        case .waiting: "Waiting"
         case nil: "Done"
         }
     }

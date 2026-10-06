@@ -65,6 +65,13 @@ public final class TicklerDatabase: Sendable {
                 table.add(column: "resumePrompt", .text)
             }
         }
+        migrator.registerMigration("v3-trigger") { db in
+            try db.alter(table: "reminder") { table in
+                table.add(column: "trigger", .text)
+                table.add(column: "firedAt", .datetime)
+                table.add(column: "firedReason", .text)
+            }
+        }
         return migrator
     }
 }

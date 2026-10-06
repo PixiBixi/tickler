@@ -19,7 +19,7 @@ enum Theme {
         switch bucket {
         case .overdue: overdue
         case .today: soon ? accent : Color.secondary
-        case .tomorrow, .later: Color.secondary.opacity(0.5)
+        case .tomorrow, .later, .waiting: Color.secondary.opacity(0.5)
         }
     }
 

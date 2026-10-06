@@ -93,7 +93,8 @@ public final class ReminderStore: Sendable {
                 id: id, title: draft.title, notes: draft.notes, dueAt: draft.dueAt, originalDueAt: draft.dueAt,
                 rescheduleCount: 0, status: .open, sessionId: draft.sessionId, cwd: draft.cwd,
                 resumePrompt: Self.normalized(draft.resumePrompt), source: draft.source,
-                externalRef: draft.externalRef, notifiedAt: nil, doneAt: nil, createdAt: stamp, updatedAt: stamp
+                externalRef: draft.externalRef, notifiedAt: nil, doneAt: nil, createdAt: stamp, updatedAt: stamp,
+                trigger: draft.trigger?.rawValue
             )
             try reminder.insert(db)
             for link in LinkExtractor.links(reminderId: id, notes: draft.notes, explicit: draft.links) {
@@ -171,6 +172,42 @@ public final class ReminderStore: Sendable {
     /// Soft delete: the row stays for the calendar sync to clean up its event.
     public func delete(_ id: String) throws {
         try mutate(id) { reminder, _ in reminder.status = .deleted }
+    }
+
+    /// Sets, replaces or (nil) removes the trigger. A new trigger forgets the previous firing.
+    @discardableResult
+    public func setTrigger(_ id: String, _ trigger: Trigger?) throws -> Reminder {
+        try mutate(id) { reminder, _ in
+            reminder.trigger = trigger?.rawValue
+            if trigger != nil {
+                reminder.firedAt = nil
+                reminder.firedReason = nil
+            }
+        }
+    }
+
+    /// Makes a waiting reminder due at `date`. Only an open reminder still waiting changes, so a second firing is a no-op.
+    /// Not a reschedule: `rescheduleCount` and `originalDueAt` stay.
+    @discardableResult
+    public func fire(_ id: String, reason: String, at date: Date) throws -> Bool {
+        let stamp = now()
+        let changed = try database.pool.write { db in
+            try Reminder
+                .filter(Column("id") == id && Column("status") == Reminder.Status.open.rawValue && Column("trigger") != nil)
+                .updateAll(
+                    db,
+                    Column("dueAt").set(to: date),
+                    Column("notifiedAt").set(to: nil),
+                    Column("trigger").set(to: nil),
+                    Column("firedAt").set(to: date),
+                    Column("firedReason").set(to: reason),
+                    Column("updatedAt").set(to: stamp)
+                )
+        }
+        if changed > 0 {
+            onChange()
+        }
+        return changed > 0
     }
 
     public func markNotified(_ ids: [String], at date: Date) throws {

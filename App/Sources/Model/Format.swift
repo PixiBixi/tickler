@@ -49,6 +49,7 @@ enum Format {
         case .today: String(localized: "Today")
         case .tomorrow: String(localized: "Tomorrow")
         case .later: String(localized: "Later")
+        case .waiting: String(localized: "Waiting")
         case nil: String(localized: "Done")
         }
     }

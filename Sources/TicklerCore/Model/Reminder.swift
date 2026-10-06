@@ -32,6 +32,27 @@ public struct Reminder: Codable, Hashable, Sendable, Identifiable, FetchableReco
     public var doneAt: Date?
     public var createdAt: Date
     public var updatedAt: Date
+    /// The event that makes it due now, as typed (`merged`, `jira:In Review`); nil once fired.
+    public var trigger: String? = nil // swiftlint:disable:this redundant_optional_initialization
+    public var firedAt: Date? = nil // swiftlint:disable:this redundant_optional_initialization
+    /// Why the trigger fired, built from the live data: `!412 merged`.
+    public var firedReason: String? = nil // swiftlint:disable:this redundant_optional_initialization
+
+    public var parsedTrigger: Trigger? {
+        trigger.flatMap(Trigger.init)
+    }
+
+    /// Open and still waiting for its event.
+    public var isWaiting: Bool {
+        status == .open && trigger != nil
+    }
+
+    /// What Resume sends: the reason the trigger fired, then the resume prompt.
+    public var resumeMessage: String? {
+        guard let firedReason else { return resumePrompt }
+        guard let resumePrompt else { return firedReason }
+        return "\(firedReason). \(resumePrompt)"
+    }
 
     /// Last path component of the session folder, "~" for the home folder itself.
     public var project: String? {
@@ -55,6 +76,7 @@ public struct ReminderDraft: Sendable {
     public var resumePrompt: String?
     public var source: Reminder.Source
     public var externalRef: String?
+    public var trigger: Trigger?
 
     public init(
         title: String,
@@ -65,7 +87,8 @@ public struct ReminderDraft: Sendable {
         cwd: String? = nil,
         resumePrompt: String? = nil,
         source: Reminder.Source = .claude,
-        externalRef: String? = nil
+        externalRef: String? = nil,
+        trigger: Trigger? = nil
     ) {
         self.title = title
         self.notes = notes
@@ -76,6 +99,7 @@ public struct ReminderDraft: Sendable {
         self.resumePrompt = resumePrompt
         self.source = source
         self.externalRef = externalRef
+        self.trigger = trigger
     }
 }
 
