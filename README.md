@@ -68,6 +68,17 @@ The setup assistant and Settings offer the same button. The skill ships with eac
 | "push it to Monday" / "it's done" | `tickler edit --at` / `tickler done` |
 | (after opening an MR or rolling out a change) | Offers a follow-up: `--when approved` once the MR is open (a dated chase when the project has no approval rule), a re-measure against the baseline after a rollout |
 
+## Claude Code hook
+
+When a session starts, Claude hears about the reminders of that repository (fired, overdue, due today, waiting), with links that open them, plus a count of overdue ones elsewhere; it mentions them and does nothing unless asked.
+
+```bash
+tickler hook install
+# installed  ~/.claude/settings.json (a SessionStart hook; new sessions and /clear only)
+```
+
+`tickler hook status` tells whether it is there, `tickler hook uninstall` removes it; the file's other content and key order are kept, and a symlinked settings file stays linked.
+
 ## CLI
 
 | Command | Does |
@@ -83,6 +94,8 @@ The setup assistant and Settings offer the same button. The skill ships with eac
 | `tickler status <id>` | Live state of the linked GitLab MRs, Jira issues and GitHub PRs (pipeline, approvals, ticket status, checks). `--json` |
 | `tickler completion zsh` | Prints the shell completion script (also `bash`, `fish`): subcommands, options, and reminder ids with their title |
 | `tickler skill install` / `status` | Installs the Claude Code skill of this version in `~/.claude/skills/tickler` (`$CLAUDE_CONFIG_DIR` honored); an edited skill is only replaced with `--force` |
+| `tickler hook install` / `status` / `uninstall` | Adds, checks or removes the SessionStart hook in `~/.claude/settings.json` (`$CLAUDE_CONFIG_DIR` honored); only Tickler's own entry is touched |
+| `tickler hook session-start` | Run by Claude Code, not by hand: reads the hook JSON on stdin, prints the digest of the session's repository or nothing, always exits 0 |
 | `tickler version` | Prints the version (also `--version`) |
 | `tickler import-apple --list Claude` | One-shot import of the open reminders of an Apple Reminders list, which is left untouched |
 
@@ -135,6 +148,8 @@ Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 | Triggers | Every 5 minutes while the app runs, reminders waiting for an event check their links; when it happens the reminder becomes due now and notifies with the reason. **Stop Waiting** in the detail pane keeps the date and drops the event |
 | Calendar | Every open reminder from 7 days ago to 60 days ahead becomes a 15 min event marked Free, without alert, with a `tickler://open/<id>` link |
 
+URLs: `tickler://open/<id>` opens a reminder, `tickler://view/today|week|overdue|all|done` opens the window on that view.
+
 Keyboard: `⌥⌘N` new reminder from any app (Settings to turn it off), `⌘N` new reminder, `⌘R` resume the session, `⌘↩` mark done, `⌘O` open the window from the popover.
 
 The date fields accept French and English: `demain 9h30`, `lundi 10h`, `dans 2h`, `tomorrow 3pm`, `monday 10am`, `in 45 minutes`, `2026-10-06 10:00`.
@@ -146,6 +161,7 @@ The date fields accept French and English: `demain 9h30`, `lundi 10h`, `dans 2h`
 | Calendar | None. Pick a writable calendar, for instance a "Claude" calendar created in Google Calendar with its default notifications set to none |
 | Terminal | Automatic: a running session is found in WezTerm, Ghostty or iTerm2; new tabs open in the first one running. Or pick one of those installed, which then always gets the new tabs. Ghostty 1.3 cannot tell which tab holds a session: Tickler brings Ghostty forward instead of the exact tab |
 | WezTerm binary | Found automatically in `/opt/homebrew/bin`, `/usr/local/bin`, then the app bundle |
+| Session Start Hook | Installs or removes the Claude Code hook (same as `tickler hook install`) |
 | Language | System, or force English or French (after a relaunch) |
 | Open at login | Off |
 
