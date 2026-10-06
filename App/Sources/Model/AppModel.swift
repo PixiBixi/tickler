@@ -315,6 +315,25 @@ final class AppModel {
         showMainWindow()
     }
 
+    /// `tickler://open/<id>` reveals a reminder, `tickler://view/<filter>` opens the window on a sidebar view.
+    func open(_ url: URL) {
+        guard url.scheme == Tickler.urlScheme else { return }
+        let parts = url.pathComponents.filter { $0 != "/" }
+        switch (url.host(), parts.first) {
+        case let ("open", id?):
+            reveal(id)
+        case let ("view", name?):
+            let views: [String: SidebarFilter] = ["today": .today, "week": .week, "overdue": .overdue, "all": .all, "done": .done]
+            if let view = views[name] {
+                filter = view
+                selection = nil
+            }
+            showMainWindow()
+        default:
+            break
+        }
+    }
+
     func markDone(_ id: String) {
         perform {
             let reminder = try $0.markDone(id)

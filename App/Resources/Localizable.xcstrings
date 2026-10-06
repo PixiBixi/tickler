@@ -787,6 +787,16 @@
         }
       }
     },
+    "Claude hears about this repository's reminders when a session starts.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude est prévenu des rappels de ce dépôt au démarrage d'une session."
+          }
+        }
+      }
+    },
     "Claude Session": {
       "localizations": {
         "fr": {
@@ -1137,12 +1147,32 @@
         }
       }
     },
+    "Install Hook": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installer le hook"
+          }
+        }
+      }
+    },
     "Install Skill": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Installer le skill"
+          }
+        }
+      }
+    },
+    "Install the tickler command first.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installe d'abord la commande tickler."
           }
         }
       }
@@ -1163,6 +1193,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Installer avec Homebrew ?"
+          }
+        }
+      }
+    },
+    "Installed": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installé"
           }
         }
       }
@@ -1193,6 +1233,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Installé, à jour"
+          }
+        }
+      }
+    },
+    "Installed, with another path": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installé, avec un autre chemin"
           }
         }
       }
@@ -2227,6 +2277,16 @@
         }
       }
     },
+    "Session Start Hook": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hook de démarrage de session"
+          }
+        }
+      }
+    },
     "Set the alert style to Persistent so reminders stay on screen until you act.": {
       "localizations": {
         "fr": {
@@ -2583,6 +2643,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Non assigné"
+          }
+        }
+      }
+    },
+    "Update Hook": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mettre à jour le hook"
           }
         }
       }

@@ -52,10 +52,7 @@ struct MainWindow: View {
             NSApp.setActivationPolicy(.accessory)
         }
         .onOpenURL { url in
-            let parts = url.pathComponents.filter { $0 != "/" }
-            if url.host() == "open", let id = parts.first {
-                model.reveal(id)
-            }
+            model.open(url)
         }
     }
 }

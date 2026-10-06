@@ -22,14 +22,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             && event?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
     }
 
-    /// `tickler://open/<id>`, from calendar events and the future web UI.
+    /// `tickler://open/<id>` from calendar events, `tickler://view/<filter>` from the session start hook.
     func application(_: NSApplication, open urls: [URL]) {
         MainActor.assumeIsolated {
             for url in urls where url.scheme == Tickler.urlScheme {
-                let parts = url.pathComponents.filter { $0 != "/" }
-                if url.host() == "open", let id = parts.first {
-                    AppModel.shared.reveal(id)
-                }
+                AppModel.shared.open(url)
             }
         }
     }

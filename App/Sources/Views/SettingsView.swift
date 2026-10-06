@@ -94,6 +94,10 @@ struct SettingsView: View {
                 SkillInstallRow()
             }
 
+            Section("Session Start Hook") {
+                HookInstallRow()
+            }
+
             Section("General") {
                 Picker("Language", selection: Binding(
                     get: { preferences.language },
