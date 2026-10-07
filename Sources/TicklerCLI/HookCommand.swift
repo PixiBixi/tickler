@@ -24,12 +24,16 @@ struct HookSessionStartCommand: TicklerSubcommand {
         let folder = (input?["cwd"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? context.currentDirectory
         guard let store = try? context.openStore(options),
               let reminders = try? store.list(ReminderFilter(due: .all)),
-              let text = SessionDigest.text(
+              let digest = SessionDigest.digest(
                   reminders: reminders, sessionFolder: folder, now: context.now(), calendar: context.calendar,
                   gitRoot: GitRoot.budgeted(lookup: context.gitRoot), folderExists: context.folderExists
               )
         else { return }
-        let output = ["hookSpecificOutput": ["hookEventName": "SessionStart", "additionalContext": text]]
+        // additionalContext goes to Claude only; systemMessage is the line the owner sees in the terminal.
+        let output: [String: Any] = [
+            "systemMessage": digest.summary,
+            "hookSpecificOutput": ["hookEventName": "SessionStart", "additionalContext": digest.context],
+        ]
         let writing: JSONSerialization.WritingOptions = [.sortedKeys, .withoutEscapingSlashes]
         guard let data = try? JSONSerialization.data(withJSONObject: output, options: writing) else { return }
         context.stdout.line(String(decoding: data, as: UTF8.self))
