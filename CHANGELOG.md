@@ -4,7 +4,14 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
-## [v0.5.0](https://github.com/PixiBixi/tickler/compare/v0.4.0..v0.5.0) - 2026-10-06
+## [v0.6.0](https://github.com/PixiBixi/tickler/compare/v0.5.0..v0.6.0) - 2026-10-07
+#### Features
+- (**cli**) show the digest summary in the terminal at session start - ([2786b23](https://github.com/PixiBixi/tickler/commit/2786b236c0cb9275442ab2d306afac0bb95758c8)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) linked titles in the session digest and a summary line - ([96f38b7](https://github.com/PixiBixi/tickler/commit/96f38b70af387d821fc2ea6c320e3768f79100d8)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
+## [v0.5.0](https://github.com/PixiBixi/tickler/compare/v0.4.0..v0.5.0) - 2026-10-07
 #### Features
 - (**app**) tickler://view URLs and the session start hook in Settings - ([c6cdb13](https://github.com/PixiBixi/tickler/commit/c6cdb13f6114d6732f2cdf7b3b58c67911f4e54a)) - [@PixiBixi](https://github.com/PixiBixi)
 - (**cli**) tickler hook session-start, install, status and uninstall - ([176e2ef](https://github.com/PixiBixi/tickler/commit/176e2eff3bea0aad6449f6cdaa327bb9deb8d39e)) - [@PixiBixi](https://github.com/PixiBixi)
