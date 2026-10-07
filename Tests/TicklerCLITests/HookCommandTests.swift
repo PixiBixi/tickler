@@ -32,7 +32,8 @@ struct HookCommandTests {
         #expect(result.code == 0)
         let text = try context(result)
         #expect(text.contains("Tickler reminders for platform"))
-        #expect(text.contains("due today 17:30: check the rollout"))
+        #expect(text.contains("- today 17:30: [check the rollout](tickler://open/"))
+        #expect(try result.jsonObject()["systemMessage"] as? String == "Tickler: 1 today in platform")
     }
 
     @Test func nothingToSayPrintsNothing() {
@@ -48,7 +49,7 @@ struct HookCommandTests {
         let result = cli.run("hook", "session-start")
         #expect(result.code == 0)
         #expect(result.err.isEmpty)
-        #expect(try context(result).contains("due today 17:30: from the current folder"))
+        #expect(try context(result).contains("today 17:30: [from the current folder]"))
     }
 
     @Test func aBrokenDatabaseStillExitsZeroSilently() {
