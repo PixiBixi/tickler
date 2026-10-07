@@ -70,7 +70,7 @@ The setup assistant and Settings offer the same button. The skill ships with eac
 
 ## Claude Code hook
 
-When a session starts, Claude hears about the reminders of that repository (fired, overdue, due today, waiting), with links that open them, plus a count of overdue ones elsewhere; it mentions them and does nothing unless asked.
+When a session starts, Claude hears about the reminders of that repository (fired, overdue, due today, waiting) and lists them at the top of its first reply, each title a link that opens it in Tickler, plus a count of the overdue and due-within-the-hour ones elsewhere; it does nothing unless asked. The terminal shows one summary line, such as `Tickler: 1 overdue, 4 today in platform; 1 overdue elsewhere`.
 
 ```bash
 tickler hook install
@@ -95,7 +95,7 @@ tickler hook install
 | `tickler completion zsh` | Prints the shell completion script (also `bash`, `fish`): subcommands, options, and reminder ids with their title |
 | `tickler skill install` / `status` | Installs the Claude Code skill of this version in `~/.claude/skills/tickler` (`$CLAUDE_CONFIG_DIR` honored); an edited skill is only replaced with `--force` |
 | `tickler hook install` / `status` / `uninstall` | Adds, checks or removes the SessionStart hook in `~/.claude/settings.json` (`$CLAUDE_CONFIG_DIR` honored); only Tickler's own entry is touched |
-| `tickler hook session-start` | Run by Claude Code, not by hand: reads the hook JSON on stdin, prints the digest of the session's repository or nothing, always exits 0 |
+| `tickler hook session-start` | Run by Claude Code, not by hand: reads the hook JSON on stdin, prints the digest of the session's repository (for Claude) and a summary line (for the terminal), or nothing; always exits 0 |
 | `tickler version` | Prints the version (also `--version`) |
 | `tickler import-apple --list Claude` | One-shot import of the open reminders of an Apple Reminders list, which is left untouched |
 
