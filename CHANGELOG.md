@@ -4,6 +4,20 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.5.0](https://github.com/PixiBixi/tickler/compare/v0.4.0..v0.5.0) - 2026-10-06
+#### Features
+- (**app**) tickler://view URLs and the session start hook in Settings - ([c6cdb13](https://github.com/PixiBixi/tickler/commit/c6cdb13f6114d6732f2cdf7b3b58c67911f4e54a)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**cli**) tickler hook session-start, install, status and uninstall - ([176e2ef](https://github.com/PixiBixi/tickler/commit/176e2eff3bea0aad6449f6cdaa327bb9deb8d39e)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) the session digest of a repository's reminders - ([87a2eb1](https://github.com/PixiBixi/tickler/commit/87a2eb1ca47b29e94be384f9b6476674c3aaba84)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) install the SessionStart hook in the Claude Code settings - ([bb132e8](https://github.com/PixiBixi/tickler/commit/bb132e8c3b9e6d03739414887b3acff012d84516)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) an order-preserving JSON value for settings edits - ([3de0b12](https://github.com/PixiBixi/tickler/commit/3de0b12fa919466c8b9a6aaea3f4fb43f6e7547e)) - [@PixiBixi](https://github.com/PixiBixi)
+#### Bug Fixes
+- (**cli**) budget the hook's git lookups, test the current directory fallback - ([df2bd78](https://github.com/PixiBixi/tickler/commit/df2bd780447463706c8aaf0e578823b624557604)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) bound the session digest, sanitize its texts, refuse a dangling settings symlink - ([3242535](https://github.com/PixiBixi/tickler/commit/32425356a330ae7298f8a1529bb6daacfa8ac9b5)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) edit only Tickler's hook entry and harden the hook path - ([3444469](https://github.com/PixiBixi/tickler/commit/3444469714700f77e5d29d81d9d925c44557dd33)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.4.0](https://github.com/PixiBixi/tickler/compare/v0.3.0..v0.4.0) - 2026-10-06
 #### Features
 - (**app**) waiting group, trigger row and fired reason in notifications - ([50d407d](https://github.com/PixiBixi/tickler/commit/50d407daf7579be09585c04c9108c0030742cab8)) - [@PixiBixi](https://github.com/PixiBixi)
