@@ -84,21 +84,20 @@ final class LiveStatusStore {
             targets[link.url] = LiveTarget(link: link)
         }
         let fetcher = fetcher
-        let results = await withTaskGroup(of: (String, Result<LiveStatus, Error>).self) { group in
-            for (url, target) in targets {
-                group.addTask {
-                    do {
-                        return try await (url, .success(fetcher.fetch(target)))
-                    } catch {
-                        return (url, .failure(error))
-                    }
+        // Not a TaskGroup: on macOS 26 the group was freed while a child still ran (SIGSEGV in TaskGroup::offer,
+        // crash loop at launch with several waiting MRs). Do not switch back without reproducing that case.
+        let tasks = targets.map { url, target in
+            (url, Task.detached { () -> Result<LiveStatus, Error> in
+                do {
+                    return try await .success(fetcher.fetch(target))
+                } catch {
+                    return .failure(error)
                 }
-            }
-            var collected: [String: Result<LiveStatus, Error>] = [:]
-            for await (url, result) in group {
-                collected[url] = result
-            }
-            return collected
+            })
+        }
+        var results: [String: Result<LiveStatus, Error>] = [:]
+        for (url, task) in tasks {
+            results[url] = await task.value
         }
         var statuses: [String: LiveStatus] = [:]
         for (url, result) in results {
