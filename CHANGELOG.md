@@ -4,6 +4,12 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.6.1](https://github.com/PixiBixi/tickler/compare/v0.6.0..v0.6.1) - 2026-10-08
+#### Bug Fixes
+- (**app**) fetch live statuses without a TaskGroup - ([f796a71](https://github.com/PixiBixi/tickler/commit/f796a71bc48aebe7e25cb5df0cc1cf6c9ae68b55)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.6.0](https://github.com/PixiBixi/tickler/compare/v0.5.0..v0.6.0) - 2026-10-07
 #### Features
 - (**cli**) show the digest summary in the terminal at session start - ([2786b23](https://github.com/PixiBixi/tickler/commit/2786b236c0cb9275442ab2d306afac0bb95758c8)) - [@PixiBixi](https://github.com/PixiBixi)
