@@ -117,6 +117,7 @@ struct QuickAddSheet: View {
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityAddTraits(selected ? .isSelected : [])
                 }
             }
         }

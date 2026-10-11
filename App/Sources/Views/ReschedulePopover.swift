@@ -115,6 +115,8 @@ struct ReschedulePopover: View {
         }
         .buttonStyle(.plain)
         .disabled(isPast)
+        .accessibilityLabel(Text(date.formatted(Date.FormatStyle(date: .complete, time: .omitted).locale(Format.locale))))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var timeRow: some View {
@@ -178,6 +180,7 @@ struct ReschedulePopover: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     // MARK: Logic

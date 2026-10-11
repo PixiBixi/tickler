@@ -177,6 +177,7 @@ private struct DayTile: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityLabel(Text("\(day.formatted(date: .complete, time: .omitted)), \(total) reminders"))
     }
 

@@ -434,6 +434,16 @@
         }
       }
     },
+    "Tickler, %lld due today, %lld overdue": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tickler, %lld pour aujourd'hui, %lld en retard"
+          }
+        }
+      }
+    },
     "%lld tickets done": {
       "localizations": {
         "en": {
