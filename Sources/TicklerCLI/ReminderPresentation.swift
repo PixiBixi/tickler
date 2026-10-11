@@ -99,13 +99,13 @@ extension CLIContext {
     }
 
     func summaryLine(_ reminder: Reminder) -> String {
-        "\(reminder.id)\t\(reminder.title)\t\(StrictDate.format(reminder.dueAt, calendar: calendar))"
+        "\(reminder.id)\t\(reminder.title.displaySafeLine)\t\(StrictDate.format(reminder.dueAt, calendar: calendar))"
     }
 
     func listLine(_ reminder: Reminder) -> String {
-        var line = "\(reminder.id)  \(StrictDate.format(reminder.dueAt, calendar: calendar))  \(reminder.title)"
+        var line = "\(reminder.id)  \(StrictDate.format(reminder.dueAt, calendar: calendar))  \(reminder.title.displaySafeLine)"
         if let project = reminder.project {
-            line += "  [\(project)]"
+            line += "  [\(project.displaySafeLine)]"
         }
         if reminder.status == .open, reminder.dueAt < now() {
             line += "  OVERDUE"
@@ -125,7 +125,7 @@ extension CLIContext {
     func detail(_ reminder: Reminder, links: [ReminderLink]) -> String {
         var lines = [
             "id: \(reminder.id)",
-            "title: \(reminder.title)",
+            "title: \(reminder.title.displaySafeLine)",
             "due: \(StrictDate.format(reminder.dueAt, calendar: calendar))"
                 + (reminder.status == .open && reminder.dueAt < now() ? " (OVERDUE)" : ""),
             "status: \(reminder.status.rawValue)",
@@ -133,30 +133,30 @@ extension CLIContext {
             "rescheduled: \(reminder.rescheduleCount) (originally \(StrictDate.format(reminder.originalDueAt, calendar: calendar)))",
         ]
         if let project = reminder.project {
-            lines.append("project: \(project)")
+            lines.append("project: \(project.displaySafeLine)")
         }
         if let cwd = reminder.cwd {
-            lines.append("cwd: \(cwd)")
+            lines.append("cwd: \(cwd.displaySafeLine)")
         }
         if let session = reminder.sessionId {
-            lines.append("session: \(session)")
+            lines.append("session: \(session.displaySafeLine)")
         }
         if let prompt = reminder.resumePrompt {
-            lines.append("resume prompt: \(prompt)")
+            lines.append("resume prompt: \(prompt.displaySafeLine)")
         }
         if let trigger = reminder.trigger {
-            lines.append("waiting for: \(trigger)")
+            lines.append("waiting for: \(trigger.displaySafeLine)")
         }
         if let reason = reminder.firedReason, let firedAt = reminder.firedAt {
-            lines.append("fired: \(reason) (\(StrictDate.format(firedAt, calendar: calendar)))")
+            lines.append("fired: \(reason.displaySafeLine) (\(StrictDate.format(firedAt, calendar: calendar)))")
         }
         if !reminder.notes.isEmpty {
             lines.append("notes:")
-            lines += reminder.notes.components(separatedBy: "\n").map { "  \($0)" }
+            lines += reminder.notes.displaySafe.components(separatedBy: "\n").map { "  \($0)" }
         }
         if !links.isEmpty {
             lines.append("links:")
-            lines += links.map { "  \($0.kind.rawValue) \($0.label) \($0.url)" }
+            lines += links.map { "  \($0.kind.rawValue) \($0.label.displaySafeLine) \($0.url.displaySafeLine)" }
         }
         if reminder.sessionId != nil {
             lines.append("resume: tickler resume \(reminder.id)")
