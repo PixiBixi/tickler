@@ -3,6 +3,8 @@ import TicklerCore
 
 /// The Claude Code SessionStart hook, the same entry `tickler hook install` writes.
 struct HookInstallRow: View {
+    /// Settings names the row; the description then moves to the section footer.
+    var title: LocalizedStringKey?
     @State private var state = ClaudeHook.State.notInstalled
     @State private var error: String?
 
@@ -20,19 +22,25 @@ struct HookInstallRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 3) {
+                    if let title {
+                        Text(title)
+                    } else {
+                        Text("Claude hears about this repository's reminders when a session starts.")
+                            .font(.system(size: 11.5)).foregroundStyle(.secondary)
+                    }
+                    Text(verbatim: settings.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
+                        .font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary).textSelection(.enabled)
+                }
+                Spacer()
                 Label(statusText, systemImage: state == .upToDate ? "checkmark.seal.fill" : "circle.dashed")
                     .foregroundStyle(state == .upToDate ? .green : (state == .notInstalled ? .secondary : .orange))
-                Spacer()
                 if state != .upToDate {
                     Button(state == .notInstalled ? "Install Hook" : "Update Hook", action: install)
                         .buttonStyle(PrimaryButtonStyle())
                         .disabled(command == nil)
                 }
             }
-            Text("Claude hears about this repository's reminders when a session starts.")
-                .font(.system(size: 11.5)).foregroundStyle(.secondary)
-            Text(verbatim: settings.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
-                .font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary).textSelection(.enabled)
             if command == nil {
                 Text("Install the tickler command first.").font(.system(size: 11.5)).foregroundStyle(.orange)
             }

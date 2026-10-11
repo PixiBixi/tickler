@@ -11,6 +11,8 @@ struct JiraTokenRow: View {
     @State private var testing = false
     /// A token already exported by a shell file, offered for import; never saved without a click.
     @State private var found: JiraTokenDiscovery.Found?
+    /// A saved token hides the field until Replace is clicked.
+    @State private var replacing = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -20,6 +22,11 @@ struct JiraTokenRow: View {
                 Label(saved ? "Saved in the keychain" : "Missing", systemImage: saved ? "checkmark.seal.fill" : "exclamationmark.triangle")
                     .font(.system(size: 11.5))
                     .foregroundStyle(saved ? .green : .orange)
+                if saved, !replacing {
+                    Button("Test", action: test).disabled(testing)
+                    Button("Replace…") { replacing = true }
+                    Button("Remove", role: .destructive, action: remove)
+                }
             }
             if !saved, let found {
                 HStack(spacing: 8) {
@@ -33,15 +40,28 @@ struct JiraTokenRow: View {
                 .padding(8)
                 .background(Theme.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
             }
-            HStack(spacing: 8) {
-                SecureField("Jira API Token", text: $token, prompt: Text(saved ? "Paste a new token to replace it" : "Paste your token"))
+            if !saved || replacing {
+                HStack(spacing: 8) {
+                    SecureField(
+                        "Jira API Token",
+                        text: $token,
+                        prompt: Text(saved ? "Paste a new token to replace it" : "Paste your token")
+                    )
                     .labelsHidden()
                     .onSubmit { save(token) }
-                Button("Save") { save(token) }.disabled(token.trimmingCharacters(in: .whitespaces).isEmpty)
-                Button("Test", action: test).disabled(!saved || testing)
-                if saved {
-                    Button("Remove", role: .destructive, action: remove)
+                    Button("Save") { save(token) }.disabled(token.trimmingCharacters(in: .whitespaces).isEmpty)
+                    if replacing {
+                        Button("Cancel") {
+                            replacing = false
+                            token = ""
+                        }
+                    }
                 }
+                Link(
+                    "Create a token at id.atlassian.com",
+                    destination: URL(string: "https://id.atlassian.com/manage-profile/security/api-tokens")!
+                )
+                .font(.system(size: 11.5))
             }
             if let result {
                 Text(verbatim: result.message)
@@ -49,11 +69,6 @@ struct JiraTokenRow: View {
                     .foregroundStyle(result.ok ? .green : .orange)
                     .textSelection(.enabled)
             }
-            Link(
-                "Create a token at id.atlassian.com",
-                destination: URL(string: "https://id.atlassian.com/manage-profile/security/api-tokens")!
-            )
-            .font(.system(size: 11.5))
         }
         .task {
             if !saved {
@@ -69,6 +84,7 @@ struct JiraTokenRow: View {
             try JiraToken.save(trimmed)
             token = ""
             saved = true
+            replacing = false
             model.liveStatus.forgetTickets()
             onChange()
             test()
