@@ -7,7 +7,7 @@ struct JiraTokenRow: View {
     var onChange: () -> Void = {}
     @State private var token = ""
     @State private var saved = false
-    /// The keychain is read once in `.task`; until then the status is hidden so "Missing" never flashes.
+    /// The keychain is read once in `.task`; until then the status is hidden so "No token saved" never flashes.
     @State private var loaded = false
     @State private var result: (ok: Bool, message: String)?
     @State private var testing = false
@@ -21,9 +21,12 @@ struct JiraTokenRow: View {
             HStack {
                 Text("Jira API Token")
                 Spacer()
-                Label(saved ? "Saved in the keychain" : "Missing", systemImage: saved ? "checkmark.seal.fill" : "exclamationmark.triangle")
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(saved ? .green : .orange)
+                Label(
+                    saved ? "Saved in the keychain" : "No token saved",
+                    systemImage: saved ? "checkmark.seal.fill" : "exclamationmark.triangle"
+                )
+                .font(.system(size: 11.5))
+                .foregroundStyle(saved ? .green : .orange)
                 if saved, !replacing {
                     Button("Test", action: test).disabled(testing)
                     Button("Replace…") { replacing = true }
@@ -35,7 +38,7 @@ struct JiraTokenRow: View {
                     Image(systemName: "key.fill").foregroundStyle(Theme.accent)
                     Text("Found a token in \(found.path)")
                     Spacer()
-                    Button("Import It") { save(found.token) }
+                    Button("Import Token") { save(found.token) }
                         .buttonStyle(PrimaryButtonStyle())
                 }
                 .font(.system(size: 12))

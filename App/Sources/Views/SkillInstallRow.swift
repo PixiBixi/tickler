@@ -47,7 +47,7 @@ struct SkillInstallRow: View {
         .confirmationDialog("Replace the installed skill?", isPresented: $confirmReplace) {
             Button("Replace", role: .destructive) { install(force: true) }
         } message: {
-            Text("It was edited, or not installed by Tickler. Edits are lost.")
+            Text("This skill was edited or not installed by Tickler. Replacing it discards those changes.")
         }
     }
 
