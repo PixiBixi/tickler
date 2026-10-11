@@ -178,8 +178,11 @@ final class AppModel {
     }
 
     /// Moves the clock for relative times and overdue colors, and rereads the store in case a change signal was missed.
+    /// Reconciles too: only 64 notifications can be pending and the calendar window slides, so a Mac that never sleeps
+    /// would otherwise leave later reminders unscheduled until the next start or wake.
     private func tick() {
         reload()
+        requestReconcile()
     }
 
     // MARK: Reconciliation
