@@ -1,19 +1,13 @@
 name: CodeQL
 
-# Swift analysis traces a full build (about 14 min): only pushes to main that touch code, plus a weekly run.
-# Not on pull requests: nothing waits for it before merging, and it held a macOS runner while CI and App queued.
+# Swift analysis traces a full build (about 14 min on a macOS runner): nightly, not on every push to main.
+# The nightly run is skipped when no code changed since the previous night; the Monday run always goes,
+# so a query published since the last analysis still runs.
 # A traced build cannot come from a cache, CodeQL would see nothing compiled.
-# Dependency bumps (Package.*) do not change our code: dependency review covers them.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "Sources/**"
-      - "App/**"
-      - ".github/workflows/codeql.yml"
   schedule:
-    # Weekly: a query published after the last push still gets to run.
-    - cron: "27 4 * * 1"
+    - cron: "17 2 * * *"
+  workflow_dispatch:
 
 permissions: {}
 
@@ -26,8 +20,39 @@ env:
   XCODE_VERSION: "26.4.1"
 
 jobs:
+  changes:
+    name: Code changed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      code: ${{ steps.check.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Check the last 25 hours
+        id: check
+        env:
+          FORCE: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          # Monday and manual runs always analyze. --first-parent: a PR merged today may carry commits dated days
+          # ago, its merge commit is what is recent. 25 h so a run that starts late does not miss one.
+          if [ "$FORCE" = "true" ] || [ "$(date -u +%u)" = "1" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          elif [ -n "$(git log -1 --first-parent --since='25 hours ago' --format=%H -- Sources App .github/workflows/codeql.yml)" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   analyze:
     name: Analyze
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: macos-26
     timeout-minutes: 45
     permissions:
