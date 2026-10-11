@@ -155,6 +155,7 @@ public enum LiveError: Error, Equatable, CustomStringConvertible {
     case timedOut(tool: String, seconds: TimeInterval)
     case unreadable(String)
     case unsupported
+    case unknownHost(String)
 
     public var description: String {
         switch self {
@@ -163,6 +164,7 @@ public enum LiveError: Error, Equatable, CustomStringConvertible {
         case let .timedOut(tool, seconds): "\(tool): timed out after \(String(format: "%g", seconds)) s"
         case let .unreadable(what): "unexpected answer for \(what)"
         case .unsupported: "only GitLab merge requests can be approved or merged"
+        case let .unknownHost(host): "glab has no login for \(host): Tickler only asks GitLab hosts glab is logged in to"
         }
     }
 

@@ -132,6 +132,16 @@ struct LiveStatusFetcherTests {
         #expect(mr.draft && mr.hasConflicts && !mr.discussionsResolved && mr.pipeline == .failed)
     }
 
+    @Test func aHostGlabHasNoLoginForIsNeverQueried() async {
+        let runner = FakeRunner()
+        let fetcher = LiveStatusFetcher(runner: runner, gitlabHosts: ["gitlab.com"])
+        let target = LiveTarget.gitlabMR(host: "gitlab.attacker.example", project: "g/p", iid: 1)
+        await #expect(throws: LiveError.unknownHost("gitlab.attacker.example")) { try await fetcher.fetch(target) }
+        await #expect(throws: LiveError.unknownHost("gitlab.attacker.example")) { try await fetcher.approve(target) }
+        await #expect(throws: LiveError.unknownHost("gitlab.attacker.example")) { try await fetcher.merge(target) }
+        #expect(runner.calls.isEmpty)
+    }
+
     @Test func approvePostsToTheApproveEndpoint() async throws {
         let runner = FakeRunner()
         try await LiveStatusFetcher(runner: runner).approve(.gitlabMR(host: "gitlab.com", project: "acme/app", iid: 9))

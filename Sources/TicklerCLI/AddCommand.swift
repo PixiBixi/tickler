@@ -31,7 +31,10 @@ struct AddCommand: TicklerSubcommand {
             ?? Trigger.defaultDeadline(after: context.now(), calendar: context.calendar)
         let noteText = notes.map(context.readNotes) ?? ""
         if let trigger {
-            try requireSupportedLink(trigger, LinkExtractor.links(reminderId: "", notes: noteText, explicit: links))
+            try requireSupportedLink(
+                trigger, LinkExtractor.links(reminderId: "", notes: noteText, explicit: links),
+                gitlabHosts: GitLabHosts.current(environment: context.environment)
+            )
         }
         let envSession = context.environment["CLAUDE_CODE_SESSION_ID"].flatMap { $0.isEmpty ? nil : $0 }
         let sessionId = session ?? envSession
@@ -48,7 +51,7 @@ struct AddCommand: TicklerSubcommand {
 
 /// A trigger needs links it can watch: refused up front rather than waiting forever. The check is the one the
 /// watcher runs (`LiveTarget`), and a trigger waits for every link of a supported kind, so one it cannot query is refused too.
-func requireSupportedLink(_ trigger: Trigger, _ links: [ReminderLink]) throws {
+func requireSupportedLink(_ trigger: Trigger, _ links: [ReminderLink], gitlabHosts: Set<String>) throws {
     let candidates = links.filter { trigger.supports($0.kind) }
     guard !candidates.isEmpty else {
         let kinds = trigger.supports(.jira) ? "a Jira issue" : "a GitLab merge request or a GitHub pull request"
@@ -56,5 +59,8 @@ func requireSupportedLink(_ trigger: Trigger, _ links: [ReminderLink]) throws {
     }
     if let unwatchable = candidates.first(where: { LiveTarget(link: $0) == nil }) {
         throw CLIError.usage("--when \(trigger.rawValue) cannot watch \(unwatchable.url): not a link Tickler can query")
+    }
+    for case let .gitlabMR(host, _, _)? in candidates.map(LiveTarget.init(link:)) where !gitlabHosts.contains(host) {
+        throw CLIError.usage("--when \(trigger.rawValue): \(LiveError.unknownHost(host))")
     }
 }

@@ -35,6 +35,14 @@ struct TriggerCLITests {
         #expect(cli.run("add", "rebase", "--when", "merged").code == 2)
     }
 
+    @Test func addRefusesAGitLabHostGlabHasNoLoginFor() {
+        var cli = CLIHarness()
+        cli.environment["GLAB_CONFIG_DIR"] = "/nonexistent/glab"
+        let result = cli.run("add", "rebase", "--link", "https://gitlab.attacker.example/g/p/-/merge_requests/1", "--when", "merged")
+        #expect(result.code == 2)
+        #expect(result.err.contains("glab has no login for gitlab.attacker.example"))
+    }
+
     @Test func addRefusesALinkTheWatcherCannotQuery() {
         let lowercase = CLIHarness().run("add", "ship", "--link", "https://acme.atlassian.net/browse/ops-12", "--when", "jira:done")
         #expect(lowercase.code == 2)
