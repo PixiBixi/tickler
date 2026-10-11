@@ -102,7 +102,7 @@ struct ReschedulePopover: View {
             text = ""
         } label: {
             VStack(spacing: 1) {
-                Text(Format.string(date, pattern: "d"))
+                Text(Format.dayNumber(date))
                     .font(.system(size: 12, weight: isSelected || isToday ? .semibold : .regular))
                     .monospacedDigit()
                 Circle().fill(busy && !isSelected ? Theme.accent.opacity(0.8) : .clear).frame(width: 4, height: 4)
@@ -225,9 +225,9 @@ struct ReschedulePopover: View {
     }
 
     private static func weekdaySymbols(_ calendar: Calendar) -> [String] {
-        let formatter = DateFormatter()
-        formatter.locale = Format.locale
-        let symbols = formatter.veryShortStandaloneWeekdaySymbols ?? ["S", "M", "T", "W", "T", "F", "S"]
+        var localized = calendar
+        localized.locale = Format.locale
+        let symbols = localized.veryShortStandaloneWeekdaySymbols
         let shift = calendar.firstWeekday - 1
         return Array(symbols[shift...] + symbols[..<shift])
     }

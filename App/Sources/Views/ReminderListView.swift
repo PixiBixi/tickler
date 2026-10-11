@@ -178,7 +178,11 @@ private struct DayTile: View {
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .accessibilityLabel(Text("\(day.formatted(date: .complete, time: .omitted)), \(total) reminders"))
+        .accessibilityLabel(Text("\(spokenDay), \(total) reminders"))
+    }
+
+    private var spokenDay: String {
+        day.formatted(Date.FormatStyle(date: .complete, time: .omitted).locale(Format.locale))
     }
 
     /// Up to three dots, then a total: the load of the day at a glance. Red when something is overdue.
