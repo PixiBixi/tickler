@@ -24,20 +24,20 @@ public struct LoginShellRunner: CommandRunning {
     public func run(_ tool: String, _ arguments: [String]) async throws -> Data {
         let command = Self.command(shell: shell, tool: tool, arguments: arguments)
         let timeout = timeout
-        return try await Task.detached {
+        let result = try await ProcessOutcome.runDetached(tool: tool, timeout: timeout) {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: command[0])
             process.arguments = Array(command.dropFirst())
-            let result = try ProcessOutcome.run(process, tool: tool, timeout: timeout)
-            let message = LiveError.failureMessage(result.errors)
-            if result.status == 127 || message.contains("command not found") {
-                throw LiveError.toolMissing(tool)
-            }
-            guard result.status == 0 else {
-                throw LiveError.failed(tool: tool, message: message)
-            }
-            return result.output
-        }.value
+            return process
+        }
+        let message = LiveError.failureMessage(result.errors)
+        if result.status == 127 || message.contains("command not found") {
+            throw LiveError.toolMissing(tool)
+        }
+        guard result.status == 0 else {
+            throw LiveError.failed(tool: tool, message: message)
+        }
+        return result.output
     }
 }
 
@@ -94,31 +94,26 @@ public struct LiveStatusFetcher: Sendable {
 
 /// Runs tools with the caller's own environment: right for the CLI, which already runs in the user's shell.
 public struct DirectRunner: CommandRunning {
-    public init() {}
+    let timeout: TimeInterval
+
+    public init(timeout: TimeInterval = 60) {
+        self.timeout = timeout
+    }
 
     public func run(_ tool: String, _ arguments: [String]) async throws -> Data {
-        try await Task.detached {
+        let result = try await ProcessOutcome.runDetached(tool: tool, timeout: timeout) {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
             process.arguments = [tool] + arguments
-            process.standardInput = FileHandle.nullDevice
-            let out = Pipe()
-            let err = Pipe()
-            process.standardOutput = out
-            process.standardError = err
-            try process.run()
-            let output = out.fileHandleForReading.readDataToEndOfFile()
-            let errors = err.fileHandleForReading.readDataToEndOfFile()
-            process.waitUntilExit()
-            let message = LiveError.failureMessage(errors)
-            if process.terminationStatus == 127 {
-                throw LiveError.toolMissing(tool)
-            }
-            guard process.terminationStatus == 0 else {
-                throw LiveError.failed(tool: tool, message: message)
-            }
-            return output
-        }.value
+            return process
+        }
+        if result.status == 127 {
+            throw LiveError.toolMissing(tool)
+        }
+        guard result.status == 0 else {
+            throw LiveError.failed(tool: tool, message: LiveError.failureMessage(result.errors))
+        }
+        return result.output
     }
 }
 
@@ -165,7 +160,7 @@ public struct AppToolRunner: CommandRunning {
     private func direct(_ tool: String, _ arguments: [String], _ extra: [String: String]) async throws -> Data {
         guard let binary = Self.locate(tool) else { throw LiveError.toolMissing(tool) }
         let timeout = timeout
-        return try await Task.detached {
+        let result = try await ProcessOutcome.runDetached(tool: tool, timeout: timeout) {
             let process = Process()
             process.executableURL = binary
             process.arguments = arguments
@@ -173,54 +168,11 @@ public struct AppToolRunner: CommandRunning {
             environment["PATH"] = Self.searchPath.joined(separator: ":")
             environment.merge(extra) { _, new in new }
             process.environment = environment
-            let result = try ProcessOutcome.run(process, tool: tool, timeout: timeout)
-            guard result.status == 0 else {
-                throw LiveError.failed(tool: tool, message: LiveError.failureMessage(result.errors))
-            }
-            return result.output
-        }.value
-    }
-}
-
-/// What a finished tool left: exit status and both outputs.
-struct ProcessOutcome {
-    let status: Int32
-    let output: Data
-    let errors: Data
-
-    /// Blocking: drains both pipes while the tool runs, so a large output cannot fill a pipe and stall it.
-    /// Past `timeout` the tool is terminated, killed if it ignores that, and the call throws `LiveError.timedOut`.
-    static func run(_ process: Process, tool: String, timeout: TimeInterval) throws -> ProcessOutcome {
-        let out = Pipe()
-        let err = Pipe()
-        process.standardInput = FileHandle.nullDevice
-        process.standardOutput = out
-        process.standardError = err
-        let exited = DispatchSemaphore(value: 0)
-        process.terminationHandler = { _ in exited.signal() }
-        try process.run()
-
-        let output = OSAllocatedUnfairLock(initialState: Data())
-        let errors = OSAllocatedUnfairLock(initialState: Data())
-        let drained = DispatchGroup()
-        for (handle, sink) in [(out.fileHandleForReading, output), (err.fileHandleForReading, errors)] {
-            DispatchQueue.global().async(group: drained) {
-                let data = handle.readDataToEndOfFile()
-                sink.withLock { $0 = data }
-            }
+            return process
         }
-
-        let deadline = DispatchTime.now() + timeout
-        guard exited.wait(timeout: deadline) == .success, drained.wait(timeout: deadline) == .success else {
-            if process.isRunning {
-                process.terminate()
-                if exited.wait(timeout: .now() + 2) == .timedOut {
-                    kill(process.processIdentifier, SIGKILL)
-                    exited.wait()
-                }
-            }
-            throw LiveError.timedOut(tool: tool, seconds: timeout)
+        guard result.status == 0 else {
+            throw LiveError.failed(tool: tool, message: LiveError.failureMessage(result.errors))
         }
-        return ProcessOutcome(status: process.terminationStatus, output: output.withLock { $0 }, errors: errors.withLock { $0 })
+        return result.output
     }
 }
