@@ -48,6 +48,7 @@ struct LiveStatusParserTests {
         #expect(status.pipeline == .success)
         #expect(status.approvalsGiven == 0)
         #expect(status.approvalsRequired == 1)
+        #expect(status.approvalsLeft == 1)
         #expect(status.canApproveNow)
         #expect(status.author == "alice")
     }
@@ -59,6 +60,7 @@ struct LiveStatusParserTests {
         #expect(status.pipeline == nil)
         #expect(status.approvalsGiven == 2)
         #expect(status.approvedBy == ["alice", "carol"])
+        #expect(status.approvalsLeft == 0)
         #expect(!status.canApproveNow)
     }
 

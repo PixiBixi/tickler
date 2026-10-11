@@ -64,6 +64,8 @@ public struct MergeRequestStatus: Codable, Hashable, Sendable {
     public var webURL: String
     public var author: String?
     public var userCanMerge: Bool = false
+    /// GitLab's count of approvals still missing under the project's approval rules; nil when the API did not say.
+    public var approvalsLeft: Int?
 
     /// GitLab has the last word: it says who may approve. Tickler only adds "still open and not approved by you yet".
     public var canApproveNow: Bool {
