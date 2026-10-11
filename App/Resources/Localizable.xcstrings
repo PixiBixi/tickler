@@ -3085,6 +3085,16 @@
           }
         }
       }
+    },
+    "Keychain: %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trousseau : %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

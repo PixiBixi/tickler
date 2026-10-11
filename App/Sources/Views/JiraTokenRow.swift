@@ -77,7 +77,13 @@ struct JiraTokenRow: View {
         }
         .opacity(loaded ? 1 : 0)
         .task {
-            saved = JiraToken.isSet
+            switch await JiraToken.loadState() {
+            case .saved: saved = true
+            case .missing: saved = false
+            case let .unreadable(message):
+                saved = false
+                result = (false, String(localized: "Keychain: \(message)"))
+            }
             loaded = true
             if !saved {
                 found = await Task.detached { JiraTokenDiscovery.find() }.value
