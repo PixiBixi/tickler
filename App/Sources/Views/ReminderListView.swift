@@ -73,6 +73,7 @@ struct ReminderListView: View {
             .buttonStyle(.plain)
             .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))
             .help("New Reminder (⌘N)")
+            .accessibilityLabel("New Reminder")
         }
         .padding(.horizontal, 16)
         .frame(height: 52)
@@ -135,6 +136,7 @@ struct DayStrip: View {
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
         .help(help)
+        .accessibilityLabel(help)
     }
 
     /// Overdue reminders from today are already counted on today's tile.
@@ -175,7 +177,12 @@ private struct DayTile: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .accessibilityLabel(Text("\(day.formatted(date: .complete, time: .omitted)), \(total) reminders"))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityLabel(Text("\(spokenDay), \(total) reminders"))
+    }
+
+    private var spokenDay: String {
+        day.formatted(Date.FormatStyle(date: .complete, time: .omitted).locale(Format.locale))
     }
 
     /// Up to three dots, then a total: the load of the day at a glance. Red when something is overdue.

@@ -3,20 +3,39 @@ import TicklerCore
 
 /// Settings in tabs, each as tall as its content.
 struct SettingsView: View {
+    enum Tab: String {
+        case general, calendar, sessions, live, claude
+    }
+
+    @State private var tab = Self.initialTab
+
     var body: some View {
-        TabView {
+        TabView(selection: $tab) {
             GeneralSettings()
                 .tabItem { Label("General", systemImage: "gearshape") }
+                .tag(Tab.general)
             CalendarSettings()
                 .tabItem { Label("Calendar", systemImage: "calendar") }
+                .tag(Tab.calendar)
             SessionSettings()
                 .tabItem { Label("Sessions", systemImage: "terminal") }
+                .tag(Tab.sessions)
             LiveStatusSettings()
                 .tabItem { Label("Live Status", systemImage: "waveform.path.ecg") }
+                .tag(Tab.live)
             ClaudeCodeSettings()
                 .tabItem { Label("Claude Code", systemImage: "sparkle") }
+                .tag(Tab.claude)
         }
         .frame(width: 560)
+    }
+
+    private static var initialTab: Tab {
+        #if DEBUG
+            ProcessInfo.processInfo.environment["TICKLER_SETTINGS"].flatMap(Tab.init(rawValue:)) ?? .general
+        #else
+            .general
+        #endif
     }
 }
 
@@ -113,9 +132,9 @@ private struct CalendarSettings: View {
                             Text("\(calendar.title) (\(calendar.source.title))").tag(calendar.calendarIdentifier)
                         }
                     }
-                    Text("Events are marked Free and have no alert.")
+                    (Text("Events are marked Free and have no alert.")
                         + Text(" ")
-                        + Text("In Google Calendar, set this calendar's default notifications to none to avoid double alerts.")
+                        + Text("In Google Calendar, set this calendar's default notifications to none to avoid double alerts."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {

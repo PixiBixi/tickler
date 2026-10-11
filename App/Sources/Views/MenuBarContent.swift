@@ -7,12 +7,15 @@ struct MenuBarLabel: View {
 
     var body: some View {
         let count = model.todayCount
+        let overdue = model.overdueCount
         HStack(spacing: 3) {
-            Image(model.overdueCount > 0 ? "MenuBarIconAlert" : "MenuBarIcon")
+            Image(overdue > 0 ? "MenuBarIconAlert" : "MenuBarIcon")
             if count > 0 {
                 Text("\(count)").monospacedDigit()
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Tickler, \(count) due today, \(overdue) overdue"))
         .onAppear {
             model.openMainWindow = {
                 openWindow(id: WindowID.main)
@@ -67,9 +70,11 @@ struct MenuBarContent: View {
             Button { model.showMainWindow(); model.showQuickAdd = true } label: { Image(systemName: "plus") }
                 .buttonStyle(.borderless)
                 .help("New Reminder")
+                .accessibilityLabel("New Reminder")
             Button { model.showMainWindow() } label: { Image(systemName: "sidebar.left") }
                 .buttonStyle(.borderless)
                 .help("Open Window")
+                .accessibilityLabel("Open Window")
         }
         .padding(.horizontal, 16)
         .padding(.top, 14)
@@ -130,6 +135,7 @@ struct MenuBarContent: View {
             }
             .buttonStyle(.borderless)
             .help("Settings (⌘,)")
+            .accessibilityLabel("Settings")
         }
         .font(.system(size: 12))
         .foregroundStyle(.secondary)
@@ -182,6 +188,8 @@ private struct NextCard: View {
         .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
         .contentShape(Rectangle())
         .onTapGesture { model.reveal(reminder.id) }
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { model.reveal(reminder.id) }
     }
 
     private var linkSummary: String? {
@@ -223,6 +231,21 @@ private struct CompactRow: View {
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
         .onTapGesture { model.reveal(reminder.id) }
+        .focusable()
+        .onKeyPress(.return) {
+            model.reveal(reminder.id)
+            return .handled
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { model.reveal(reminder.id) }
+        .accessibilityActions {
+            if reminder.sessionId != nil {
+                Button("Resume Session") { model.resume(reminder) }
+            }
+            Button("Snooze 1 hour") { model.snooze(reminder.id, preset: .oneHour) }
+            Button("Mark Done") { model.markDone(reminder.id) }
+        }
         .padding(.horizontal, 6)
     }
 
@@ -239,6 +262,7 @@ private struct CompactRow: View {
         .buttonStyle(.plain)
         .background(Color.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
         .help(help)
+        .accessibilityLabel(help)
     }
 }
 

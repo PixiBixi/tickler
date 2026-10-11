@@ -58,6 +58,8 @@ struct LinkBadge: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 12, height: 12)
+                .accessibilityHidden(kind == .gitlabMR || kind == .githubPR)
+                .accessibilityLabel(tag.text)
             if kind == .gitlabMR || kind == .githubPR {
                 Text(tag.text).font(.system(size: 10, weight: .bold))
             }

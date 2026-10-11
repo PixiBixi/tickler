@@ -40,7 +40,7 @@ struct ReschedulePopover: View {
             let start = max(current, Date())
             month = start
             day = calendar.startOfDay(for: start)
-            time = Self.format(start, "HH:mm")
+            time = Format.string(start, pattern: "HH:mm")
             textFocused = true
         }
     }
@@ -68,13 +68,16 @@ struct ReschedulePopover: View {
 
     private var monthGrid: some View {
         let days = gridDays
+        let busyDays = Set(model.open.map { calendar.startOfDay(for: $0.dueAt) })
         let symbols = Self.weekdaySymbols(calendar)
         return VStack(spacing: 6) {
             HStack {
-                Text(Self.format(month, "LLLL yyyy").capitalized).font(.system(size: 13, weight: .semibold))
+                Text(Format.string(month, pattern: "LLLL yyyy").capitalized).font(.system(size: 13, weight: .semibold))
                 Spacer()
                 Button { shiftMonth(-1) } label: { Image(systemName: "chevron.left") }.buttonStyle(.borderless)
+                    .accessibilityLabel("Previous Month")
                 Button { shiftMonth(1) } label: { Image(systemName: "chevron.right") }.buttonStyle(.borderless)
+                    .accessibilityLabel("Next Month")
             }
             .font(.system(size: 11, weight: .semibold))
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 7), spacing: 4) {
@@ -82,24 +85,24 @@ struct ReschedulePopover: View {
                     Text(symbol).font(.system(size: 10, weight: .medium)).foregroundStyle(.tertiary)
                 }
                 ForEach(days, id: \.self) { date in
-                    dayCell(date)
+                    dayCell(date, busyDays: busyDays)
                 }
             }
         }
     }
 
-    private func dayCell(_ date: Date) -> some View {
+    private func dayCell(_ date: Date, busyDays: Set<Date>) -> some View {
         let inMonth = calendar.isDate(date, equalTo: month, toGranularity: .month)
         let isPast = date < calendar.startOfDay(for: Date())
         let isToday = calendar.isDateInToday(date)
         let isSelected = day.map { calendar.isDate($0, inSameDayAs: date) } ?? false
-        let busy = model.open.contains { calendar.isDate($0.dueAt, inSameDayAs: date) }
+        let busy = busyDays.contains(calendar.startOfDay(for: date))
         return Button {
             day = date
             text = ""
         } label: {
             VStack(spacing: 1) {
-                Text(Self.format(date, "d"))
+                Text(Format.dayNumber(date))
                     .font(.system(size: 12, weight: isSelected || isToday ? .semibold : .regular))
                     .monospacedDigit()
                 Circle().fill(busy && !isSelected ? Theme.accent.opacity(0.8) : .clear).frame(width: 4, height: 4)
@@ -112,6 +115,8 @@ struct ReschedulePopover: View {
         }
         .buttonStyle(.plain)
         .disabled(isPast)
+        .accessibilityLabel(Text(date.formatted(Date.FormatStyle(date: .complete, time: .omitted).locale(Format.locale))))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var timeRow: some View {
@@ -175,6 +180,7 @@ struct ReschedulePopover: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     // MARK: Logic
@@ -198,7 +204,7 @@ struct ReschedulePopover: View {
         text = ""
         day = calendar.startOfDay(for: date)
         month = date
-        time = Self.format(date, "HH:mm")
+        time = Format.string(date, pattern: "HH:mm")
     }
 
     private func finish(_ date: Date?) {
@@ -219,17 +225,10 @@ struct ReschedulePopover: View {
     }
 
     private static func weekdaySymbols(_ calendar: Calendar) -> [String] {
-        let formatter = DateFormatter()
-        formatter.locale = Format.locale
-        let symbols = formatter.veryShortStandaloneWeekdaySymbols ?? ["S", "M", "T", "W", "T", "F", "S"]
+        var localized = calendar
+        localized.locale = Format.locale
+        let symbols = localized.veryShortStandaloneWeekdaySymbols
         let shift = calendar.firstWeekday - 1
         return Array(symbols[shift...] + symbols[..<shift])
-    }
-
-    private static func format(_ date: Date, _ pattern: String) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Format.locale
-        formatter.dateFormat = pattern
-        return formatter.string(from: date)
     }
 }

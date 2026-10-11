@@ -22,6 +22,7 @@ struct LiveStatusSection: View {
                     }
                     .buttonStyle(.borderless)
                     .help("Refresh")
+                    .accessibilityLabel("Refresh")
                 }
                 let finished = links.filter { LiveCard.isFinished(model.liveStatus.entries[$0.url]?.status) }
                 VStack(spacing: 6) {
@@ -102,6 +103,7 @@ private struct LiveCard: View {
             Theme.logo(for: link.kind)
                 .resizable().scaledToFit().frame(width: 14, height: 14)
                 .foregroundStyle(Theme.tag(for: link.kind).color)
+                .accessibilityHidden(true)
             Text(link.label).font(.system(size: 13, weight: .semibold)).lineLimit(1).layoutPriority(1)
             if let title = statusTitle {
                 Text(title).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
@@ -121,6 +123,7 @@ private struct LiveCard: View {
             .buttonStyle(.borderless)
             .foregroundStyle(.secondary)
             .help("Open")
+            .accessibilityLabel("Open")
         }
     }
 

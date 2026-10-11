@@ -449,6 +449,7 @@ final class AppModel {
 
     private func present(_ toast: Toast) {
         withAnimation(.easeOut(duration: 0.2)) { self.toast = toast }
+        AccessibilityNotification.Announcement(toast.message).post()
         toastTask?.cancel()
         toastTask = Task {
             try? await Task.sleep(for: .seconds(toast.isError ? 6 : 3))

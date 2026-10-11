@@ -434,6 +434,16 @@
         }
       }
     },
+    "Tickler, %lld due today, %lld overdue": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tickler, %lld pour aujourd'hui, %lld en retard"
+          }
+        }
+      }
+    },
     "%lld tickets done": {
       "localizations": {
         "en": {
@@ -1017,16 +1027,6 @@
         }
       }
     },
-    "Four quick steps. You can change all of it later in Settings.": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quatre étapes rapides. Tout se modifie ensuite dans les réglages."
-          }
-        }
-      }
-    },
     "General": {
       "localizations": {
         "fr": {
@@ -1097,12 +1097,12 @@
         }
       }
     },
-    "Import It": {
+    "Import Token": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "L'importer"
+            "value": "Importer le token"
           }
         }
       }
@@ -1257,12 +1257,12 @@
         }
       }
     },
-    "It was edited, or not installed by Tickler. Edits are lost.": {
+    "This skill was edited or not installed by Tickler. Replacing it discards those changes.": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Il a été modifié, ou n'a pas été installé par Tickler. Les modifications seront perdues."
+            "value": "Ce skill a été modifié ou n'a pas été installé par Tickler. Le remplacer supprime ces modifications."
           }
         }
       }
@@ -1447,12 +1447,12 @@
         }
       }
     },
-    "Missing": {
+    "No token saved": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manquant"
+            "value": "Aucun token enregistré"
           }
         }
       }
@@ -1482,7 +1482,7 @@
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reporté à %@"
+            "value": "Reprogrammé pour %@"
           }
         }
       }
@@ -1532,7 +1532,7 @@
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tapez le raccourci…"
+            "value": "Tape le raccourci…"
           }
         }
       }
@@ -1552,7 +1552,7 @@
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Utilisez au moins ⌘, ⌥ ou ⌃."
+            "value": "Utilise au moins ⌘, ⌥ ou ⌃."
           }
         }
       }
@@ -1583,6 +1583,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "7 prochains jours"
+          }
+        }
+      }
+    },
+    "Next Month": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mois suivant"
           }
         }
       }
@@ -1967,6 +1977,16 @@
         }
       }
     },
+    "Previous Month": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mois précédent"
+          }
+        }
+      }
+    },
     "Previous week": {
       "localizations": {
         "fr": {
@@ -2125,13 +2145,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Reporté %lld fois"
+                  "value": "Reprogrammé %lld fois"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Reporté %lld fois"
+                  "value": "Reprogrammé %lld fois"
                 }
               }
             }
@@ -2163,6 +2183,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reprogrammer…"
+          }
+        }
+      }
+    },
+    "Pick a day and a time": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisis un jour et une heure"
           }
         }
       }
@@ -2353,6 +2383,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Configurer Tickler"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réglages"
           }
         }
       }
@@ -2952,7 +2992,7 @@
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "reporté %lld×"
+            "value": "reprogrammé %lld×"
           }
         }
       }

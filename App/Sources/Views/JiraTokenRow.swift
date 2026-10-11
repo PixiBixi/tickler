@@ -6,7 +6,9 @@ struct JiraTokenRow: View {
     @Environment(AppModel.self) private var model
     var onChange: () -> Void = {}
     @State private var token = ""
-    @State private var saved = JiraToken.isSet
+    @State private var saved = false
+    /// The keychain is read once in `.task`; until then the status is hidden so "No token saved" never flashes.
+    @State private var loaded = false
     @State private var result: (ok: Bool, message: String)?
     @State private var testing = false
     /// A token already exported by a shell file, offered for import; never saved without a click.
@@ -19,9 +21,12 @@ struct JiraTokenRow: View {
             HStack {
                 Text("Jira API Token")
                 Spacer()
-                Label(saved ? "Saved in the keychain" : "Missing", systemImage: saved ? "checkmark.seal.fill" : "exclamationmark.triangle")
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(saved ? .green : .orange)
+                Label(
+                    saved ? "Saved in the keychain" : "No token saved",
+                    systemImage: saved ? "checkmark.seal.fill" : "exclamationmark.triangle"
+                )
+                .font(.system(size: 11.5))
+                .foregroundStyle(saved ? .green : .orange)
                 if saved, !replacing {
                     Button("Test", action: test).disabled(testing)
                     Button("Replace…") { replacing = true }
@@ -33,7 +38,7 @@ struct JiraTokenRow: View {
                     Image(systemName: "key.fill").foregroundStyle(Theme.accent)
                     Text("Found a token in \(found.path)")
                     Spacer()
-                    Button("Import It") { save(found.token) }
+                    Button("Import Token") { save(found.token) }
                         .buttonStyle(PrimaryButtonStyle())
                 }
                 .font(.system(size: 12))
@@ -70,7 +75,10 @@ struct JiraTokenRow: View {
                     .textSelection(.enabled)
             }
         }
+        .opacity(loaded ? 1 : 0)
         .task {
+            saved = JiraToken.isSet
+            loaded = true
             if !saved {
                 found = await Task.detached { JiraTokenDiscovery.find() }.value
             }
