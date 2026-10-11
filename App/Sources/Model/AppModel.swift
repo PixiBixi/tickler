@@ -138,7 +138,7 @@ final class AppModel {
                 AppModel.shared.calendarSync.loadCalendars()
             }
         }
-        GlobalHotKey.shared.setEnabled(preferences.globalShortcut)
+        GlobalHotKey.shared.setEnabled(preferences.globalShortcut, shortcut: preferences.shortcut)
         notifications.setUp()
         Task {
             await calendarSync.prepare(calendarId: preferences.calendarId)

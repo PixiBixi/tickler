@@ -1507,12 +1507,62 @@
         }
       }
     },
-    "New reminder from anywhere with ⌥⌘N": {
+    "New reminder from anywhere": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nouveau rappel depuis n'importe où avec ⌥⌘N"
+            "value": "Nouveau rappel depuis n'importe où"
+          }
+        }
+      }
+    },
+    "Shortcut": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raccourci"
+          }
+        }
+      }
+    },
+    "Type the shortcut…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tapez le raccourci…"
+          }
+        }
+      }
+    },
+    "Reset": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réinitialiser"
+          }
+        }
+      }
+    },
+    "Use at least ⌘, ⌥ or ⌃.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilisez au moins ⌘, ⌥ ou ⌃."
+          }
+        }
+      }
+    },
+    "Another app already uses this shortcut.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une autre app utilise déjà ce raccourci."
           }
         }
       }
