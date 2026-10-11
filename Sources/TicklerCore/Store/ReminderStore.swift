@@ -216,10 +216,19 @@ public final class ReminderStore: Sendable {
         return changed > 0
     }
 
-    public func markNotified(_ ids: [String], at date: Date) throws {
-        guard !ids.isEmpty else { return }
+    /// Records that these reminders were notified, as read when the decision was made: one rescheduled, snoozed, fired
+    /// or closed since keeps `notifiedAt` empty, so its new time still gets a notification and a catch-up.
+    public func markNotified(_ reminders: [Reminder], at date: Date) throws {
+        guard !reminders.isEmpty else { return }
         try database.pool.write { db in
-            _ = try Reminder.filter(ids.contains(Column("id"))).updateAll(db, Column("notifiedAt").set(to: date))
+            for reminder in reminders {
+                _ = try Reminder
+                    .filter(
+                        Column("id") == reminder.id && Column("dueAt") == reminder.dueAt
+                            && Column("status") == Reminder.Status.open.rawValue
+                    )
+                    .updateAll(db, Column("notifiedAt").set(to: date))
+            }
         }
     }
 

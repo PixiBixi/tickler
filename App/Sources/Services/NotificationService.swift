@@ -315,6 +315,6 @@ extension NotificationService: UNUserNotificationCenterDelegate {
         let reminderId = NotificationPlanner.reminderId(fromRequestId: requestId)
         guard let store = AppModel.shared.store, let reminder = try? store.get(reminderId),
               NotificationPlanner.isCurrent(requestId: requestId, reminder: reminder) else { return }
-        try? store.markNotified([reminderId], at: Date())
+        try? store.markNotified([reminder], at: Date())
     }
 }

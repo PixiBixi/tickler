@@ -111,9 +111,21 @@ struct ReminderStoreTests {
     @Test func rescheduleClearsNotifiedAt() throws {
         let store = try Fixture.store()
         let added = try store.add(Fixture.draft("a", at: "2026-10-01 09:00"))
-        try store.markNotified([added.id], at: Fixture.now)
+        try store.markNotified([added], at: Fixture.now)
         let moved = try store.reschedule(added.id, to: Fixture.date("2026-10-01 12:00"))
         #expect(moved.notifiedAt == nil)
+    }
+
+    @Test func markNotifiedSkipsAReminderChangedSinceItWasRead() throws {
+        let store = try Fixture.store()
+        let read = try store.add(Fixture.draft("a", at: "2026-10-01 09:00"))
+        // Snoozed while the notification was being decided on the old time.
+        _ = try store.reschedule(read.id, to: Fixture.date("2026-10-02 10:00"))
+        try store.markNotified([read], at: Fixture.now)
+        #expect(try store.require(read.id).notifiedAt == nil)
+        let current = try store.require(read.id)
+        try store.markNotified([current], at: Fixture.now)
+        #expect(try store.require(read.id).notifiedAt == Fixture.now)
     }
 
     @Test func doneAndDeletedLeaveTheOpenList() throws {
