@@ -41,6 +41,32 @@ struct SkillVersionTests {
         #expect(try String(contentsOf: skillFile, encoding: .utf8) == ClaudeSkill.content)
     }
 
+    @Test func aSymlinkedSkillFileKeepsItsLink() throws {
+        let cli = cli()
+        let target = home.appendingPathComponent("dotfiles/SKILL.md")
+        try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "older skill\n".write(to: target, atomically: true, encoding: .utf8)
+        try FileManager.default.createDirectory(at: skillFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: skillFile, withDestinationURL: target)
+        try (ClaudeSkill.hash("older skill\n") + "\n").write(
+            to: skillFile.deletingLastPathComponent().appendingPathComponent(".tickler-installed"), atomically: true, encoding: .utf8
+        )
+        #expect(cli.run("skill", "install").out.hasPrefix("updated\t"))
+        #expect(try FileManager.default.destinationOfSymbolicLink(atPath: skillFile.path) == target.path)
+        #expect(try String(contentsOf: target, encoding: .utf8) == ClaudeSkill.content)
+    }
+
+    @Test func aDanglingSkillSymlinkIsRefused() throws {
+        let cli = cli()
+        try FileManager.default.createDirectory(at: skillFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(atPath: skillFile.path, withDestinationPath: "missing.md")
+        let result = cli.run("skill", "install", "--force")
+        #expect(result.code == 1)
+        #expect(result.err.contains("symlink to a missing file"))
+        #expect(try FileManager.default.destinationOfSymbolicLink(atPath: skillFile.path) == "missing.md")
+        #expect(!FileManager.default.fileExists(atPath: skillFile.deletingLastPathComponent().appendingPathComponent("missing.md").path))
+    }
+
     @Test func anUntouchedOlderSkillIsUpdatedWithoutForce() throws {
         let cli = cli()
         _ = cli.run("skill", "install")
