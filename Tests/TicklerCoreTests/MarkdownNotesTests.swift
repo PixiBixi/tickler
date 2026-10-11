@@ -1,7 +1,18 @@
+import Foundation
 import Testing
 @testable import TicklerCore
 
 struct MarkdownNotesTests {
+    @Test(arguments: ["https://a.io/x", "HTTP://a.io", "tickler://open/abc"])
+    func webAndTicklerLinksOpen(_ link: String) throws {
+        #expect(try MarkdownNotes.isOpenable(#require(URL(string: link))))
+    }
+
+    @Test(arguments: ["file:///etc/passwd", "ssh://host", "x-apple.systempreferences:", "javascript:alert(1)", "/relative"])
+    func otherLinksAreRefused(_ link: String) throws {
+        #expect(try !MarkdownNotes.isOpenable(#require(URL(string: link))))
+    }
+
     @Test func splitsBlocks() {
         let notes = """
         # Rollout
