@@ -32,7 +32,10 @@
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                 for (index, window) in NSApp.windows.enumerated() where window.isVisible {
-                    guard let view = window.contentView, let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { continue }
+                    // Titled windows: the frame view, so the title bar and the Settings tabs are in the picture.
+                    let frame = window.styleMask.contains(.titled) ? window.contentView?.superview : nil
+                    guard let view = frame ?? window.contentView,
+                          let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { continue }
                     view.cacheDisplay(in: view.bounds, to: rep)
                     let name = window.title.isEmpty ? "window-\(index)" : window.title
                     try? rep.representation(using: .png, properties: [:])?

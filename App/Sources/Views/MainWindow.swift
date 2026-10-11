@@ -6,6 +6,7 @@ import TicklerCore
 struct MainWindow: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         @Bindable var model = model
@@ -46,6 +47,12 @@ struct MainWindow: View {
             if !model.preferences.onboardingDone {
                 model.showOnboarding = true
             }
+            #if DEBUG
+                // DebugSnapshot: TICKLER_SETTINGS=<tab> opens Settings on that tab.
+                if ProcessInfo.processInfo.environment["TICKLER_SETTINGS"] != nil {
+                    openSettings()
+                }
+            #endif
         }
         .onDisappear {
             // Back to a menu bar only app once the window is closed.
