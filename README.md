@@ -156,14 +156,16 @@ The date fields accept French and English: `demain 9h30`, `lundi 10h`, `dans 2h`
 
 ### Settings
 
-| Setting | Default |
-|---|---|
-| Calendar | None. Pick a writable calendar, for instance a "Claude" calendar created in Google Calendar with its default notifications set to none |
-| Terminal | Automatic: a running session is found in WezTerm, Ghostty or iTerm2; new tabs open in the first one running. Or pick one of those installed, which then always gets the new tabs. Ghostty 1.3 cannot tell which tab holds a session: Tickler brings Ghostty forward instead of the exact tab |
-| WezTerm binary | Found automatically in `/opt/homebrew/bin`, `/usr/local/bin`, then the app bundle |
-| Session Start Hook | Installs or updates the Claude Code hook (same as `tickler hook install`) |
-| Language | System, or force English or French (after a relaunch) |
-| Open at login | Off |
+| Tab | Setting | Default |
+|---|---|---|
+| General | Language | System, or force English or French (after a relaunch) |
+| General | Open at login | Off |
+| General | New reminder from anywhere | On, `⌥⌘N`: click the shortcut to record another one (needs `⌘`, `⌥` or `⌃`) |
+| Calendar | Copy reminders to | None. Pick a writable calendar, for instance a "Claude" calendar created in Google Calendar with its default notifications set to none |
+| Sessions | Terminal | Automatic: a running session is found in WezTerm, Ghostty or iTerm2; new tabs open in the first one running. Or pick one of those installed, which then always gets the new tabs. Ghostty 1.3 cannot tell which tab holds a session: Tickler brings Ghostty forward instead of the exact tab |
+| Sessions | WezTerm binary | Found automatically in `/opt/homebrew/bin`, `/usr/local/bin`, then the app bundle |
+| Live Status | `glab`, `jira`, `gh`, Jira API token | All tools on, no token |
+| Claude Code | Skill, Session Start Hook | Installs or updates them (same as `tickler skill install`, `tickler hook install`) |
 
 For notifications to stay on screen until you act, set Tickler's alert style to **Persistent** in System Settings, Notifications.
 

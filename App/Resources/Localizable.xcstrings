@@ -3015,6 +3015,36 @@
           }
         }
       }
+    },
+    "Sessions": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sessions"
+          }
+        }
+      }
+    },
+    "Claude Code": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code"
+          }
+        }
+      }
+    },
+    "The skill teaches Claude when to create a reminder; the hook lists the repository's reminders when a session starts.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le skill apprend à Claude quand créer un rappel ; le hook lui liste les rappels du dépôt au démarrage d'une session."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

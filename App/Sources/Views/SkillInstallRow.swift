@@ -3,6 +3,7 @@ import TicklerCore
 
 /// Installs the Claude Code skill of this version into ~/.claude/skills/tickler, the same file `tickler skill install` writes.
 struct SkillInstallRow: View {
+    var title: LocalizedStringKey?
     var onChange: () -> Void = {}
     @State private var state = ClaudeSkill.State.notInstalled
     @State private var error: String?
@@ -15,9 +16,18 @@ struct SkillInstallRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 3) {
+                    if let title {
+                        Text(title)
+                    }
+                    Text(verbatim: ClaudeSkill.file(in: directory).path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+                Spacer()
                 Label(statusText, systemImage: statusIcon)
                     .foregroundStyle(state == .upToDate ? .green : (state == .notInstalled ? .secondary : .orange))
-                Spacer()
                 switch state {
                 case .notInstalled:
                     Button("Install Skill") { install(force: false) }.buttonStyle(PrimaryButtonStyle())
@@ -29,10 +39,6 @@ struct SkillInstallRow: View {
                     EmptyView()
                 }
             }
-            Text(verbatim: ClaudeSkill.file(in: directory).path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(.secondary)
-                .textSelection(.enabled)
             if let error {
                 Text(verbatim: error).font(.system(size: 11.5)).foregroundStyle(.orange)
             }
