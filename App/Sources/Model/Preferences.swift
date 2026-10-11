@@ -34,7 +34,16 @@ final class Preferences {
     var globalShortcut: Bool {
         didSet {
             defaults.set(globalShortcut, forKey: "globalShortcut")
-            GlobalHotKey.shared.setEnabled(globalShortcut)
+            GlobalHotKey.shared.setEnabled(globalShortcut, shortcut: shortcut)
+        }
+    }
+
+    /// Change it through `changeShortcut`, which keeps the old one when the new one is taken.
+    private(set) var shortcut: HotKeyShortcut {
+        didSet {
+            defaults.set(Int(shortcut.keyCode), forKey: "shortcutKeyCode")
+            defaults.set(Int(shortcut.modifiers), forKey: "shortcutModifiers")
+            defaults.set(shortcut.key, forKey: "shortcutKey")
         }
     }
 
@@ -80,10 +89,28 @@ final class Preferences {
         bannerHintDismissed = defaults.bool(forKey: "bannerHintDismissed")
         announceNewReminders = defaults.object(forKey: "announceNewReminders") as? Bool ?? true
         globalShortcut = defaults.object(forKey: "globalShortcut") as? Bool ?? true
+        if let keyCode = defaults.object(forKey: "shortcutKeyCode") as? Int,
+           let modifiers = defaults.object(forKey: "shortcutModifiers") as? Int,
+           let key = defaults.string(forKey: "shortcutKey")
+        {
+            shortcut = HotKeyShortcut(keyCode: UInt32(keyCode), modifiers: UInt32(modifiers), key: key)
+        } else {
+            shortcut = .standard
+        }
         enabledTools = defaults.stringArray(forKey: "enabledTools")
             .map { Set($0.compactMap(ExternalTool.init(rawValue:))) } ?? Set(ExternalTool.allCases)
         terminal = TerminalChoice(rawValue: defaults.string(forKey: "terminal") ?? "") ?? .auto
         language = Language(rawValue: defaults.string(forKey: "language") ?? "") ?? .system
+    }
+
+    /// False when another app holds the new shortcut: the old one stays registered.
+    func changeShortcut(_ new: HotKeyShortcut) -> Bool {
+        guard GlobalHotKey.shared.setEnabled(globalShortcut, shortcut: new) else {
+            GlobalHotKey.shared.setEnabled(globalShortcut, shortcut: shortcut)
+            return false
+        }
+        shortcut = new
+        return true
     }
 
     /// Takes effect at the next launch: AppKit reads AppleLanguages once.

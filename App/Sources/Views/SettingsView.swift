@@ -123,7 +123,10 @@ struct SettingsView: View {
                     Text("Setup assistant")
                     Text("Permissions, terminal and live status tools, as on first launch.")
                 }
-                Toggle("New reminder from anywhere with ⌥⌘N", isOn: $preferences.globalShortcut)
+                Toggle("New reminder from anywhere", isOn: $preferences.globalShortcut)
+                if preferences.globalShortcut {
+                    LabeledContent("Shortcut") { ShortcutRecorder(preferences: preferences) }
+                }
                 Toggle("Notify when a reminder is added from outside the app", isOn: $preferences.announceNewReminders)
                 Toggle("Open at login", isOn: Binding(
                     get: { launchAtLogin },
