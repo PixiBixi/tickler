@@ -4,6 +4,12 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.7.1](https://github.com/PixiBixi/tickler/compare/v0.7.0..v0.7.1) - 2026-10-11
+#### Bug Fixes
+- (**skill**) never mark a reminder done to cancel it - ([fc8b590](https://github.com/PixiBixi/tickler/commit/fc8b590ce06c7e57bc7e0c6e25b920f32ea8cb82)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.7.0](https://github.com/PixiBixi/tickler/compare/v0.6.1..v0.7.0) - 2026-10-11
 #### Features
 - (**app**) split Settings into tabs - ([e1dcb2f](https://github.com/PixiBixi/tickler/commit/e1dcb2f6bad6b1aea0f4e3a55a2de6b2904abe5d)) - [@PixiBixi](https://github.com/PixiBixi)
