@@ -102,22 +102,24 @@ public struct WezTermDriver: TerminalDriver {
         try Self.execute(binary, arguments)
     }
 
-    static func execute(_ executable: URL, _ arguments: [String]) throws -> String {
+    /// A frozen terminal or an automation prompt left unanswered must not hold the resume forever.
+    static func execute(_ executable: URL, _ arguments: [String], timeout: TimeInterval = 60) throws -> String {
         let process = Process()
         process.executableURL = executable
         process.arguments = arguments
-        let out = Pipe()
-        let err = Pipe()
-        process.standardOutput = out
-        process.standardError = err
-        do { try process.run() } catch { throw ResumeError.terminal("cannot run \(executable.path): \(error.localizedDescription)") }
-        let output = out.fileHandleForReading.readDataToEndOfFile()
-        let errors = err.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else {
-            let message = String(decoding: errors, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-            throw ResumeError.terminal("\(executable.lastPathComponent) \(arguments.prefix(2).joined(separator: " ")) failed: \(message)")
+        let name = executable.lastPathComponent
+        let result: ProcessOutcome
+        do {
+            result = try ProcessOutcome.run(process, tool: name, timeout: timeout)
+        } catch let error as LiveError {
+            throw ResumeError.terminal(error.description)
+        } catch {
+            throw ResumeError.terminal("cannot run \(executable.path): \(error.localizedDescription)")
         }
-        return String(decoding: output, as: UTF8.self)
+        guard result.status == 0 else {
+            let message = String(decoding: result.errors, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            throw ResumeError.terminal("\(name) \(arguments.prefix(2).joined(separator: " ")) failed: \(message)")
+        }
+        return String(decoding: result.output, as: UTF8.self)
     }
 }
