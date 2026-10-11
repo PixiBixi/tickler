@@ -36,8 +36,12 @@ public extension LiveTarget {
 
 public enum ToolCheck {
     /// Where the tool is installed, checked on disk: no shell, so no access to a profile kept in Documents.
-    public static func locate(_ tool: ExternalTool, fileManager: FileManager = .default) -> String? {
-        AppToolRunner.locate(tool.rawValue, fileManager: fileManager)?.path
+    public static func locate(
+        _ tool: ExternalTool,
+        in searchPath: [String] = AppToolRunner.searchPath,
+        fileManager: FileManager = .default
+    ) -> String? {
+        AppToolRunner.locate(tool.rawValue, in: searchPath, fileManager: fileManager)?.path
     }
 
     /// The Homebrew version from the Cellar path the binary links to, without running the tool.
