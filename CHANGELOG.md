@@ -4,6 +4,21 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.7.0](https://github.com/PixiBixi/tickler/compare/v0.6.1..v0.7.0) - 2026-10-11
+#### Features
+- (**app**) split Settings into tabs - ([e1dcb2f](https://github.com/PixiBixi/tickler/commit/e1dcb2f6bad6b1aea0f4e3a55a2de6b2904abe5d)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) make the global shortcut configurable - ([c36e47e](https://github.com/PixiBixi/tickler/commit/c36e47e0e61f8062f3a577fee2ab8682645a47d8)) - [@PixiBixi](https://github.com/PixiBixi)
+#### Bug Fixes
+- (**app**) tell a refused keychain from a missing Jira token - ([72d5890](https://github.com/PixiBixi/tickler/commit/72d5890c6cbb0c5d29b4fb860396e53273222637)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) tidy French and English UI copy - ([405d3c9](https://github.com/PixiBixi/tickler/commit/405d3c9411c458624e55934029cb3417fd8cac78)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) use the app language for dates read by VoiceOver and drop a per-render formatter - ([1e8b115](https://github.com/PixiBixi/tickler/commit/1e8b11555f0a3af23c28b540cec264a4718b14fe)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) make menu bar rows reachable without a mouse - ([889d6ca](https://github.com/PixiBixi/tickler/commit/889d6cac84310fa8d77d31ca07d9aecc09fccfc7)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) cache formatters, label icon buttons, load state off body - ([e9dcb96](https://github.com/PixiBixi/tickler/commit/e9dcb96ef7ec61104b377b958c2781ccb32a2855)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) drop live status answers overtaken by a newer fetch - ([524be41](https://github.com/PixiBixi/tickler/commit/524be41fcacbc43a0bc843582836c6beda3eb538)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) run external tools off the cooperative pool - ([aac52b9](https://github.com/PixiBixi/tickler/commit/aac52b905fb809317f92e3f9022bbc4483ecea2e)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.6.1](https://github.com/PixiBixi/tickler/compare/v0.6.0..v0.6.1) - 2026-10-08
 #### Bug Fixes
 - (**app**) fetch live statuses without a TaskGroup - ([f796a71](https://github.com/PixiBixi/tickler/commit/f796a71bc48aebe7e25cb5df0cc1cf6c9ae68b55)) - [@PixiBixi](https://github.com/PixiBixi)
