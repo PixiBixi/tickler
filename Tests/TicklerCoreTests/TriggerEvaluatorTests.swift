@@ -136,6 +136,12 @@ struct TriggerEvaluatorTests {
             == .fired(reason: "MR !412 merged, MR !413 merged"))
     }
 
+    @Test func aLinkNoToolCanQueryDoesNotBlockTheOthers() {
+        let lowercase = link("https://acme.atlassian.net/browse/pe-12")
+        #expect(TriggerEvaluator.evaluate(.jiraDone, links: [link(jiraURL), lowercase], statuses: [jiraURL: ticket("Done", .done)])
+            == .fired(reason: "PE-1685 is done"))
+    }
+
     @Test func anUnknownStatusKeepsWaiting() {
         let links = [link(mrURL), link(mr2URL)]
         #expect(TriggerEvaluator.evaluate(.merged, links: links, statuses: [mrURL: mr(state: "merged")]) == .waiting)

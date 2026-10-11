@@ -35,6 +35,13 @@ struct TriggerCLITests {
         #expect(cli.run("add", "rebase", "--when", "merged").code == 2)
     }
 
+    @Test func addRefusesALinkTheWatcherCannotQuery() {
+        let lowercase = CLIHarness().run("add", "ship", "--link", "https://acme.atlassian.net/browse/ops-12", "--when", "jira:done")
+        #expect(lowercase.code == 2)
+        #expect(lowercase.err.contains("cannot watch https://acme.atlassian.net/browse/ops-12"))
+        #expect(CLIHarness().run("add", "ship", "--link", "https://acme.atlassian.net/browse/OPS-12", "--when", "jira:done").code == 0)
+    }
+
     @Test func plainReminderJSONHasNullTrigger() throws {
         let object = try CLIHarness().run("add", "Thing", "--at", "2026-10-01 16:00", "--json").jsonObject()
         #expect(object["trigger"] is NSNull)

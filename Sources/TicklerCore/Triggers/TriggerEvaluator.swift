@@ -8,7 +8,8 @@ public enum TriggerOutcome: Equatable, Sendable {
 /// Pure: whether the live state of a reminder's links satisfies its trigger. `statuses` is keyed by link URL; missing means unknown.
 public enum TriggerEvaluator {
     public static func evaluate(_ trigger: Trigger, links: [ReminderLink], statuses: [String: LiveStatus]) -> TriggerOutcome {
-        let reasons = links.filter { trigger.supports($0.kind) }
+        // A link no tool can be asked about never gets a status: counting it would wait until the deadline.
+        let reasons = links.filter { trigger.supports($0.kind) && LiveTarget(link: $0) != nil }
             .map { link in statuses[link.url].flatMap { reason(trigger, $0, link: link) } }
         guard !reasons.isEmpty else { return .waiting }
         // A failure anywhere is news; every other trigger waits for all of its links.

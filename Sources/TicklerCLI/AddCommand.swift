@@ -46,10 +46,15 @@ struct AddCommand: TicklerSubcommand {
     }
 }
 
-/// A trigger needs a link it can watch: refused up front rather than waiting forever.
+/// A trigger needs links it can watch: refused up front rather than waiting forever. The check is the one the
+/// watcher runs (`LiveTarget`), and a trigger waits for every link of a supported kind, so one it cannot query is refused too.
 func requireSupportedLink(_ trigger: Trigger, _ links: [ReminderLink]) throws {
-    guard links.contains(where: { trigger.supports($0.kind) }) else {
+    let candidates = links.filter { trigger.supports($0.kind) }
+    guard !candidates.isEmpty else {
         let kinds = trigger.supports(.jira) ? "a Jira issue" : "a GitLab merge request or a GitHub pull request"
         throw CLIError.usage("--when \(trigger.rawValue) needs \(kinds) among the links")
+    }
+    if let unwatchable = candidates.first(where: { LiveTarget(link: $0) == nil }) {
+        throw CLIError.usage("--when \(trigger.rawValue) cannot watch \(unwatchable.url): not a link Tickler can query")
     }
 }
