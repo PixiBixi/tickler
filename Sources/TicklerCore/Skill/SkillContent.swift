@@ -17,7 +17,7 @@ extension ClaudeSkill {
     | `tickler list --due all --json` | Every open reminder |
     | `tickler list --waiting --json` | Reminders waiting for an event, whatever their date |
     | `tickler show <id> --json` | One reminder with notes, links, session and folder |
-    | `tickler done <id>` | Marks it done |
+    | `tickler done <id>` | Marks it done, only once the task is actually complete; to cancel, use `rm` |
     | `tickler edit <id> --at "YYYY-MM-DD HH:MM"` | Reschedules it (also `--title`, `--notes`, `--prompt`) |
     | `tickler edit <id> --when <event>` | Sets or replaces the trigger; `--when ""` removes it |
     | `tickler snooze <id> --for 1h` | Pushes it back from now (`15m`, `1h`, `2d`) |
