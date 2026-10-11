@@ -96,6 +96,7 @@ struct SidebarView: View {
                     }
                     .buttonStyle(.borderless)
                     .help("Settings (⌘,)")
+                    .accessibilityLabel("Settings")
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -182,6 +183,7 @@ private struct AlertsHint: View {
             .buttonStyle(.borderless)
             .foregroundStyle(.secondary)
             .help("Hide")
+            .accessibilityLabel("Hide")
         }
         .padding(8)
         .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))

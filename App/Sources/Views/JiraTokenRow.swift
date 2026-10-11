@@ -6,7 +6,9 @@ struct JiraTokenRow: View {
     @Environment(AppModel.self) private var model
     var onChange: () -> Void = {}
     @State private var token = ""
-    @State private var saved = JiraToken.isSet
+    @State private var saved = false
+    /// The keychain is read once in `.task`; until then the status is hidden so "Missing" never flashes.
+    @State private var loaded = false
     @State private var result: (ok: Bool, message: String)?
     @State private var testing = false
     /// A token already exported by a shell file, offered for import; never saved without a click.
@@ -70,7 +72,10 @@ struct JiraTokenRow: View {
                     .textSelection(.enabled)
             }
         }
+        .opacity(loaded ? 1 : 0)
         .task {
+            saved = JiraToken.isSet
+            loaded = true
             if !saved {
                 found = await Task.detached { JiraTokenDiscovery.find() }.value
             }

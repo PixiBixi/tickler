@@ -1587,6 +1587,16 @@
         }
       }
     },
+    "Next Month": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mois suivant"
+          }
+        }
+      }
+    },
     "Next week": {
       "localizations": {
         "fr": {
@@ -1963,6 +1973,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pipeline"
+          }
+        }
+      }
+    },
+    "Previous Month": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mois précédent"
           }
         }
       }
@@ -2353,6 +2373,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Configurer Tickler"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réglages"
           }
         }
       }

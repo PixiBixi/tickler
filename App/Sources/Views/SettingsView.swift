@@ -113,9 +113,9 @@ private struct CalendarSettings: View {
                             Text("\(calendar.title) (\(calendar.source.title))").tag(calendar.calendarIdentifier)
                         }
                     }
-                    Text("Events are marked Free and have no alert.")
+                    (Text("Events are marked Free and have no alert.")
                         + Text(" ")
-                        + Text("In Google Calendar, set this calendar's default notifications to none to avoid double alerts.")
+                        + Text("In Google Calendar, set this calendar's default notifications to none to avoid double alerts."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {

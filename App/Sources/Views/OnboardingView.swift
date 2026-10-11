@@ -11,9 +11,10 @@ struct OnboardingView: View {
     @State private var installing = false
     @State private var installOutput: String?
     @State private var confirmInstall = false
-    @State private var jiraTokenSaved = JiraToken.isSet
-    @State private var skillInstalled = ClaudeSkill
-        .state(in: ClaudeSkill.directory(environment: ProcessInfo.processInfo.environment)) == .upToDate
+    @State private var jiraTokenSaved = false
+    @State private var skillInstalled = false
+    @State private var versions: [ExternalTool: String] = [:]
+    @State private var hasHomebrew = false
 
     var body: some View {
         @Bindable var preferences = model.preferences
@@ -52,7 +53,11 @@ struct OnboardingView: View {
         }
         .frame(width: 580, height: 640)
         .background(Theme.listBackground)
-        .task { await checkTools() }
+        .task {
+            refreshSkill()
+            jiraTokenSaved = JiraToken.isSet
+            await checkTools()
+        }
         .confirmationDialog("Install with Homebrew?", isPresented: $confirmInstall, titleVisibility: .visible) {
             Button("Install") { install() }
             Button("Cancel", role: .cancel) {}
@@ -155,7 +160,7 @@ struct OnboardingView: View {
                             Spacer()
                             if let path = tools[tool] {
                                 Label(
-                                    ToolCheck.version(of: path).map { "v\($0)" } ?? String(localized: "installed"),
+                                    versions[tool].map { "v\($0)" } ?? String(localized: "installed"),
                                     systemImage: "checkmark.circle.fill"
                                 )
                                 .foregroundStyle(.green)
@@ -168,7 +173,7 @@ struct OnboardingView: View {
                     .toggleStyle(.checkbox)
                 }
                 if !toInstall.isEmpty {
-                    if ToolCheck.homebrew() != nil {
+                    if hasHomebrew {
                         HStack {
                             Button(installing ? "Installing…" : "Install with Homebrew") { confirmInstall = true }
                                 .buttonStyle(PrimaryButtonStyle())
@@ -202,9 +207,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Teaches Claude Code when and how to create reminders, with the session, the links and the prompt to resume with.")
                 .foregroundStyle(.secondary)
-            SkillInstallRow(onChange: {
-                skillInstalled = ClaudeSkill.state(in: ClaudeSkill.directory(environment: ProcessInfo.processInfo.environment)) == .upToDate
-            })
+            SkillInstallRow(onChange: refreshSkill)
         }
     }
 
@@ -240,14 +243,26 @@ struct OnboardingView: View {
         }
     }
 
+    private func refreshSkill() {
+        skillInstalled = ClaudeSkill.state(in: ClaudeSkill.directory(environment: ProcessInfo.processInfo.environment)) == .upToDate
+    }
+
     private func checkTools() async {
-        var found: [ExternalTool: String] = [:]
-        for tool in ExternalTool.allCases {
-            if let path = ToolCheck.locate(tool) {
-                found[tool] = path
+        // Disk lookups, kept off the main actor.
+        let (found, foundVersions, brew) = await Task.detached {
+            var found: [ExternalTool: String] = [:]
+            var foundVersions: [ExternalTool: String] = [:]
+            for tool in ExternalTool.allCases {
+                if let path = ToolCheck.locate(tool) {
+                    found[tool] = path
+                    foundVersions[tool] = ToolCheck.version(of: path)
+                }
             }
-        }
+            return (found, foundVersions, ToolCheck.homebrew() != nil)
+        }.value
         tools = found
+        versions = foundVersions
+        hasHomebrew = brew
         // First setup: start from what is already installed.
         if !checkedTools, !model.preferences.onboardingDone, UserDefaults.standard.object(forKey: "enabledTools") == nil {
             model.preferences.enabledTools = Set(found.keys)

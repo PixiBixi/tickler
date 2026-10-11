@@ -29,11 +29,16 @@ enum Format {
         if abs(date.timeIntervalSince(now)) < 60 {
             return String(localized: "now")
         }
-        let formatter = RelativeDateTimeFormatter()
-        formatter.locale = locale
-        formatter.unitsStyle = .short
+        let formatter = cache.relative(locale: locale)
         return formatter.localizedString(for: date, relativeTo: now)
     }
+
+    /// A date rendered with a fixed pattern in the app's language; the formatter is cached per pattern and locale.
+    static func string(_ date: Date, pattern: String) -> String {
+        cache.dateFormatter(pattern: pattern, locale: locale).string(from: date)
+    }
+
+    private static let cache = FormatterCache()
 
     static func weekdayShort(_ date: Date) -> String {
         date.formatted(Date.FormatStyle().weekday(.abbreviated).locale(locale))
@@ -58,5 +63,39 @@ enum Format {
     static func preview(_ notes: String, lines: Int = 2) -> String {
         notes.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
             .prefix(lines).joined(separator: " ")
+    }
+}
+
+/// Formatters keyed on the locale identifier, so a language change builds fresh ones. Used from the main actor and tests.
+private final class FormatterCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private var dates: [String: DateFormatter] = [:]
+    private var relatives: [String: RelativeDateTimeFormatter] = [:]
+
+    func dateFormatter(pattern: String, locale: Locale) -> DateFormatter {
+        lock.withLock {
+            let key = "\(locale.identifier)|\(pattern)"
+            if let hit = dates[key] {
+                return hit
+            }
+            let formatter = DateFormatter()
+            formatter.locale = locale
+            formatter.dateFormat = pattern
+            dates[key] = formatter
+            return formatter
+        }
+    }
+
+    func relative(locale: Locale) -> RelativeDateTimeFormatter {
+        lock.withLock {
+            if let hit = relatives[locale.identifier] {
+                return hit
+            }
+            let formatter = RelativeDateTimeFormatter()
+            formatter.locale = locale
+            formatter.unitsStyle = .short
+            relatives[locale.identifier] = formatter
+            return formatter
+        }
     }
 }

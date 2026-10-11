@@ -7,13 +7,15 @@ struct HookInstallRow: View {
     var title: LocalizedStringKey?
     @State private var state = ClaudeHook.State.notInstalled
     @State private var error: String?
+    @State private var command: String?
+    @State private var loaded = false
 
     private var settings: URL {
         ClaudeHook.settingsFile(environment: ProcessInfo.processInfo.environment)
     }
 
     /// The app has no shell PATH: look where the cask and `make install` put the CLI.
-    private var command: String? {
+    private func lookupCommand() -> String? {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         return ClaudeHook.ticklerPath(environment: ["PATH": "/opt/homebrew/bin:/usr/local/bin:\(home)/.local/bin"])
             .map(ClaudeHook.command(ticklerPath:))
@@ -41,7 +43,7 @@ struct HookInstallRow: View {
                         .disabled(command == nil)
                 }
             }
-            if command == nil {
+            if loaded, command == nil {
                 Text("Install the tickler command first.").font(.system(size: 11.5)).foregroundStyle(.orange)
             }
             if let error {
@@ -60,6 +62,8 @@ struct HookInstallRow: View {
     }
 
     private func refresh() {
+        command = lookupCommand()
+        loaded = true
         state = ClaudeHook.state(settings: settings, command: command ?? "")
     }
 

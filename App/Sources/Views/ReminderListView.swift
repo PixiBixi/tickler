@@ -73,6 +73,7 @@ struct ReminderListView: View {
             .buttonStyle(.plain)
             .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))
             .help("New Reminder (⌘N)")
+            .accessibilityLabel("New Reminder")
         }
         .padding(.horizontal, 16)
         .frame(height: 52)
@@ -135,6 +136,7 @@ struct DayStrip: View {
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
         .help(help)
+        .accessibilityLabel(help)
     }
 
     /// Overdue reminders from today are already counted on today's tile.
