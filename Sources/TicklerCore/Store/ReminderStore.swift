@@ -164,10 +164,14 @@ public final class ReminderStore: Sendable {
         }
     }
 
-    /// One line, trimmed; nothing left means no prompt.
+    /// One line, no control or format characters, trimmed; nothing left means no prompt.
+    /// It is typed into Claude Code, so a leading `/` or `!` (slash command, bash mode) gets a `Resume: ` prefix.
     static func normalized(_ prompt: String?) -> String? {
-        let line = (prompt ?? "").split(whereSeparator: \.isNewline).joined(separator: " ").trimmingCharacters(in: .whitespaces)
-        return line.isEmpty ? nil : line
+        let joined = (prompt ?? "").split(whereSeparator: \.isNewline).joined(separator: " ")
+        let kept = joined.unicodeScalars.filter { $0.properties.generalCategory != .control && $0.properties.generalCategory != .format }
+        let line = String(String.UnicodeScalarView(kept)).trimmingCharacters(in: .whitespaces)
+        guard !line.isEmpty else { return nil }
+        return line.hasPrefix("/") || line.hasPrefix("!") ? "Resume: " + line : line
     }
 
     /// Soft delete: the row stays for the calendar sync to clean up its event.
