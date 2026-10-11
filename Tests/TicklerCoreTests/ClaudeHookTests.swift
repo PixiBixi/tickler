@@ -237,23 +237,22 @@ struct ClaudeHookTests {
     @Test func ticklerPathSkipsRelativePathEntries() throws {
         let bin = directory.appendingPathComponent("bin")
         try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
-        let local = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("tickler")
-        let planted = !FileManager.default.fileExists(atPath: local.path)
-            && FileManager.default.createFile(
-                atPath: local.path,
-                contents: Data("#!/bin/sh\n".utf8),
-                attributes: [.posixPermissions: 0o755]
-            )
-        defer {
-            if planted {
-                try? FileManager.default.removeItem(at: local)
-            }
+        // A stand-in for the working directory: relative paths would resolve here if the filter let them through.
+        let cwd = directory.appendingPathComponent("cwd")
+        try FileManager.default.createDirectory(at: cwd, withIntermediateDirectories: true)
+        FileManager.default.createFile(
+            atPath: cwd.appendingPathComponent("tickler").path,
+            contents: Data("#!/bin/sh\n".utf8),
+            attributes: [.posixPermissions: 0o755]
+        )
+        let fromCwd: (String) -> Bool = { path in
+            FileManager.default.isExecutableFile(atPath: path.hasPrefix("/") ? path : cwd.appendingPathComponent(path).path)
         }
-        #expect(ClaudeHook.ticklerPath(environment: ["PATH": ".::relative:\(bin.path)"]) == nil)
+        #expect(ClaudeHook.ticklerPath(environment: ["PATH": ".::relative:\(bin.path)"], isExecutable: fromCwd) == nil)
         let tool = bin.appendingPathComponent("tickler")
         try "#!/bin/sh\n".write(to: tool, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tool.path)
-        #expect(ClaudeHook.ticklerPath(environment: ["PATH": ".::relative:\(bin.path)"]) == tool.path)
+        #expect(ClaudeHook.ticklerPath(environment: ["PATH": ".::relative:\(bin.path)"], isExecutable: fromCwd) == tool.path)
     }
 
     @Test func installKeepsTheFilePermissions() throws {

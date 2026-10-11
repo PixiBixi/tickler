@@ -36,9 +36,11 @@ public enum ClaudeHook {
     }
 
     /// The first executable `tickler` on an absolute PATH entry, as found: a Homebrew symlink survives upgrades, its target does not.
-    public static func ticklerPath(environment: [String: String]) -> String? {
-        (environment["PATH"] ?? "").split(separator: ":").filter { $0.hasPrefix("/") }.map { "\($0)/tickler" }
-            .first { FileManager.default.isExecutableFile(atPath: $0) }
+    public static func ticklerPath(
+        environment: [String: String],
+        isExecutable: (String) -> Bool = { FileManager.default.isExecutableFile(atPath: $0) }
+    ) -> String? {
+        (environment["PATH"] ?? "").split(separator: ":").filter { $0.hasPrefix("/") }.map { "\($0)/tickler" }.first(where: isExecutable)
     }
 
     public static func command(ticklerPath: String) -> String {
