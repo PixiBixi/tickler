@@ -128,14 +128,17 @@ public struct AppToolRunner: CommandRunning {
     let timeout: TimeInterval
     /// Extra variables for one tool, read on every run: the app hands jira the token it keeps in its keychain.
     let environment: @Sendable (String) -> [String: String]
+    let searchPath: [String]
 
     public init(
         shell: LoginShellRunner = LoginShellRunner(),
         timeout: TimeInterval = 60,
+        searchPath: [String] = AppToolRunner.searchPath,
         environment: @escaping @Sendable (String) -> [String: String] = { _ in [:] }
     ) {
         self.shell = shell
         self.timeout = timeout
+        self.searchPath = searchPath
         self.environment = environment
     }
 
@@ -143,7 +146,11 @@ public struct AppToolRunner: CommandRunning {
         tool == ExternalTool.jira.rawValue
     }
 
-    public static func locate(_ tool: String, fileManager: FileManager = .default) -> URL? {
+    public static func locate(
+        _ tool: String,
+        in searchPath: [String] = AppToolRunner.searchPath,
+        fileManager: FileManager = .default
+    ) -> URL? {
         searchPath.map { URL(fileURLWithPath: $0).appendingPathComponent(tool) }.first { fileManager.isExecutableFile(atPath: $0.path) }
     }
 
@@ -158,14 +165,15 @@ public struct AppToolRunner: CommandRunning {
     }
 
     private func direct(_ tool: String, _ arguments: [String], _ extra: [String: String]) async throws -> Data {
-        guard let binary = Self.locate(tool) else { throw LiveError.toolMissing(tool) }
+        guard let binary = Self.locate(tool, in: searchPath) else { throw LiveError.toolMissing(tool) }
         let timeout = timeout
+        let searchPath = searchPath
         let result = try await ProcessOutcome.runDetached(tool: tool, timeout: timeout) {
             let process = Process()
             process.executableURL = binary
             process.arguments = arguments
             var environment = ProcessInfo.processInfo.environment
-            environment["PATH"] = Self.searchPath.joined(separator: ":")
+            environment["PATH"] = searchPath.joined(separator: ":")
             environment.merge(extra) { _, new in new }
             process.environment = environment
             return process

@@ -7,8 +7,21 @@ struct ToolCheckTests {
         #expect(ToolCheck.installArguments(for: [.glab, .jira, .gh]) == ["install", "glab", "jira-cli", "gh"])
     }
 
-    @Test func locatesToolsOnDisk() {
-        #expect((ToolCheck.locate(.gh) != nil) == FileManager.default.isExecutableFile(atPath: "/opt/homebrew/bin/gh"))
+    @Test func locatesToolsInTheSearchPath() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("locate-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let gh = root.appendingPathComponent("gh")
+        FileManager.default.createFile(atPath: gh.path, contents: Data("#!/bin/sh\n".utf8), attributes: [.posixPermissions: 0o755])
+        FileManager.default.createFile(
+            atPath: root.appendingPathComponent("glab").path,
+            contents: Data(),
+            attributes: [.posixPermissions: 0o644]
+        )
+        let search = ["/nonexistent", root.path]
+        #expect(ToolCheck.locate(.gh, in: search) == gh.path)
+        #expect(ToolCheck.locate(.glab, in: search) == nil)
+        #expect(ToolCheck.locate(.jira, in: search) == nil)
     }
 
     @Test func onlyJiraNeedsTheShell() {

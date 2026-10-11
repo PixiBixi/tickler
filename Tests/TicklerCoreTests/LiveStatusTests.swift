@@ -255,3 +255,67 @@ struct JiraTokenDiscoveryTests {
         #expect(JiraTokenDiscovery.find(home: home) == .init(token: "secret-file", path: "~/.zsh_work_secrets"))
     }
 }
+
+struct AppToolRunnerRetryTests {
+    private struct Sandbox {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("retry-\(UUID().uuidString)")
+        var marker: URL {
+            root.appendingPathComponent("shell-called")
+        }
+
+        init(jira: String) throws {
+            try FileManager.default.createDirectory(at: root.appendingPathComponent("bin"), withIntermediateDirectories: true)
+            try script("bin/jira", jira)
+            try script("shell", "#!/bin/sh\ntouch '\(marker.path)'\necho from-shell\n")
+        }
+
+        private func script(_ name: String, _ body: String) throws {
+            let url = root.appendingPathComponent(name)
+            try body.write(to: url, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+        }
+
+        func runner(timeout: TimeInterval = 5, token: String? = nil) -> AppToolRunner {
+            AppToolRunner(
+                shell: LoginShellRunner(shell: root.appendingPathComponent("shell").path, timeout: 5),
+                timeout: timeout,
+                searchPath: [root.appendingPathComponent("bin").path, "/bin", "/usr/bin"],
+                environment: { _ in token.map { ["JIRA_API_TOKEN": $0] } ?? [:] }
+            )
+        }
+
+        var shellWasCalled: Bool {
+            FileManager.default.fileExists(atPath: marker.path)
+        }
+
+        func cleanUp() {
+            try? FileManager.default.removeItem(at: root)
+        }
+    }
+
+    @Test func jiraFailureRetriesThroughTheLoginShell() async throws {
+        let sandbox = try Sandbox(jira: "#!/bin/sh\necho nope >&2\nexit 1\n")
+        defer { sandbox.cleanUp() }
+        let output = try await String(decoding: sandbox.runner().run("jira", ["issue", "view", "OPS-1"]), as: UTF8.self)
+        #expect(output == "from-shell\n")
+        #expect(sandbox.shellWasCalled)
+    }
+
+    @Test func jiraTimeoutDoesNotRetryThroughTheLoginShell() async throws {
+        let sandbox = try Sandbox(jira: "#!/bin/sh\nexec sleep 5\n")
+        defer { sandbox.cleanUp() }
+        await #expect(throws: LiveError.timedOut(tool: "jira", seconds: 0.5)) {
+            try await sandbox.runner(timeout: 0.5).run("jira", [])
+        }
+        #expect(!sandbox.shellWasCalled)
+    }
+
+    @Test func jiraWithAnAppTokenFailsWithoutTheShell() async throws {
+        let sandbox = try Sandbox(jira: "#!/bin/sh\necho nope >&2\nexit 1\n")
+        defer { sandbox.cleanUp() }
+        await #expect(throws: LiveError.failed(tool: "jira", message: "nope")) {
+            try await sandbox.runner(token: "t").run("jira", [])
+        }
+        #expect(!sandbox.shellWasCalled)
+    }
+}
