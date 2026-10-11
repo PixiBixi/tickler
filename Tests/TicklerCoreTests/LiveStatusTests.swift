@@ -202,9 +202,10 @@ struct LiveStatusFetcherTests {
         let runner = AppToolRunner(timeout: 0.5)
         let start = Date()
         await #expect(throws: LiveError.timedOut(tool: "sleep", seconds: 0.5)) {
-            try await runner.run("sleep", ["5"])
+            try await runner.run("sleep", ["10"])
         }
-        #expect(Date().timeIntervalSince(start) < 3)
+        // Without the timeout this takes 10 s; 6 s leaves room for slow CI runners (seen at 3.4 s).
+        #expect(Date().timeIntervalSince(start) < 6)
     }
 
     @Test func timeoutReadsAsAFailureOfTheTool() {

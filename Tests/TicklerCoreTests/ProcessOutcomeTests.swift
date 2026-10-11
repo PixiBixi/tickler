@@ -33,11 +33,12 @@ struct ProcessOutcomeTests {
     @Test func hungToolsLeaveTheCooperativePoolFree() async throws {
         let runner = DirectRunner(timeout: 10)
         let hung = (0 ..< ProcessInfo.processInfo.activeProcessorCount * 2).map { _ in
-            Task { try await runner.run("sleep", ["3"]) }
+            Task { try await runner.run("sleep", ["6"]) }
         }
         let start = Date()
         _ = await Task.detached { 1 }.value
-        #expect(Date().timeIntervalSince(start) < 1)
+        // A blocked pool waits for the 6 s sleeps; 4 s leaves room for slow CI runners (seen at 2.4 s).
+        #expect(Date().timeIntervalSince(start) < 4)
         for task in hung {
             _ = try await task.value
         }
