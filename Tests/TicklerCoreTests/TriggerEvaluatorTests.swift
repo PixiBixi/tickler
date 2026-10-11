@@ -68,6 +68,14 @@ struct TriggerEvaluatorTests {
             .evaluate(.approved, links: links, statuses: [mrURL: mr(state: "merged")]) == .fired(reason: "MR !412 merged"))
     }
 
+    @Test func aLockedMergeRequestIsMergingNotClosed() {
+        let links = [link(mrURL)]
+        #expect(TriggerEvaluator.evaluate(.merged, links: links, statuses: [mrURL: mr(state: "locked")]) == .waiting)
+        #expect(TriggerEvaluator.evaluate(.approved, links: links, statuses: [mrURL: mr(state: "locked", given: 2)]) == .waiting)
+        #expect(!mr(state: "locked").isFinished)
+        #expect(mr(state: "closed").isFinished)
+    }
+
     @Test func pullRequestTriggers() {
         let links = [link(prURL)]
         #expect(TriggerEvaluator.evaluate(.merged, links: links, statuses: [prURL: pr(state: "MERGED")]) == .fired(reason: "PR #88 merged"))

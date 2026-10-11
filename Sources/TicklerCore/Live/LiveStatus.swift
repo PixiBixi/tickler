@@ -121,7 +121,7 @@ public extension LiveStatus {
     /// Nothing left to do on it: merged or closed MR and PR, ticket in a done status.
     var isFinished: Bool {
         switch self {
-        case let .mergeRequest(mr): mr.state != "opened"
+        case let .mergeRequest(mr): mr.state != "opened" && mr.state != "locked"
         case let .ticket(ticket): ticket.category == .done
         case let .pullRequest(pr): pr.state != "OPEN"
         }

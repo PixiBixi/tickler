@@ -34,6 +34,10 @@ public enum TriggerEvaluator {
         if mr.state == "merged" {
             return "\(name) merged"
         }
+        // GitLab locks an MR while it merges: no verdict yet, the next poll sees it merged.
+        if mr.state == "locked" {
+            return nil
+        }
         // Closed: the awaited event can no longer happen, so say it now rather than at the deadline.
         if mr.state != "opened" {
             return "\(name) closed without merge"
