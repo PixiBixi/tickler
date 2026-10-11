@@ -16,6 +16,9 @@ final class LiveStatusStore {
     static let freshness: TimeInterval = 120
 
     private(set) var entries: [String: Entry] = [:]
+    /// Bumped by every fetch and by `forgetTickets`: a fetch writes back only if nothing started or reset since,
+    /// or an answer to an old token would overwrite the new one's for the whole freshness window.
+    private var generations: [String: Int] = [:]
     private let runner = AppToolRunner(environment: JiraToken.environment(for:))
     private var fetcher: LiveStatusFetcher {
         LiveStatusFetcher(runner: runner)
@@ -33,11 +36,15 @@ final class LiveStatusStore {
 
     /// A new token must not wait for the 2 minute freshness: drop what Jira answered so far.
     func forgetTickets() {
-        entries = entries.filter { _, entry in
+        let forgotten = entries.filter { _, entry in
             if case .ticket = entry.status {
-                return false
+                return true
             }
-            return entry.error == nil
+            return entry.error != nil
+        }
+        for url in forgotten.keys {
+            entries[url] = nil
+            nextGeneration(url)
         }
     }
 
@@ -80,8 +87,10 @@ final class LiveStatusStore {
     /// Fetches every supported link now, in parallel, updates the cards, and returns what answered, by URL.
     func fetchNow(_ links: [ReminderLink]) async -> [String: LiveStatus] {
         var targets: [String: LiveTarget] = [:]
+        var started: [String: Int] = [:]
         for link in supported(links) {
             targets[link.url] = LiveTarget(link: link)
+            started[link.url] = nextGeneration(link.url)
         }
         let fetcher = fetcher
         // Not a TaskGroup: on macOS 26 the group was freed while a child still ran (SIGSEGV in TaskGroup::offer,
@@ -101,17 +110,12 @@ final class LiveStatusStore {
         }
         var statuses: [String: LiveStatus] = [:]
         for (url, result) in results {
-            var entry = entries[url] ?? Entry()
-            switch result {
-            case let .success(status):
-                entry.status = status
-                entry.error = nil
+            if case let .success(status) = result {
                 statuses[url] = status
-            case let .failure(error):
-                entry.error = String(describing: error)
             }
-            entry.fetchedAt = Date()
-            entries[url] = entry
+            if let generation = started[url] {
+                store(result, for: url, generation: generation)
+            }
         }
         return statuses
     }
@@ -144,17 +148,39 @@ final class LiveStatusStore {
     private func load(_ link: ReminderLink) {
         guard let target = LiveTarget(link: link) else { return }
         entries[link.url, default: Entry()].loading = true
+        let generation = nextGeneration(link.url)
+        let fetcher = fetcher
         Task {
-            var entry = entries[link.url] ?? Entry()
+            let result: Result<LiveStatus, Error>
             do {
-                entry.status = try await fetcher.fetch(target)
-                entry.error = nil
+                result = try await .success(fetcher.fetch(target))
             } catch {
-                entry.error = String(describing: error)
+                result = .failure(error)
             }
-            entry.fetchedAt = Date()
-            entry.loading = false
-            entries[link.url] = entry
+            store(result, for: link.url, generation: generation)
         }
+    }
+
+    @discardableResult
+    private func nextGeneration(_ url: String) -> Int {
+        let next = (generations[url] ?? 0) + 1
+        generations[url] = next
+        return next
+    }
+
+    /// Reads the entry after the fetch, not before: a stale copy would undo what changed meanwhile.
+    private func store(_ result: Result<LiveStatus, Error>, for url: String, generation: Int) {
+        guard generations[url] == generation else { return }
+        var entry = entries[url] ?? Entry()
+        switch result {
+        case let .success(status):
+            entry.status = status
+            entry.error = nil
+        case let .failure(error):
+            entry.error = String(describing: error)
+        }
+        entry.fetchedAt = Date()
+        entry.loading = false
+        entries[url] = entry
     }
 }
