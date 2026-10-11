@@ -55,7 +55,7 @@ struct OnboardingView: View {
         .background(Theme.listBackground)
         .task {
             refreshSkill()
-            jiraTokenSaved = JiraToken.isSet
+            jiraTokenSaved = await JiraToken.loadState() == .saved
             await checkTools()
         }
         .confirmationDialog("Install with Homebrew?", isPresented: $confirmInstall, titleVisibility: .visible) {
