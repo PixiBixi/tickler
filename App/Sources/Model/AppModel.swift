@@ -178,8 +178,11 @@ final class AppModel {
     }
 
     /// Moves the clock for relative times and overdue colors, and rereads the store in case a change signal was missed.
+    /// Reconciles too: only 64 notifications can be pending and the calendar window slides, so a Mac that never sleeps
+    /// would otherwise leave later reminders unscheduled until the next start or wake.
     private func tick() {
         reload()
+        requestReconcile()
     }
 
     // MARK: Reconciliation
@@ -210,13 +213,16 @@ final class AppModel {
 
     private func reconcileOnce(catchUp: Bool) async {
         guard let store else { return }
-        let alreadyDelivered = await notifications.reconcile(reminders: open, links: links)
+        // The decisions below are made on this snapshot; `open` may be reloaded while they await.
+        let snapshot = open
+        let alreadyDelivered = await notifications.reconcile(reminders: snapshot, links: links)
         var notified = alreadyDelivered
         if catchUp {
-            notified += await notifications.catchUp(reminders: open.filter { !alreadyDelivered.contains($0.id) }, links: links)
+            notified += await notifications.catchUp(reminders: snapshot.filter { !alreadyDelivered.contains($0.id) }, links: links)
         }
         if !notified.isEmpty {
-            try? store.markNotified(notified, at: Date())
+            let decided = Dictionary(snapshot.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            try? store.markNotified(notified.compactMap { decided[$0] }, at: Date())
             reload()
         }
         // Demo recordings never touch the user's real calendar.

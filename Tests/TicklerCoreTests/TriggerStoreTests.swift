@@ -23,7 +23,7 @@ struct TriggerStoreTests {
     @Test func fireMakesItDueNowWithoutCountingAReschedule() throws {
         let store = try Fixture.store()
         let reminder = try waiting(store)
-        try store.markNotified([reminder.id], at: Fixture.now)
+        try store.markNotified([reminder], at: Fixture.now)
         #expect(try store.fire(reminder.id, expected: .merged, reason: "MR !412 merged", at: Fixture.now))
         let fired = try store.require(reminder.id)
         #expect(fired.dueAt == Fixture.now)
