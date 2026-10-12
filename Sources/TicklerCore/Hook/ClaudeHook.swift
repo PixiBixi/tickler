@@ -30,9 +30,7 @@ public enum ClaudeHook {
 
     /// `$CLAUDE_CONFIG_DIR/settings.json`, else `~/.claude/settings.json`.
     public static func settingsFile(environment: [String: String]) -> URL {
-        let config = environment["CLAUDE_CONFIG_DIR"].flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) }
-            ?? URL(fileURLWithPath: environment["HOME"] ?? NSHomeDirectory()).appendingPathComponent(".claude")
-        return config.appendingPathComponent("settings.json")
+        ClaudeConfig.directory(environment: environment).appendingPathComponent("settings.json")
     }
 
     /// The first executable `tickler` on an absolute PATH entry, as found: a Homebrew symlink survives upgrades, its target does not.
@@ -181,10 +179,11 @@ public enum ClaudeHook {
 
     /// A link whose target is gone is never replaced by a regular file: the owner restores the target.
     static func refuseDanglingSymlink(_ settings: URL) throws {
-        let manager = FileManager.default
-        guard let destination = try? manager.destinationOfSymbolicLink(atPath: settings.path) else { return }
-        let target = URL(fileURLWithPath: destination, relativeTo: settings.deletingLastPathComponent())
-        guard manager.fileExists(atPath: target.path) else { throw InstallError.danglingSymlink(settings.path) }
+        do {
+            try ClaudeConfig.refuseDanglingSymlink(settings)
+        } catch {
+            throw InstallError.danglingSymlink(settings.path)
+        }
     }
 
     /// A missing file is an empty object; anything unreadable or unparsable is refused, never overwritten.
@@ -203,12 +202,6 @@ public enum ClaudeHook {
     /// Writes the symlink's target, so a settings file kept in a dotfiles repository stays linked.
     static func save(_ root: OrderedJSON, to settings: URL) throws {
         try refuseDanglingSymlink(settings)
-        let target = settings.resolvingSymlinksInPath()
-        try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
-        let permissions = (try? FileManager.default.attributesOfItem(atPath: target.path))?[.posixPermissions]
-        try Data((root.printed() + "\n").utf8).write(to: target, options: .atomic)
-        if let permissions {
-            try FileManager.default.setAttributes([.posixPermissions: permissions], ofItemAtPath: target.path)
-        }
+        try ClaudeConfig.write(Data((root.printed() + "\n").utf8), to: settings)
     }
 }

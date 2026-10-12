@@ -66,6 +66,12 @@ public enum MarkdownNotes {
         return .paragraph(line)
     }
 
+    /// Schemes a note link may open: a note is free text, so `file:`, `ssh:`, `x-apple.*` and friends are dropped.
+    public static func isOpenable(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased() else { return false }
+        return ["http", "https", "tickler"].contains(scheme)
+    }
+
     /// Wraps bare URLs as `[label](url)`; URLs already inside Markdown links or angle brackets stay as written.
     public static func autolink(_ text: String) -> String {
         guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return text }

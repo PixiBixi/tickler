@@ -14,20 +14,21 @@ public enum ClaudeSkill {
 
     public enum InstallError: Error, Equatable, CustomStringConvertible {
         case edited(String)
+        case danglingSymlink(String)
 
         public var description: String {
             switch self {
             case let .edited(path):
                 "\(path) was edited, or not installed by Tickler: pass --force to replace it"
+            case let .danglingSymlink(path):
+                "\(path) is a symlink to a missing file: restore the target, then run tickler skill install again"
             }
         }
     }
 
     /// `$CLAUDE_CONFIG_DIR/skills/tickler`, else `~/.claude/skills/tickler`.
     public static func directory(environment: [String: String]) -> URL {
-        let config = environment["CLAUDE_CONFIG_DIR"].flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) }
-            ?? URL(fileURLWithPath: environment["HOME"] ?? NSHomeDirectory()).appendingPathComponent(".claude")
-        return config.appendingPathComponent("skills/tickler")
+        ClaudeConfig.directory(environment: environment).appendingPathComponent("skills/tickler")
     }
 
     public static func file(in directory: URL) -> URL {
@@ -55,15 +56,21 @@ public enum ClaudeSkill {
     /// Writes the skill. An edited file is only replaced with `force`, so a user's changes are never lost silently.
     @discardableResult
     public static func install(in directory: URL, force: Bool) throws -> State {
+        let skill = file(in: directory)
+        do {
+            try ClaudeConfig.refuseDanglingSymlink(skill)
+        } catch {
+            throw InstallError.danglingSymlink(skill.path)
+        }
         let before = state(in: directory)
         if before == .edited, !force {
             throw InstallError.edited(file(in: directory).path)
         }
         if before != .upToDate {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try Data(content.utf8).write(to: file(in: directory), options: .atomic)
+            try ClaudeConfig.write(Data(content.utf8), to: skill)
         }
-        try Data((hash(content) + "\n").utf8).write(to: stamp(in: directory), options: .atomic)
+        try ClaudeConfig.write(Data((hash(content) + "\n").utf8), to: stamp(in: directory))
         return before
     }
 }

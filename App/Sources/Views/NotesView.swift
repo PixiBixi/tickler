@@ -80,6 +80,7 @@ struct MarkdownView: View {
         }
         .textSelection(.enabled)
         .tint(Theme.accent)
+        .environment(\.openURL, OpenURLAction { MarkdownNotes.isOpenable($0) ? .systemAction : .discarded })
     }
 
     @ViewBuilder

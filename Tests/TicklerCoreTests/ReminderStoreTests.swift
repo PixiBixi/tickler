@@ -56,6 +56,24 @@ struct ReminderStoreTests {
         #expect(try store.links(for: added.id).map(\.label) == ["OPS-2204", "rollout-readiness"])
     }
 
+    @Test func resumePromptDropsControlAndFormatCharacters() {
+        #expect(ReminderStore.normalized("a\u{1B}[31mb\u{200B}c\u{202E}d\u{7}") == "a[31mbcd")
+        #expect(ReminderStore.normalized("\u{1B}\u{200B}") == nil)
+    }
+
+    @Test func resumePromptNeverStartsAsSlashCommandOrBashMode() {
+        #expect(ReminderStore.normalized("/clear") == "Resume: /clear")
+        #expect(ReminderStore.normalized("!ls -la") == "Resume: !ls -la")
+        #expect(ReminderStore.normalized("\u{200B}/cmd") == "Resume: /cmd")
+        #expect(ReminderStore.normalized("compare /tmp and !x") == "compare /tmp and !x")
+    }
+
+    @Test func resumePromptIsSanitizedOnUpdateToo() throws {
+        let store = try Fixture.store()
+        let reminder = try store.add(Fixture.draft("x", at: "2026-10-02 09:00"))
+        #expect(try store.update(reminder.id, resumePrompt: "/exit").resumePrompt == "Resume: /exit")
+    }
+
     @Test func resumePromptIsOneLineAndClearsWhenEmpty() throws {
         let store = try Fixture.store()
         var draft = Fixture.draft("Compare", at: "2026-10-02 09:30")

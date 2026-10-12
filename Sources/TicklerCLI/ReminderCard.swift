@@ -11,23 +11,23 @@ struct ReminderCard {
 
     func render(_ reminder: Reminder, links: [ReminderLink]) -> String {
         var lines: [String] = []
-        lines.append(Ansi.style(reminder.title, .bold))
+        lines.append(Ansi.style(reminder.title.displaySafeLine, .bold))
         lines.append(dueLine(reminder))
         if let cwd = reminder.cwd {
-            lines.append(Ansi.style(abbreviate(cwd), .dim))
+            lines.append(Ansi.style(abbreviate(cwd).displaySafeLine, .dim))
         }
 
         if let trigger = reminder.trigger {
-            lines.append("\(Ansi.style("waiting for", .dim)) \(Ansi.style(trigger, .accent))")
+            lines.append("\(Ansi.style("waiting for", .dim)) \(Ansi.style(trigger.displaySafeLine, .accent))")
         }
         if let reason = reminder.firedReason, let firedAt = reminder.firedAt {
-            lines
-                .append("\(Ansi.style("fired", .dim)) \(reason) \(Ansi.style("(\(StrictDate.format(firedAt, calendar: calendar)))", .dim))")
+            let when = Ansi.style("(\(StrictDate.format(firedAt, calendar: calendar)))", .dim)
+            lines.append("\(Ansi.style("fired", .dim)) \(reason.displaySafeLine) \(when)")
         }
 
         if !reminder.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             lines += ["", Ansi.style("Notes", .heading)]
-            lines += MarkdownNotes.blocks(from: reminder.notes).map(render)
+            lines += MarkdownNotes.blocks(from: reminder.notes.displaySafe).map(render)
         }
 
         if !links.isEmpty {
@@ -35,7 +35,8 @@ struct ReminderCard {
             let kindWidth = links.map { kindName($0.kind).count }.max() ?? 0
             for link in links {
                 let kind = kindName(link.kind).padding(toLength: kindWidth, withPad: " ", startingAt: 0)
-                lines.append("  \(Ansi.style(kind, .dim))  \(Ansi.link(Ansi.style(link.label, .underline), to: link.url))")
+                let label = Ansi.link(Ansi.style(link.label.displaySafeLine, .underline), to: link.url.displaySafeLine)
+                lines.append("  \(Ansi.style(kind, .dim))  \(label)")
             }
         }
 
@@ -46,9 +47,9 @@ struct ReminderCard {
             case false?: Ansi.style("○ ended", .dim)
             case nil: ""
             }
-            lines.append("  \(state)  \(Ansi.style(session, .dim))")
+            lines.append("  \(state)  \(Ansi.style(session.displaySafeLine, .dim))")
             if let prompt = reminder.resumeMessage {
-                lines.append("  says \(Ansi.style("\u{201C}\(prompt)\u{201D}", .bold)) on resume")
+                lines.append("  says \(Ansi.style("\u{201C}\(prompt.displaySafeLine)\u{201D}", .bold)) on resume")
             }
             lines.append("  \(Ansi.style("tickler resume \(reminder.id)", .accent))")
         }
@@ -73,7 +74,7 @@ struct ReminderCard {
         let style: Ansi.Style = reminder.status == .open && bucket == .overdue ? .red : (bucket == .today ? .accent : .plain)
         parts.append(Ansi.style("\(when) (\(distance))", style))
         if let project = reminder.project {
-            parts.append(Ansi.style(project, .dim))
+            parts.append(Ansi.style(project.displaySafeLine, .dim))
         }
         return parts.joined(separator: Ansi.style("  ·  ", .dim))
     }

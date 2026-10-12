@@ -16,7 +16,7 @@ struct ReminderTable {
         }
         let order: [DueBucket?] = [.overdue, .today, .tomorrow, .later, .waiting, nil]
         let dueWidth = reminders.map { due($0).count }.max() ?? 0
-        let projectWidth = min(reminders.map { ($0.project ?? "").count }.max() ?? 0, 24)
+        let projectWidth = min(reminders.map { ($0.project ?? "").displaySafeLine.count }.max() ?? 0, 24)
         // id (6) + gaps (3 x 2) + due + project: the title gets what is left, never less than 20.
         let titleWidth = max(20, width - 6 - 6 - dueWidth - projectWidth - 2)
         var lines: [String] = []
@@ -30,12 +30,12 @@ struct ReminderTable {
                 let dueText = pad(due(reminder), dueWidth)
                 let dimmed = bucket == .later || bucket == .waiting || bucket == nil
                 let dueStyle: Ansi.Style = bucket == .overdue ? .red : (dimmed ? .dim : .plain)
-                let titleText = pad(truncate(reminder.title, titleWidth), titleWidth)
+                let titleText = pad(truncate(reminder.title.displaySafeLine, titleWidth), titleWidth)
                 lines.append([
                     link(style(reminder.id, .accent), to: CalendarMarker.link(for: reminder.id)),
                     style(dueText, dueStyle),
                     reminder.status == .done ? style(titleText, .strike) : titleText,
-                    style(truncate(reminder.project ?? "", projectWidth), .dim),
+                    style(truncate((reminder.project ?? "").displaySafeLine, projectWidth), .dim),
                 ].joined(separator: "  "))
             }
         }
