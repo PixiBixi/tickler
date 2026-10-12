@@ -48,6 +48,7 @@ struct LiveStatusParserTests {
         #expect(status.pipeline == .success)
         #expect(status.approvalsGiven == 0)
         #expect(status.approvalsRequired == 1)
+        #expect(status.approvalsLeft == 1)
         #expect(status.canApproveNow)
         #expect(status.author == "alice")
     }
@@ -59,6 +60,7 @@ struct LiveStatusParserTests {
         #expect(status.pipeline == nil)
         #expect(status.approvalsGiven == 2)
         #expect(status.approvedBy == ["alice", "carol"])
+        #expect(status.approvalsLeft == 0)
         #expect(!status.canApproveNow)
     }
 
@@ -128,6 +130,16 @@ struct LiveStatusFetcherTests {
         ])
         guard case let .mergeRequest(mr) = status else { Issue.record("not an MR"); return }
         #expect(mr.draft && mr.hasConflicts && !mr.discussionsResolved && mr.pipeline == .failed)
+    }
+
+    @Test func aHostGlabHasNoLoginForIsNeverQueried() async {
+        let runner = FakeRunner()
+        let fetcher = LiveStatusFetcher(runner: runner, gitlabHosts: ["gitlab.com"])
+        let target = LiveTarget.gitlabMR(host: "gitlab.attacker.example", project: "g/p", iid: 1)
+        await #expect(throws: LiveError.unknownHost("gitlab.attacker.example")) { try await fetcher.fetch(target) }
+        await #expect(throws: LiveError.unknownHost("gitlab.attacker.example")) { try await fetcher.approve(target) }
+        await #expect(throws: LiveError.unknownHost("gitlab.attacker.example")) { try await fetcher.merge(target) }
+        #expect(runner.calls.isEmpty)
     }
 
     @Test func approvePostsToTheApproveEndpoint() async throws {

@@ -44,14 +44,18 @@ public struct LoginShellRunner: CommandRunning {
 /// Asks glab, jira and gh about a link.
 public struct LiveStatusFetcher: Sendable {
     let runner: CommandRunning
+    /// Hosts glab may be pointed at: status reads, approvals and merges all refuse the others.
+    let gitlabHosts: Set<String>
 
-    public init(runner: CommandRunning = LoginShellRunner()) {
+    public init(runner: CommandRunning = LoginShellRunner(), gitlabHosts: Set<String> = GitLabHosts.current()) {
         self.runner = runner
+        self.gitlabHosts = gitlabHosts
     }
 
     public func fetch(_ target: LiveTarget) async throws -> LiveStatus {
         switch target {
         case let .gitlabMR(host, project, iid):
+            try requireKnownHost(host)
             let path = Self.mergeRequestPath(project: project, iid: iid)
             async let request = runner.run("glab", ["api", "--hostname", host, path])
             async let approvals = runner.run("glab", ["api", "--hostname", host, path + "/approvals"])
@@ -69,6 +73,7 @@ public struct LiveStatusFetcher: Sendable {
 
     public func approve(_ target: LiveTarget) async throws {
         guard case let .gitlabMR(host, project, iid) = target else { throw LiveError.unsupported }
+        try requireKnownHost(host)
         _ = try await runner.run(
             "glab",
             ["api", "--hostname", host, "-X", "POST", Self.mergeRequestPath(project: project, iid: iid) + "/approve"]
@@ -78,11 +83,16 @@ public struct LiveStatusFetcher: Sendable {
     /// Merges with the MR's own options (squash, source branch removal), now or once the pipeline passes.
     public func merge(_ target: LiveTarget, whenPipelinePasses: Bool = false) async throws {
         guard case let .gitlabMR(host, project, iid) = target else { throw LiveError.unsupported }
+        try requireKnownHost(host)
         var arguments = ["api", "--hostname", host, "-X", "PUT", Self.mergeRequestPath(project: project, iid: iid) + "/merge"]
         if whenPipelinePasses {
             arguments += ["-f", "auto_merge=true"]
         }
         _ = try await runner.run("glab", arguments)
+    }
+
+    private func requireKnownHost(_ host: String) throws {
+        guard gitlabHosts.contains(host) else { throw LiveError.unknownHost(host) }
     }
 
     static func mergeRequestPath(project: String, iid: Int) -> String {

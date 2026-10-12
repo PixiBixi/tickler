@@ -85,7 +85,7 @@ struct EditCommand: TicklerSubcommand {
             let links = newNotes.map {
                 LinkExtractor.linksAfterNotesChange(reminderId: id, oldNotes: existing.notes, newNotes: $0, current: current)
             } ?? current
-            try requireSupportedLink(trigger, links)
+            try requireSupportedLink(trigger, links, gitlabHosts: GitLabHosts.current(environment: context.environment))
         }
         var updated = try store.update(id, title: title, notes: newNotes, dueAt: due, resumePrompt: prompt)
         if when != nil {

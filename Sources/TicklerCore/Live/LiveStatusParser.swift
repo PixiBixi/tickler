@@ -55,7 +55,8 @@ public enum LiveStatusParser {
             discussionsResolved: request.blockingDiscussionsResolved ?? true,
             webURL: request.webUrl,
             author: request.author?.username,
-            userCanMerge: request.user?.canMerge ?? false
+            userCanMerge: request.user?.canMerge ?? false,
+            approvalsLeft: approval.approvalsLeft
         )
     }
 

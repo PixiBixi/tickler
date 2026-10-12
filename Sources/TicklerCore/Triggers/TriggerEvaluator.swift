@@ -8,7 +8,8 @@ public enum TriggerOutcome: Equatable, Sendable {
 /// Pure: whether the live state of a reminder's links satisfies its trigger. `statuses` is keyed by link URL; missing means unknown.
 public enum TriggerEvaluator {
     public static func evaluate(_ trigger: Trigger, links: [ReminderLink], statuses: [String: LiveStatus]) -> TriggerOutcome {
-        let reasons = links.filter { trigger.supports($0.kind) }
+        // A link no tool can be asked about never gets a status: counting it would wait until the deadline.
+        let reasons = links.filter { trigger.supports($0.kind) && LiveTarget(link: $0) != nil }
             .map { link in statuses[link.url].flatMap { reason(trigger, $0, link: link) } }
         guard !reasons.isEmpty else { return .waiting }
         // A failure anywhere is news; every other trigger waits for all of its links.
@@ -34,6 +35,10 @@ public enum TriggerEvaluator {
         if mr.state == "merged" {
             return "\(name) merged"
         }
+        // GitLab locks an MR while it merges: no verdict yet, the next poll sees it merged.
+        if mr.state == "locked" {
+            return nil
+        }
         // Closed: the awaited event can no longer happen, so say it now rather than at the deadline.
         if mr.state != "opened" {
             return "\(name) closed without merge"
@@ -41,9 +46,16 @@ public enum TriggerEvaluator {
         switch trigger {
         case .pipelineGreen: return mr.pipeline == .success ? "\(name) pipeline passed" : nil
         case .pipelineFailed: return mr.pipeline == .failed ? "\(name) pipeline failed" : nil
-        case .approved: return mr.approvalsGiven >= max(mr.approvalsRequired, 1) ? "\(name) approved" : nil
+        case .approved: return isApproved(mr) ? "\(name) approved" : nil
         case .merged, .jiraDone, .jiraStatus: return nil
         }
+    }
+
+    /// Approval rules (code owners, a required group) decide, not the raw count: two approvals from outside the
+    /// required group leave `approvals_left` at 1. At least one approval either way, so a project without rules still waits.
+    private static func isApproved(_ mr: MergeRequestStatus) -> Bool {
+        let rulesMet = mr.approvalsLeft.map { $0 == 0 } ?? (mr.approvalsGiven >= mr.approvalsRequired)
+        return rulesMet && mr.approvalsGiven >= 1
     }
 
     private static func pullRequestReason(_ trigger: Trigger, _ pr: PullRequestStatus) -> String? {

@@ -17,12 +17,13 @@ private func mr(
     state: String = "opened",
     pipeline: PipelineState? = nil,
     given: Int = 0,
-    required: Int = 0
+    required: Int = 0,
+    left: Int? = nil
 ) -> LiveStatus {
     .mergeRequest(MergeRequestStatus(
         iid: iid, title: "t", state: state, draft: false, pipeline: pipeline, pipelineURL: nil,
         approvalsRequired: required, approvalsGiven: given, approvedBy: [], userHasApproved: false, userCanApprove: false,
-        mergeStatus: "mergeable", hasConflicts: false, discussionsResolved: true, webURL: mrURL, author: nil
+        mergeStatus: "mergeable", hasConflicts: false, discussionsResolved: true, webURL: mrURL, author: nil, approvalsLeft: left
     ))
 }
 
@@ -60,12 +61,29 @@ struct TriggerEvaluatorTests {
             == .fired(reason: "MR !412 approved"))
     }
 
+    @Test func approvedFollowsGitLabApprovalRules() {
+        let links = [link(mrURL)]
+        // Two approvals from outside a required group: the count is met, the rule is not.
+        #expect(TriggerEvaluator.evaluate(.approved, links: links, statuses: [mrURL: mr(given: 2, required: 1, left: 1)]) == .waiting)
+        #expect(TriggerEvaluator.evaluate(.approved, links: links, statuses: [mrURL: mr(given: 1, required: 1, left: 0)])
+            == .fired(reason: "MR !412 approved"))
+        #expect(TriggerEvaluator.evaluate(.approved, links: links, statuses: [mrURL: mr(given: 0, required: 0, left: 0)]) == .waiting)
+    }
+
     @Test func aClosedMergeRequestSatisfiesAnyTrigger() {
         let links = [link(mrURL)]
         #expect(TriggerEvaluator.evaluate(.pipelineGreen, links: links, statuses: [mrURL: mr(state: "closed", pipeline: .running)])
             == .fired(reason: "MR !412 closed without merge"))
         #expect(TriggerEvaluator
             .evaluate(.approved, links: links, statuses: [mrURL: mr(state: "merged")]) == .fired(reason: "MR !412 merged"))
+    }
+
+    @Test func aLockedMergeRequestIsMergingNotClosed() {
+        let links = [link(mrURL)]
+        #expect(TriggerEvaluator.evaluate(.merged, links: links, statuses: [mrURL: mr(state: "locked")]) == .waiting)
+        #expect(TriggerEvaluator.evaluate(.approved, links: links, statuses: [mrURL: mr(state: "locked", given: 2)]) == .waiting)
+        #expect(!mr(state: "locked").isFinished)
+        #expect(mr(state: "closed").isFinished)
     }
 
     @Test func pullRequestTriggers() {
@@ -116,6 +134,12 @@ struct TriggerEvaluatorTests {
         #expect(TriggerEvaluator.evaluate(.merged, links: links, statuses: [mrURL: mr(state: "merged"), mr2URL: mr(413)]) == .waiting)
         #expect(TriggerEvaluator.evaluate(.merged, links: links, statuses: [mrURL: mr(state: "merged"), mr2URL: mr(413, state: "merged")])
             == .fired(reason: "MR !412 merged, MR !413 merged"))
+    }
+
+    @Test func aLinkNoToolCanQueryDoesNotBlockTheOthers() {
+        let lowercase = link("https://acme.atlassian.net/browse/pe-12")
+        #expect(TriggerEvaluator.evaluate(.jiraDone, links: [link(jiraURL), lowercase], statuses: [jiraURL: ticket("Done", .done)])
+            == .fired(reason: "PE-1685 is done"))
     }
 
     @Test func anUnknownStatusKeepsWaiting() {

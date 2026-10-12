@@ -101,6 +101,7 @@ tickler hook install
 
 - Completion: add `source <(tickler completion zsh)` to `~/.zshrc`; `tickler rm <Tab>` then lists open reminders as `id -- date title`.
 - `--session` defaults to `CLAUDE_CODE_SESSION_ID`, and `--cwd` to the current directory when a session is known.
+- `--when` refuses a link Tickler cannot query (a Jira key not in capitals, a partial MR path) and a GitLab host `glab` has no login for: the reminder would otherwise wait until its deadline.
 - Dates on the CLI take only the strict local format `YYYY-MM-DD HH:MM`.
 - In a terminal, `list` prints a table grouped by Overdue, Today, Tomorrow, Later, and each id is a link that opens the reminder in the app (⌘-click in WezTerm, Ghostty or iTerm2). Piped, or with `NO_COLOR`, it prints one plain line per reminder.
 - Exit codes: `0` ok, `1` runtime error, `2` usage error, `3` unknown id.
@@ -144,7 +145,7 @@ Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 | Menu bar | Count of today's reminders (overdue included); the glyph turns solid while one is overdue. The popover shows the next reminder with Resume, Snooze and Done, then overdue, today, tomorrow and later |
 | Window | Views (Today, Next 7 Days, Overdue, All, Done), projects from the session folder, a Waiting group, a 7-day strip to filter on a day, search, and a detail pane where title, date, notes and resume prompt edit in place |
 | Notifications | One per reminder at its time, with Resume Session, Snooze 15 min, Snooze 1 hour, Tomorrow 09:30, Reschedule (type "thursday 2pm" or "in 3h"), Open Ticket, Open Slack Thread or Open Link, Mark Done. Reminders missed while the Mac slept are notified on wake, as one summary beyond three |
-| Live status | For each linked GitLab MR, Jira issue or GitHub PR: pipeline, approvals, threads, conflicts, ticket status and assignee, checks. **Approve…** appears when GitLab says you may approve, and asks for confirmation first. Data from `glab`, `jira` and `gh`, refreshed when older than 2 minutes. The Jira API token goes in Settings > Live Status, kept in the keychain and passed to `jira` as `JIRA_API_TOKEN`; without it, `jira` falls back to its own config and your login shell |
+| Live status | For each linked GitLab MR, Jira issue or GitHub PR: pipeline, approvals, threads, conflicts, ticket status and assignee, checks. **Approve…** appears when GitLab says you may approve, and asks for confirmation first. Data from `glab`, `jira` and `gh`, refreshed when older than 2 minutes. GitLab links are only queried on hosts listed in glab's `config.yml` (plus `gitlab.com` and `GITLAB_HOST`), so a link to an unknown host never receives a token. The Jira API token goes in Settings > Live Status, kept in the keychain and passed to `jira` as `JIRA_API_TOKEN`; without it, `jira` falls back to its own config and your login shell |
 | Triggers | Every 5 minutes while the app runs, reminders waiting for an event check their links; when it happens the reminder becomes due now and notifies with the reason. **Stop Waiting** in the detail pane keeps the date and drops the event |
 | Calendar | Every open reminder from 7 days ago to 60 days ahead becomes a 15 min event marked Free, without alert, with a `tickler://open/<id>` link |
 

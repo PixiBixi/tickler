@@ -64,6 +64,8 @@ public struct MergeRequestStatus: Codable, Hashable, Sendable {
     public var webURL: String
     public var author: String?
     public var userCanMerge: Bool = false
+    /// GitLab's count of approvals still missing under the project's approval rules; nil when the API did not say.
+    public var approvalsLeft: Int?
 
     /// GitLab has the last word: it says who may approve. Tickler only adds "still open and not approved by you yet".
     public var canApproveNow: Bool {
@@ -121,7 +123,7 @@ public extension LiveStatus {
     /// Nothing left to do on it: merged or closed MR and PR, ticket in a done status.
     var isFinished: Bool {
         switch self {
-        case let .mergeRequest(mr): mr.state != "opened"
+        case let .mergeRequest(mr): mr.state != "opened" && mr.state != "locked"
         case let .ticket(ticket): ticket.category == .done
         case let .pullRequest(pr): pr.state != "OPEN"
         }
@@ -153,6 +155,7 @@ public enum LiveError: Error, Equatable, CustomStringConvertible {
     case timedOut(tool: String, seconds: TimeInterval)
     case unreadable(String)
     case unsupported
+    case unknownHost(String)
 
     public var description: String {
         switch self {
@@ -161,6 +164,7 @@ public enum LiveError: Error, Equatable, CustomStringConvertible {
         case let .timedOut(tool, seconds): "\(tool): timed out after \(String(format: "%g", seconds)) s"
         case let .unreadable(what): "unexpected answer for \(what)"
         case .unsupported: "only GitLab merge requests can be approved or merged"
+        case let .unknownHost(host): "glab has no login for \(host): Tickler only asks GitLab hosts glab is logged in to"
         }
     }
 

@@ -27,7 +27,7 @@ struct StatusCommand: TicklerSubcommand {
         let store = try context.openStore(options)
         _ = try context.loadReminder(id, from: store)
         let links = try store.links(for: id).filter { LiveTarget(link: $0) != nil }
-        let fetcher = LiveStatusFetcher(runner: context.liveRunner)
+        let fetcher = LiveStatusFetcher(runner: context.liveRunner, gitlabHosts: GitLabHosts.current(environment: context.environment))
         let results = waitFor {
             await withTaskGroup(of: (Int, LinkStatusJSON).self) { group in
                 for (index, link) in links.enumerated() {
