@@ -4,6 +4,24 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.8.0](https://github.com/PixiBixi/tickler/compare/v0.7.1..v0.8.0) - 2026-10-13
+#### Features
+- (**app**) show the next reminder in a pill under the notch - ([ba6609b](https://github.com/PixiBixi/tickler/commit/ba6609b2a2bd1b86195b76d58890fc03f968d3f7)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) plan which reminder shows near the notch - ([fd02811](https://github.com/PixiBixi/tickler/commit/fd028115f4cf75938496c237334cfbcd76c11931)) - [@PixiBixi](https://github.com/PixiBixi)
+#### Bug Fixes
+- (**app**) reconcile on the minute tick - ([16cf020](https://github.com/PixiBixi/tickler/commit/16cf0207066f613f140d18b0b56fdafc901efce4)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) open only http, https and tickler links from notes - ([2386a08](https://github.com/PixiBixi/tickler/commit/2386a0819c7421c7ac301e41e0e43f17aa479de2)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**cli**) neutralize control characters in terminal output - ([1ff687f](https://github.com/PixiBixi/tickler/commit/1ff687fc54e482a47c95bb756367821e48ff3ced)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**live**) only query GitLab hosts glab is logged in to - ([0341411](https://github.com/PixiBixi/tickler/commit/0341411996e1141ef7fbcd9a502df0c75fae43e4)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**skill**) keep a symlinked SKILL.md linked on install - ([db8575b](https://github.com/PixiBixi/tickler/commit/db8575be594e88a005d6217cf5ab82e6c9fed947)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**store**) mark a reminder notified only at the due date it was decided on - ([0a9cb4c](https://github.com/PixiBixi/tickler/commit/0a9cb4cd9d5a2ccf626ded2e9e6200b45fd5c0c9)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**store**) sanitize resume prompts before they reach Claude - ([2bf7fb9](https://github.com/PixiBixi/tickler/commit/2bf7fb9ff75a1ad6ec986c084b07db5361c782d9)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**triggers**) refuse --when links the watcher cannot query - ([058e85c](https://github.com/PixiBixi/tickler/commit/058e85c74ab3377eec9b924fa48a13d0c89d3c9b)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**triggers**) wait for GitLab approval rules on approved - ([b36bc75](https://github.com/PixiBixi/tickler/commit/b36bc7522423db4ef596f354d40c5472d69e2124)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**triggers**) treat a locked merge request as merging, not closed - ([c0259fe](https://github.com/PixiBixi/tickler/commit/c0259fee25271e8e5a9e5e225057d883c8dad50c)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.7.1](https://github.com/PixiBixi/tickler/compare/v0.7.0..v0.7.1) - 2026-10-11
 #### Bug Fixes
 - (**skill**) never mark a reminder done to cancel it - ([fc8b590](https://github.com/PixiBixi/tickler/commit/fc8b590ce06c7e57bc7e0c6e25b920f32ea8cb82)) - [@PixiBixi](https://github.com/PixiBixi)
