@@ -354,6 +354,16 @@
         }
       }
     },
+    "%lld min": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min"
+          }
+        }
+      }
+    },
     "%lld new reminders": {
       "localizations": {
         "en": {
@@ -430,6 +440,36 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Notch": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encoche"
+          }
+        }
+      }
+    },
+    "Show it before the reminder": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'afficher avant le rappel"
+          }
+        }
+      }
+    },
+    "Show the next reminder near the notch": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher le prochain rappel près de l'encoche"
           }
         }
       }
@@ -2923,6 +2963,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "mergée"
+          }
+        }
+      }
+    },
+    "min": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "min"
           }
         }
       }

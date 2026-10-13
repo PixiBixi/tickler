@@ -147,6 +147,7 @@ Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 | Notifications | One per reminder at its time, with Resume Session, Snooze 15 min, Snooze 1 hour, Tomorrow 09:30, Reschedule (type "thursday 2pm" or "in 3h"), Open Ticket, Open Slack Thread or Open Link, Mark Done. Reminders missed while the Mac slept are notified on wake, as one summary beyond three |
 | Live status | For each linked GitLab MR, Jira issue or GitHub PR: pipeline, approvals, threads, conflicts, ticket status and assignee, checks. **Approve…** appears when GitLab says you may approve, and asks for confirmation first. Data from `glab`, `jira` and `gh`, refreshed when older than 2 minutes. GitLab links are only queried on hosts listed in glab's `config.yml` (plus `gitlab.com` and `GITLAB_HOST`), so a link to an unknown host never receives a token. The Jira API token goes in Settings > Live Status, kept in the keychain and passed to `jira` as `JIRA_API_TOKEN`; without it, `jira` falls back to its own config and your login shell |
 | Triggers | Every 5 minutes while the app runs, reminders waiting for an event check their links; when it happens the reminder becomes due now and notifies with the reason. **Stop Waiting** in the detail pane keeps the date and drops the event |
+| Notch | When turned on in Settings, the next reminder due within 5 minutes (adjustable) shows in a pill under the notch, or under the menu bar on a screen without one, with a countdown and a `+N` badge for the others; "now" for 5 minutes after its time. Waiting reminders are left out until their event fires, and the pill stays off full screen apps. A click opens the reminder, the MR/PR logo opens the first MR or PR link, the terminal icon resumes the session; each hides the pill until the reminder is rescheduled |
 | Calendar | Every open reminder from 7 days ago to 60 days ahead becomes a 15 min event marked Free, without alert, with a `tickler://open/<id>` link |
 
 URLs: `tickler://open/<id>` opens a reminder, `tickler://view/today|week|overdue|all|done` opens the window on that view.
@@ -162,6 +163,7 @@ The date fields accept French and English: `demain 9h30`, `lundi 10h`, `dans 2h`
 | General | Language | System, or force English or French (after a relaunch) |
 | General | Open at login | Off |
 | General | New reminder from anywhere | On, `⌥⌘N`: click the shortcut to record another one (needs `⌘`, `⌥` or `⌃`) |
+| General | Show the next reminder near the notch | Off; 5 minutes before when on (1 to 120) |
 | Calendar | Copy reminders to | None. Pick a writable calendar, for instance a "Claude" calendar created in Google Calendar with its default notifications set to none |
 | Sessions | Terminal | Automatic: a running session is found in WezTerm, Ghostty or iTerm2; new tabs open in the first one running. Or pick one of those installed, which then always gets the new tabs. Ghostty 1.3 cannot tell which tab holds a session: Tickler brings Ghostty forward instead of the exact tab |
 | Sessions | WezTerm binary | Found automatically in `/opt/homebrew/bin`, `/usr/local/bin`, then the app bundle |

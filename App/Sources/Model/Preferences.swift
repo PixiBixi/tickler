@@ -51,6 +51,28 @@ final class Preferences {
         didSet { defaults.set(announceNewReminders, forKey: "announceNewReminders") }
     }
 
+    /// The pill under the notch showing the next reminder.
+    var islandEnabled: Bool {
+        didSet {
+            defaults.set(islandEnabled, forKey: "islandEnabled")
+            AppModel.shared.island.update()
+        }
+    }
+
+    /// How long before its due date a reminder shows under the notch.
+    var islandLeadMinutes: Int {
+        didSet {
+            // @Observable routes this write back through didSet: assign only when out of range, or it recurses forever.
+            let clamped = min(max(islandLeadMinutes, 1), 120)
+            guard clamped == islandLeadMinutes else {
+                islandLeadMinutes = clamped
+                return
+            }
+            defaults.set(islandLeadMinutes, forKey: "islandLeadMinutes")
+            AppModel.shared.island.update()
+        }
+    }
+
     var bannerHintDismissed: Bool {
         didSet { defaults.set(bannerHintDismissed, forKey: "bannerHintDismissed") }
     }
@@ -89,6 +111,8 @@ final class Preferences {
         bannerHintDismissed = defaults.bool(forKey: "bannerHintDismissed")
         announceNewReminders = defaults.object(forKey: "announceNewReminders") as? Bool ?? true
         globalShortcut = defaults.object(forKey: "globalShortcut") as? Bool ?? true
+        islandEnabled = defaults.object(forKey: "islandEnabled") as? Bool ?? false
+        islandLeadMinutes = defaults.object(forKey: "islandLeadMinutes") as? Int ?? 5
         if let keyCode = defaults.object(forKey: "shortcutKeyCode") as? Int,
            let modifiers = defaults.object(forKey: "shortcutModifiers") as? Int,
            let key = defaults.string(forKey: "shortcutKey")

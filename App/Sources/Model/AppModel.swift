@@ -38,6 +38,7 @@ final class AppModel {
     let calendarSync = CalendarService()
     let liveStatus = LiveStatusStore()
     let triggerWatcher = TriggerWatcher()
+    let island = IslandController()
     private(set) var store: ReminderStore?
     private(set) var loadError: String?
 
@@ -145,6 +146,7 @@ final class AppModel {
             requestReconcile(catchUp: true)
         }
         triggerWatcher.start()
+        island.start()
     }
 
     // MARK: Loading
@@ -157,6 +159,7 @@ final class AppModel {
             links = try store.links(for: (open + done).map(\.id))
             now = Date()
             refreshSessions()
+            island.update()
         } catch {
             showError(String(describing: error))
         }
