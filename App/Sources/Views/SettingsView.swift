@@ -86,6 +86,20 @@ private struct GeneralSettings: View {
                 }
                 Toggle("Notify when a reminder is added from outside the app", isOn: $preferences.announceNewReminders)
             }
+            Section("Notch") {
+                Toggle("Show the next reminder near the notch", isOn: $preferences.islandEnabled)
+                if preferences.islandEnabled {
+                    LabeledContent("Show it before the reminder") {
+                        HStack(spacing: 6) {
+                            TextField("", value: $preferences.islandLeadMinutes, format: .number)
+                                .textFieldStyle(.roundedBorder)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 52)
+                            Text("min").foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
             Section {
                 LabeledContent {
                     Button("Open Assistant…") {
