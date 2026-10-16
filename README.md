@@ -161,6 +161,7 @@ The date fields accept French and English: `demain 9h30`, `lundi 10h`, `dans 2h`
 | Tab | Setting | Default |
 |---|---|---|
 | General | Language | System, or force English or French (after a relaunch) |
+| General | Appearance | System, or force Light or Dark (applies at once) |
 | General | Open at login | Off |
 | General | New reminder from anywhere | On, `⌥⌘N`: click the shortcut to record another one (needs `⌘`, `⌥` or `⌃`) |
 | General | Show the next reminder near the notch | Off; 5 minutes before when on (1 to 120) |

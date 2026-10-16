@@ -4,6 +4,7 @@ import TicklerCore
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_: Notification) {
         MainActor.assumeIsolated {
+            AppModel.shared.preferences.applyAppearance()
             AppModel.shared.start()
             // Opened by the user: show the window. Started at login: stay in the menu bar.
             if !Self.launchedAtLogin() {

@@ -74,6 +74,11 @@ private struct GeneralSettings: View {
                         Button("Relaunch Now", action: relaunch).buttonStyle(SecondaryButtonStyle())
                     }
                 }
+                Picker("Appearance", selection: $preferences.appearance) {
+                    Text("System").tag(Preferences.Appearance.system)
+                    Text("Light").tag(Preferences.Appearance.light)
+                    Text("Dark").tag(Preferences.Appearance.dark)
+                }
                 Toggle("Open at login", isOn: Binding(
                     get: { launchAtLogin },
                     set: { preferences.launchAtLogin = $0; launchAtLogin = preferences.launchAtLogin }

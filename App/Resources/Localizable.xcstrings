@@ -687,6 +687,16 @@
         }
       }
     },
+    "Appearance": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apparence"
+          }
+        }
+      }
+    },
     "Approve": {
       "localizations": {
         "fr": {
@@ -943,6 +953,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Créé %@ par toi"
+          }
+        }
+      }
+    },
+    "Dark": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sombre"
           }
         }
       }
@@ -1373,6 +1393,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Laisse vide pour utiliser celui trouvé automatiquement."
+          }
+        }
+      }
+    },
+    "Light": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clair"
           }
         }
       }

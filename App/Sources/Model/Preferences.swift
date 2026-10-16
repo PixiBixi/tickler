@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import ServiceManagement
 import TicklerCore
 
@@ -10,6 +10,16 @@ final class Preferences {
         case system
         case en
         case fr
+
+        var id: String {
+            rawValue
+        }
+    }
+
+    enum Appearance: String, CaseIterable, Identifiable {
+        case system
+        case light
+        case dark
 
         var id: String {
             rawValue
@@ -89,6 +99,13 @@ final class Preferences {
         didSet { applyLanguage() }
     }
 
+    var appearance: Appearance {
+        didSet {
+            defaults.set(appearance.rawValue, forKey: "appearance")
+            applyAppearance()
+        }
+    }
+
     var launchAtLogin: Bool {
         get { SMAppService.mainApp.status == .enabled }
         set {
@@ -125,6 +142,16 @@ final class Preferences {
             .map { Set($0.compactMap(ExternalTool.init(rawValue:))) } ?? Set(ExternalTool.allCases)
         terminal = TerminalChoice(rawValue: defaults.string(forKey: "terminal") ?? "") ?? .auto
         language = Language(rawValue: defaults.string(forKey: "language") ?? "") ?? .system
+        appearance = Appearance(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
+    }
+
+    /// Applies to every window and the menu bar panel at once; nil follows the system setting live.
+    func applyAppearance() {
+        NSApp.appearance = switch appearance {
+        case .system: nil
+        case .light: NSAppearance(named: .aqua)
+        case .dark: NSAppearance(named: .darkAqua)
+        }
     }
 
     /// False when another app holds the new shortcut: the old one stays registered.
