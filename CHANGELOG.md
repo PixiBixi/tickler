@@ -4,6 +4,12 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.9.0](https://github.com/PixiBixi/tickler/compare/v0.8.0..v0.9.0) - 2026-10-16
+#### Features
+- (**app**) let the user force a light or dark appearance - ([98f1f63](https://github.com/PixiBixi/tickler/commit/98f1f634ff4df85773b078f8c9db95f42a9c9667)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.8.0](https://github.com/PixiBixi/tickler/compare/v0.7.1..v0.8.0) - 2026-10-13
 #### Features
 - (**app**) show the next reminder in a pill under the notch - ([ba6609b](https://github.com/PixiBixi/tickler/commit/ba6609b2a2bd1b86195b76d58890fc03f968d3f7)) - [@PixiBixi](https://github.com/PixiBixi)
