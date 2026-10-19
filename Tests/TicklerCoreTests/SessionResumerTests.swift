@@ -200,6 +200,79 @@ struct SessionResumerTests {
         let panes = try WezTermDriver.decodePanes(Data(json.utf8))
         #expect(panes == ["/dev/ttys003": "3"])
     }
+
+    @Test func wezTermAnchorPrefersAnActivePane() throws {
+        let json = #"[{"pane_id":3,"is_active":false},{"pane_id":7,"is_active":true}]"#
+        #expect(try WezTermDriver.anchorPane(Data(json.utf8)) == "7")
+        #expect(try WezTermDriver.anchorPane(Data(#"[{"pane_id":3}]"#.utf8)) == "3")
+        #expect(try WezTermDriver.anchorPane(Data("[]".utf8)) == nil)
+    }
+}
+
+/// A fake `wezterm` answering per socket: `cli list` prints `<socket name>.json` or fails, `cli spawn` prints 42.
+struct FakeWezTerm {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent("wezterm-\(UUID().uuidString)")
+    var binary: URL {
+        directory.appendingPathComponent("wezterm")
+    }
+
+    var log: URL {
+        directory.appendingPathComponent("calls.log")
+    }
+
+    init(instances: [Int32: String?]) throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let script = """
+        #!/bin/sh
+        sock=$(basename "${WEZTERM_UNIX_SOCKET:-none}")
+        echo "$sock $*" >> "\(log.path)"
+        case "$2" in
+          list) cat "\(directory.path)/$sock.json" 2>/dev/null || exit 1 ;;
+          spawn) echo 42 ;;
+        esac
+        """
+        try script.write(to: binary, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
+        for (pid, panes) in instances {
+            FileManager.default.createFile(atPath: directory.appendingPathComponent("gui-sock-\(pid)").path, contents: nil)
+            try panes?.write(to: directory.appendingPathComponent("gui-sock-\(pid).json"), atomically: true, encoding: .utf8)
+        }
+    }
+
+    func driver(alive: Set<Int32>) -> WezTermDriver {
+        WezTermDriver(binary: binary, socketDirectory: directory, isAlive: { alive.contains($0) })
+    }
+
+    func calls() throws -> [String] {
+        try String(contentsOf: log, encoding: .utf8).split(separator: "\n").map(String.init)
+    }
+}
+
+struct WezTermSocketTests {
+    @Test func skipsTheSocketOfACrashedInstance() throws {
+        let fake = try FakeWezTerm(instances: [100: nil, 200: #"[{"pane_id":5,"is_active":true}]"#])
+        let driver = fake.driver(alive: [200])
+        #expect(driver.isRunning())
+        #expect(try driver.spawn(cwd: "/x", command: ["claude"]) == "42")
+        #expect(try fake.calls().allSatisfy { $0.hasPrefix("gui-sock-200 ") })
+        #expect(try fake.calls().last == "gui-sock-200 cli spawn --pane-id 5 --cwd /x -- claude")
+    }
+
+    @Test func findsASessionInASecondInstanceAndActivatesItThere() throws {
+        let fake = try FakeWezTerm(instances: [
+            100: #"[{"pane_id":5,"tty_name":"/dev/ttys001"}]"#,
+            200: #"[{"pane_id":5,"tty_name":"/dev/ttys000"}]"#,
+        ])
+        let driver = fake.driver(alive: [100, 200])
+        #expect(try driver.paneId(forTTY: "/dev/ttys000") == "5")
+        try driver.activate(paneId: "5")
+        #expect(try fake.calls().last == "gui-sock-200 cli activate-pane --pane-id 5")
+    }
+
+    @Test func notRunningWhenEverySocketIsDead() throws {
+        let fake = try FakeWezTerm(instances: [100: #"[{"pane_id":5}]"#])
+        #expect(!fake.driver(alive: []).isRunning())
+    }
 }
 
 struct ProcessArgumentsTests {
