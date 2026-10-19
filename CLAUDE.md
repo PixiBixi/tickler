@@ -33,6 +33,7 @@ Three products share one library, `Sources/TicklerCore`:
 
 ## Gates and generated files
 
+- Zero warnings in every build, local and CI, dependencies included: read the CI log after a workflow or `Makefile` build change. Never `-suppress-warnings` (it hides ours too); a universal CLI is one `--triple` build per arch plus `lipo`, since `--arch a --arch b` goes through Swift Build, which prints dependency warnings.
 - `make test` never compiles `App/`: run `make app` whenever a core type the app uses changes (a new `DueBucket` case breaks `Format.title` and `Theme.dot`).
 - SwiftLint runs strict: line length 140, cyclomatic complexity 15. A switch over several status kinds goes over 15 quickly, so write one private helper per case from the start. SwiftFormat removes redundant `return` and prefers switch expressions.
 - `Sources/TicklerCore/Skill/SkillContent.swift` is generated: edit `skills/tickler/SKILL.md`, then run `scripts/embed-skill.sh`. The skill ships inside the binary and `tickler skill install` copies it to `~/.claude/skills/tickler`.
