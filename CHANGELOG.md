@@ -4,6 +4,14 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.9.1](https://github.com/PixiBixi/tickler/compare/v0.9.0..v0.9.1) - 2026-10-19
+#### Bug Fixes
+- (**app**) show a reopened session as running once claude starts - ([7ee0916](https://github.com/PixiBixi/tickler/commit/7ee091639bedfab0bfeb086b50b70bcdc4af876f)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) retry a stalled status read after 15 s - ([91ef3b2](https://github.com/PixiBixi/tickler/commit/91ef3b28fcce0a2df784d2809a7c225e6c252334)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) reach WezTerm through its live GUI sockets - ([13585d2](https://github.com/PixiBixi/tickler/commit/13585d22b40d05fd9cd03b52249565f9673f7494)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.9.0](https://github.com/PixiBixi/tickler/compare/v0.8.0..v0.9.0) - 2026-10-16
 #### Features
 - (**app**) let the user force a light or dark appearance - ([98f1f63](https://github.com/PixiBixi/tickler/commit/98f1f634ff4df85773b078f8c9db95f42a9c9667)) - [@PixiBixi](https://github.com/PixiBixi)
