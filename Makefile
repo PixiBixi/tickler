@@ -86,10 +86,13 @@ release:
 	@test -n "$(VERSION)" || { echo "usage: make release VERSION=x.y.z SIGN_IDENTITY=<name>"; exit 1; }
 	@test -n "$(SIGN_IDENTITY)" || { echo "SIGN_IDENTITY is required: an ad hoc release would reset permissions on upgrade"; exit 1; }
 	$(MAKE) app CONFIGURATION=Release XCODEBUILD_EXTRA='ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO MARKETING_VERSION=$(VERSION)'
-	swift build -c release --product tickler --arch arm64 --arch x86_64
+	# One native build per arch, then lipo: `--arch a --arch b` goes through Swift Build, which shows dependency warnings.
+	swift build -c release --product tickler --triple arm64-apple-macosx
+	swift build -c release --product tickler --triple x86_64-apple-macosx
 	rm -rf "$(DIST)/tickler-$(VERSION)" && mkdir -p "$(DIST)/tickler-$(VERSION)"
 	cp -R "$(DERIVED)/Build/Products/Release/Tickler.app" "$(DIST)/tickler-$(VERSION)/"
-	cp .build/apple/Products/Release/tickler "$(DIST)/tickler-$(VERSION)/tickler"
+	lipo -create .build/arm64-apple-macosx/release/tickler .build/x86_64-apple-macosx/release/tickler \
+		-output "$(DIST)/tickler-$(VERSION)/tickler"
 	codesign --force --options runtime --timestamp=none --identifier io.github.pixibixi.tickler.cli \
 		--sign "$(SIGN_IDENTITY)" "$(DIST)/tickler-$(VERSION)/tickler"
 	codesign --verify --strict "$(DIST)/tickler-$(VERSION)/Tickler.app" "$(DIST)/tickler-$(VERSION)/tickler"
