@@ -4,6 +4,14 @@ import os
 public protocol CommandRunning: Sendable {
     /// Runs `tool` with `arguments` and returns its standard output.
     func run(_ tool: String, _ arguments: [String]) async throws -> Data
+    /// Same, stopped after `timeout` instead of the runner's own limit.
+    func run(_ tool: String, _ arguments: [String], timeout: TimeInterval) async throws -> Data
+}
+
+public extension CommandRunning {
+    func run(_ tool: String, _ arguments: [String], timeout _: TimeInterval) async throws -> Data {
+        try await run(tool, arguments)
+    }
 }
 
 /// Runs tools through the user's login shell: an app started from Finder has neither the shell PATH
@@ -22,8 +30,11 @@ public struct LoginShellRunner: CommandRunning {
     }
 
     public func run(_ tool: String, _ arguments: [String]) async throws -> Data {
+        try await run(tool, arguments, timeout: timeout)
+    }
+
+    public func run(_ tool: String, _ arguments: [String], timeout: TimeInterval) async throws -> Data {
         let command = Self.command(shell: shell, tool: tool, arguments: arguments)
-        let timeout = timeout
         let result = try await ProcessOutcome.runDetached(tool: tool, timeout: timeout) {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: command[0])
@@ -46,10 +57,17 @@ public struct LiveStatusFetcher: Sendable {
     let runner: CommandRunning
     /// Hosts glab may be pointed at: status reads, approvals and merges all refuse the others.
     let gitlabHosts: Set<String>
+    /// Status reads answer in about 1.5 s: past this, a call has stalled (network, VPN) and is tried once more.
+    let readTimeout: TimeInterval
 
-    public init(runner: CommandRunning = LoginShellRunner(), gitlabHosts: Set<String> = GitLabHosts.current()) {
+    public init(
+        runner: CommandRunning = LoginShellRunner(),
+        gitlabHosts: Set<String> = GitLabHosts.current(),
+        readTimeout: TimeInterval = 15
+    ) {
         self.runner = runner
         self.gitlabHosts = gitlabHosts
+        self.readTimeout = readTimeout
     }
 
     public func fetch(_ target: LiveTarget) async throws -> LiveStatus {
@@ -57,17 +75,27 @@ public struct LiveStatusFetcher: Sendable {
         case let .gitlabMR(host, project, iid):
             try requireKnownHost(host)
             let path = Self.mergeRequestPath(project: project, iid: iid)
-            async let request = runner.run("glab", ["api", "--hostname", host, path])
-            async let approvals = runner.run("glab", ["api", "--hostname", host, path + "/approvals"])
+            async let request = read("glab", ["api", "--hostname", host, path])
+            async let approvals = read("glab", ["api", "--hostname", host, path + "/approvals"])
             return try await .mergeRequest(LiveStatusParser.mergeRequest(mr: request, approvals: approvals))
         case let .jira(key):
-            return try await .ticket(LiveStatusParser.ticket(runner.run("jira", ["issue", "view", key, "--raw"])))
+            return try await .ticket(LiveStatusParser.ticket(read("jira", ["issue", "view", key, "--raw"])))
         case let .githubPR(owner, repo, number):
-            let data = try await runner.run("gh", [
+            let data = try await read("gh", [
                 "pr", "view", "https://github.com/\(owner)/\(repo)/pull/\(number)",
                 "--json", "number,title,state,isDraft,reviewDecision,statusCheckRollup,url",
             ])
             return try .pullRequest(LiveStatusParser.pullRequest(data))
+        }
+    }
+
+    /// Reads only: an approval or a merge cut short may still have happened, so writes keep the runner's limit
+    /// and are never retried.
+    private func read(_ tool: String, _ arguments: [String]) async throws -> Data {
+        do {
+            return try await runner.run(tool, arguments, timeout: readTimeout)
+        } catch LiveError.timedOut {
+            return try await runner.run(tool, arguments, timeout: readTimeout)
         }
     }
 
@@ -111,6 +139,10 @@ public struct DirectRunner: CommandRunning {
     }
 
     public func run(_ tool: String, _ arguments: [String]) async throws -> Data {
+        try await run(tool, arguments, timeout: timeout)
+    }
+
+    public func run(_ tool: String, _ arguments: [String], timeout: TimeInterval) async throws -> Data {
         let result = try await ProcessOutcome.runDetached(tool: tool, timeout: timeout) {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
@@ -165,18 +197,21 @@ public struct AppToolRunner: CommandRunning {
     }
 
     public func run(_ tool: String, _ arguments: [String]) async throws -> Data {
+        try await run(tool, arguments, timeout: timeout)
+    }
+
+    public func run(_ tool: String, _ arguments: [String], timeout: TimeInterval) async throws -> Data {
         let extra = environment(tool)
-        guard Self.needsShell(tool), extra["JIRA_API_TOKEN"] == nil else { return try await direct(tool, arguments, extra) }
+        guard Self.needsShell(tool), extra["JIRA_API_TOKEN"] == nil else { return try await direct(tool, arguments, extra, timeout) }
         do {
-            return try await direct(tool, arguments, extra)
+            return try await direct(tool, arguments, extra, timeout)
         } catch LiveError.failed {
-            return try await shell.run(tool, arguments)
+            return try await shell.run(tool, arguments, timeout: timeout)
         }
     }
 
-    private func direct(_ tool: String, _ arguments: [String], _ extra: [String: String]) async throws -> Data {
+    private func direct(_ tool: String, _ arguments: [String], _ extra: [String: String], _ timeout: TimeInterval) async throws -> Data {
         guard let binary = Self.locate(tool, in: searchPath) else { throw LiveError.toolMissing(tool) }
-        let timeout = timeout
         let searchPath = searchPath
         let result = try await ProcessOutcome.runDetached(tool: tool, timeout: timeout) {
             let process = Process()

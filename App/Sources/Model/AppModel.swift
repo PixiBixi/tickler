@@ -234,13 +234,28 @@ final class AppModel {
 
     /// Off the main actor: it walks the process table.
     private func refreshSessions() {
+        Task { await refreshSessionsNow() }
+    }
+
+    private func refreshSessionsNow() async {
         let ids = Set(open.compactMap(\.sessionId))
+        let running = await Task.detached {
+            SessionResumer(driver: WezTermDriver(binary: URL(fileURLWithPath: "/usr/bin/false"))).runningSessions(ids)
+        }.value
+        if running != runningSessions {
+            runningSessions = running
+        }
+    }
+
+    /// A reopened session starts behind a login shell: `claude` reaches the process table seconds after the spawn.
+    private func refreshSessions(until sessionId: String) {
         Task {
-            let running = await Task.detached {
-                SessionResumer(driver: WezTermDriver(binary: URL(fileURLWithPath: "/usr/bin/false"))).runningSessions(ids)
-            }.value
-            if running != runningSessions {
-                runningSessions = running
+            for _ in 0 ..< 15 {
+                await refreshSessionsNow()
+                if runningSessions.contains(sessionId) {
+                    return
+                }
+                try? await Task.sleep(for: .seconds(1))
             }
         }
     }
@@ -437,7 +452,7 @@ final class AppModel {
             case let .failure(error):
                 showError(String(describing: error))
             }
-            refreshSessions()
+            refreshSessions(until: sessionId)
         }
     }
 
