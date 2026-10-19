@@ -115,6 +115,65 @@ final class FakeRunner: CommandRunning, @unchecked Sendable {
     }
 }
 
+/// Times out the first `stalls` calls, then answers `{}`; records the timeout each call was given (nil: the runner's own).
+final class StallingRunner: CommandRunning, @unchecked Sendable {
+    private let lock = NSLock()
+    private var remaining: Int
+    private var recorded: [TimeInterval?] = []
+    var timeouts: [TimeInterval?] {
+        lock.withLock { recorded }
+    }
+
+    init(stalls: Int) {
+        remaining = stalls
+    }
+
+    func run(_ tool: String, _ arguments: [String]) async throws -> Data {
+        try answer(tool, timeout: nil)
+    }
+
+    func run(_ tool: String, _: [String], timeout: TimeInterval) async throws -> Data {
+        try answer(tool, timeout: timeout)
+    }
+
+    private func answer(_ tool: String, timeout: TimeInterval?) throws -> Data {
+        let stalled = lock.withLock {
+            recorded.append(timeout)
+            remaining -= 1
+            return remaining >= 0
+        }
+        if stalled {
+            throw LiveError.timedOut(tool: tool, seconds: timeout ?? 60)
+        }
+        return Data(#"{"key":"PE-1","fields":{"summary":"s","status":{"name":"Done","statusCategory":{"key":"done"}}}}"#.utf8)
+    }
+}
+
+struct LiveStatusFetcherReadTimeoutTests {
+    @Test func aStalledReadIsTriedOnceMoreWithTheShortTimeout() async throws {
+        let runner = StallingRunner(stalls: 1)
+        _ = try await LiveStatusFetcher(runner: runner, readTimeout: 15).fetch(.jira(key: "PE-1"))
+        #expect(runner.timeouts == [15, 15])
+    }
+
+    @Test func aReadStalledTwiceFails() async {
+        let runner = StallingRunner(stalls: 2)
+        await #expect(throws: LiveError.timedOut(tool: "jira", seconds: 15)) {
+            try await LiveStatusFetcher(runner: runner, readTimeout: 15).fetch(.jira(key: "PE-1"))
+        }
+        #expect(runner.timeouts.count == 2)
+    }
+
+    @Test func aWriteKeepsTheRunnerLimitAndIsNeverRetried() async {
+        let runner = StallingRunner(stalls: 1)
+        let fetcher = LiveStatusFetcher(runner: runner, gitlabHosts: ["gitlab.com"])
+        await #expect(throws: LiveError.self) {
+            try await fetcher.approve(.gitlabMR(host: "gitlab.com", project: "a/b", iid: 1))
+        }
+        #expect(runner.timeouts == [nil])
+    }
+}
+
 struct LiveStatusFetcherTests {
     @Test func gitLabCallsUseTheHostAndTheEncodedProject() async throws {
         let runner = FakeRunner()
