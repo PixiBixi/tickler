@@ -22,7 +22,7 @@ env:
 jobs:
   swift:
     name: SwiftLint and SwiftFormat
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - name: Harden the runner

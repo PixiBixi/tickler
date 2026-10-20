@@ -22,7 +22,7 @@ env:
 jobs:
   actionlint:
     name: Run actionlint
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -43,7 +43,7 @@ jobs:
 
   zizmor:
     name: Run zizmor
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       security-events: write
