@@ -207,6 +207,19 @@ struct SessionResumerTests {
         #expect(try WezTermDriver.anchorPane(Data(#"[{"pane_id":3}]"#.utf8)) == "3")
         #expect(try WezTermDriver.anchorPane(Data("[]".utf8)) == nil)
     }
+
+    @Test func wezTermAnchorPrefersTheFocusedPane() throws {
+        let json = #"[{"pane_id":3,"is_active":true},{"pane_id":7,"is_active":true}]"#
+        #expect(try WezTermDriver.anchorPane(Data(json.utf8), focused: 7) == "7")
+        #expect(try WezTermDriver.anchorPane(Data(json.utf8), focused: 42) == "3")
+    }
+
+    @Test func wezTermFocusedPaneDecoding() {
+        let json = #"[{"workspace":"default","focused_pane_id":null},{"workspace":"default","focused_pane_id":91}]"#
+        #expect(WezTermDriver.focusedPane(Data(json.utf8)) == 91)
+        #expect(WezTermDriver.focusedPane(Data("[]".utf8)) == nil)
+        #expect(WezTermDriver.focusedPane(Data("not json".utf8)) == nil)
+    }
 }
 
 /// A fake `wezterm` answering per socket: `cli list` prints `<socket name>.json` or fails, `cli spawn` prints 42.
