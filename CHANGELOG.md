@@ -4,6 +4,12 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.9.2](https://github.com/PixiBixi/tickler/compare/v0.9.1..v0.9.2) - 2026-10-21
+#### Bug Fixes
+- (**resume**) spawn the WezTerm tab next to the focused pane - ([d28f3a0](https://github.com/PixiBixi/tickler/commit/d28f3a09a7a7d282fad2e6e2909fa04033b0d969)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.9.1](https://github.com/PixiBixi/tickler/compare/v0.9.0..v0.9.1) - 2026-10-19
 #### Bug Fixes
 - (**app**) show a reopened session as running once claude starts - ([7ee0916](https://github.com/PixiBixi/tickler/commit/7ee091639bedfab0bfeb086b50b70bcdc4af876f)) - [@PixiBixi](https://github.com/PixiBixi)
