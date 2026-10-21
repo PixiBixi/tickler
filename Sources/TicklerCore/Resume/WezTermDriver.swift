@@ -114,8 +114,10 @@ public struct WezTermDriver: TerminalDriver {
     public func spawn(cwd: String, command: [String]) throws -> String {
         let sockets = instances()
         for socket in sockets {
+            let clients = try? run(["cli", "list-clients", "--format", "json"], socket: socket)
+            let focused = clients.flatMap { Self.focusedPane(Data($0.utf8)) }
             guard let output = try? run(["cli", "list", "--format", "json"], socket: socket),
-                  let anchor = try Self.anchorPane(Data(output.utf8))
+                  let anchor = try Self.anchorPane(Data(output.utf8), focused: focused)
             else { continue }
             return try spawn(["--pane-id", anchor], cwd: cwd, command: command, socket: socket)
         }
@@ -163,10 +165,25 @@ public struct WezTermDriver: TerminalDriver {
         }
     }
 
-    /// The pane a new tab attaches to: an active one first, nil when WezTerm has no pane.
-    static func anchorPane(_ data: Data) throws -> String? {
+    private struct Client: Decodable {
+        let focusedPaneId: Int?
+        enum CodingKeys: String, CodingKey {
+            case focusedPaneId = "focused_pane_id"
+        }
+    }
+
+    /// The pane focused in the GUI, from `wezterm cli list-clients --format json`; nil when unknown.
+    static func focusedPane(_ data: Data) -> Int? {
+        let clients = (try? JSONDecoder().decode([Client].self, from: data)) ?? []
+        return clients.lazy.compactMap(\.focusedPaneId).first
+    }
+
+    /// The pane a new tab attaches to: the focused one, else an active one, nil when WezTerm has no pane.
+    /// `is_active` is per tab, so it alone lands every new tab in the first window, not the one in use.
+    static func anchorPane(_ data: Data, focused: Int? = nil) throws -> String? {
         let panes = try JSONDecoder().decode([Pane].self, from: data)
-        return (panes.first { $0.isActive == true } ?? panes.first).map { String($0.paneId) }
+        let anchor = panes.first { $0.paneId == focused } ?? panes.first { $0.isActive == true } ?? panes.first
+        return anchor.map { String($0.paneId) }
     }
 
     /// tty path to pane id, from `wezterm cli list --format json`.
