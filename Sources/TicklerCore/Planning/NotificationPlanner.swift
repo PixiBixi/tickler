@@ -133,7 +133,7 @@ public enum NotificationPlanner {
         let keep = Set(wanted.map(\.id)).union(pendingIds.filter { current.contains($0) && !isFuture($0, now: now) })
         return (
             add: wanted.filter { !pendingIds.contains($0.id) },
-            remove: pendingIds.subtracting(keep).sorted()
+            remove: pendingIds.subtracting(keep).filter { !isRunRequestId($0) }.sorted()
         )
     }
 

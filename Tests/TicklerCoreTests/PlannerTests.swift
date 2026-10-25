@@ -308,6 +308,13 @@ struct AutoRunNotificationTests {
         #expect(!NotificationPlanner.isRunRequestId(NotificationPlanner.requestId(for: item)))
     }
 
+    @Test func runBannerIsNeverRemoved() {
+        let item = auto("auto01", at: "2026-10-01 09:30")
+        let banner = NotificationPlanner.runRequestId(reminderId: "auto01", runId: "r1")
+        let plan = NotificationPlanner.plan(reminders: [item], links: [:], pendingIds: [banner, "gone@x@1"], now: Fixture.now)
+        #expect(plan.remove == ["gone@x@1"])
+    }
+
     @Test func runNotificationStaleWhenDone() {
         let item = auto("auto01", at: "2026-10-01 09:30", status: .done)
         let id = NotificationPlanner.runRequestId(reminderId: "auto01", runId: "r1")
