@@ -3,10 +3,14 @@ import GRDB
 
 public enum StoreError: Error, Equatable, CustomStringConvertible {
     case notFound(String)
+    case autoRunNeedsPrompt
+    case autoRunNeedsFolder
 
     public var description: String {
         switch self {
         case let .notFound(id): "no reminder with id \(id)"
+        case .autoRunNeedsPrompt: "auto-run needs a resume prompt"
+        case .autoRunNeedsFolder: "auto-run needs a session folder"
         }
     }
 }
@@ -94,7 +98,7 @@ public final class ReminderStore: Sendable {
                 rescheduleCount: 0, status: .open, sessionId: draft.sessionId, cwd: draft.cwd,
                 resumePrompt: Self.normalized(draft.resumePrompt), source: draft.source,
                 externalRef: draft.externalRef, notifiedAt: nil, doneAt: nil, createdAt: stamp, updatedAt: stamp,
-                trigger: draft.trigger?.rawValue
+                trigger: draft.trigger?.rawValue, autoRun: draft.autoRun?.rawValue
             )
             try reminder.insert(db)
             for link in LinkExtractor.links(reminderId: id, notes: draft.notes, explicit: draft.links) {
@@ -191,6 +195,17 @@ public final class ReminderStore: Sendable {
         }
     }
 
+    /// Sets or (nil) removes the background run. A mode needs a resume prompt and a session folder to run in.
+    @discardableResult
+    public func setAutoRun(_ id: String, _ mode: AutoRunMode?) throws -> Reminder {
+        if mode != nil {
+            let current = try require(id)
+            guard current.resumePrompt != nil else { throw StoreError.autoRunNeedsPrompt }
+            guard let cwd = current.cwd, !cwd.isEmpty else { throw StoreError.autoRunNeedsFolder }
+        }
+        return try mutate(id) { reminder, _ in reminder.autoRun = mode?.rawValue }
+    }
+
     /// Makes a waiting reminder due at `date`. Only an open reminder still waiting for `trigger` changes, so a second firing
     /// or a trigger replaced meanwhile is a no-op.
     /// Not a reschedule: `rescheduleCount` and `originalDueAt` stay.
@@ -230,6 +245,125 @@ public final class ReminderStore: Sendable {
                     .updateAll(db, Column("notifiedAt").set(to: date))
             }
         }
+    }
+
+    // MARK: Runs
+
+    public func runs(for id: String) throws -> [AutoRun] {
+        try database.pool.read { db in
+            try AutoRun.filter(Column("reminderId") == id).order(Column("startedAt").desc, Column("rowid").desc).fetchAll(db)
+        }
+    }
+
+    public func lastRuns(for ids: [String]) throws -> [String: AutoRun] {
+        let all = try database.pool.read { db in
+            try AutoRun.filter(ids.contains(Column("reminderId"))).order(Column("startedAt").desc, Column("rowid").desc).fetchAll(db)
+        }
+        return Dictionary(all.map { ($0.reminderId, $0) }, uniquingKeysWith: { newest, _ in newest })
+    }
+
+    /// Opens a run for the reminder as it is now; nil when one is already running or the reminder is gone.
+    public func startRun(_ reminderId: String, at date: Date) throws -> AutoRun? {
+        let run = try database.pool.write { db -> AutoRun? in
+            guard let reminder = try Reminder.fetchOne(db, key: reminderId) else { throw StoreError.notFound(reminderId) }
+            let running = try AutoRun
+                .filter(Column("reminderId") == reminderId && Column("state") == AutoRun.State.running.rawValue)
+                .fetchCount(db)
+            guard running == 0 else { return nil }
+            let run = try AutoRun(
+                id: Self.newRunId(db), reminderId: reminderId, forDueAt: reminder.dueAt, sessionId: reminder.sessionId,
+                mode: reminder.autoRunMode ?? .read, startedAt: date, state: .running
+            )
+            try run.insert(db)
+            return run
+        }
+        if run != nil {
+            onChange()
+        }
+        return run
+    }
+
+    /// Records a due run that did not start (Mac asleep, session busy...), so it is not retried.
+    @discardableResult
+    public func recordSkipped(_ reminderId: String, reason: String, at date: Date) throws -> AutoRun {
+        let run = try database.pool.write { db in
+            guard let reminder = try Reminder.fetchOne(db, key: reminderId) else { throw StoreError.notFound(reminderId) }
+            let run = try AutoRun(
+                id: Self.newRunId(db), reminderId: reminderId, forDueAt: reminder.dueAt, sessionId: reminder.sessionId,
+                mode: reminder.autoRunMode ?? .read, startedAt: date, endedAt: date, state: .skipped, error: reason
+            )
+            try run.insert(db)
+            return run
+        }
+        onChange()
+        return run
+    }
+
+    /// Stores the outcome of a running run; false when it already ended. A session id the reminder lacked is kept.
+    @discardableResult
+    public func finishRun(_ runId: String, _ result: RunResult, at date: Date) throws -> Bool {
+        let state: AutoRun.State = switch result.state {
+        case .succeeded: .succeeded
+        case .failed: .failed
+        case .cancelled: .cancelled
+        }
+        let figures = try String(decoding: JSONEncoder().encode(result.figures), as: UTF8.self)
+        let changed = try database.pool.write { db -> Bool in
+            let updated = try AutoRun
+                .filter(Column("id") == runId && Column("state") == AutoRun.State.running.rawValue)
+                .updateAll(
+                    db,
+                    Column("endedAt").set(to: date),
+                    Column("state").set(to: state.rawValue),
+                    Column("verdict").set(to: result.verdict?.rawValue),
+                    Column("headline").set(to: result.headline),
+                    Column("figures").set(to: figures),
+                    Column("nextStep").set(to: result.nextStep),
+                    Column("output").set(to: result.output),
+                    Column("error").set(to: result.error),
+                    Column("denials").set(to: result.denials),
+                    Column("costUsd").set(to: result.costUsd),
+                    Column("durationMs").set(to: result.durationMs)
+                )
+            guard updated > 0 else { return false }
+            if let sessionId = result.sessionId, let run = try AutoRun.fetchOne(db, key: runId) {
+                _ = try Reminder
+                    .filter(Column("id") == run.reminderId && Column("sessionId") == nil)
+                    .updateAll(db, Column("sessionId").set(to: sessionId))
+            }
+            return true
+        }
+        if changed {
+            onChange()
+        }
+        return changed
+    }
+
+    /// Marks every run left `running` (the app quit or crashed) as failed; returns how many.
+    @discardableResult
+    public func interruptRunning(at date: Date) throws -> Int {
+        let count = try database.pool.write { db in
+            try AutoRun
+                .filter(Column("state") == AutoRun.State.running.rawValue)
+                .updateAll(
+                    db,
+                    Column("state").set(to: AutoRun.State.failed.rawValue),
+                    Column("error").set(to: "Interrupted"),
+                    Column("endedAt").set(to: date)
+                )
+        }
+        if count > 0 {
+            onChange()
+        }
+        return count
+    }
+
+    private static func newRunId(_ db: Database) throws -> String {
+        var id = ReminderID.generate()
+        while try AutoRun.exists(db, key: id) {
+            id = ReminderID.generate()
+        }
+        return id
     }
 
     @discardableResult
