@@ -1,0 +1,1 @@
+{"type":"result","subtype":"error_max_turns","is_error":true,"duration_ms":91000,"num_turns":30,"result":"Reached the maximum number of turns. Do not leak this text","session_id":"de9cdbf9-c71d-4170-addf-7f8a96df4d62","total_cost_usd":0.9,"permission_denials":[{"tool_name":"Bash","tool_use_id":"toolu_01","tool_input":{"command":"kubectl delete pod x"}}]}

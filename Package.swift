@@ -25,7 +25,7 @@ let package = Package(
             ]
         ),
         .executableTarget(name: "tickler", dependencies: ["TicklerCLI"]),
-        .testTarget(name: "TicklerCoreTests", dependencies: ["TicklerCore"]),
+        .testTarget(name: "TicklerCoreTests", dependencies: ["TicklerCore"], resources: [.copy("Fixtures")]),
         .testTarget(name: "TicklerCLITests", dependencies: ["TicklerCLI", "TicklerCore"]),
     ]
 )
