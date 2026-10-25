@@ -9,7 +9,7 @@ Every reminder Claude creates goes through the `tickler` CLI ([PixiBixi/tickler]
 
 | Command | Does |
 |---|---|
-| `tickler add "<title>" --at "YYYY-MM-DD HH:MM" [--when <event>] [--notes -] [--link <url>]... [--prompt "<text>"]` | Creates the reminder, prints `id<TAB>title<TAB>date` |
+| `tickler add "<title>" --at "YYYY-MM-DD HH:MM" [--when <event>] [--notes -] [--link <url>]... [--prompt "<text>"] [--auto-run read]` | Creates the reminder, prints `id<TAB>title<TAB>date` |
 | `tickler list --due today --json` | Open reminders due up to the end of today, overdue included |
 | `tickler list --due all --json` | Every open reminder |
 | `tickler list --waiting --json` | Reminders waiting for an event, whatever their date |
@@ -17,13 +17,14 @@ Every reminder Claude creates goes through the `tickler` CLI ([PixiBixi/tickler]
 | `tickler done <id>` | Marks it done, only once the task is actually complete; to cancel, use `rm` |
 | `tickler edit <id> --at "YYYY-MM-DD HH:MM"` | Reschedules it (also `--title`, `--notes`, `--prompt`) |
 | `tickler edit <id> --when <event>` | Sets or replaces the trigger; `--when ""` removes it |
+| `tickler edit <id> --auto-run read\|write\|off` | Sets or removes the background run |
 | `tickler snooze <id> --for 1h` | Pushes it back from now (`15m`, `1h`, `2d`) |
 | `tickler rm <id>` | Deletes an obsolete reminder |
 | `tickler resume <id>` | Reopens the reminder's Claude session in WezTerm, Ghostty or iTerm2 |
 | `tickler status <id> --json` | Live state of the linked MRs, Jira issues and PRs: pipeline, approvals, ticket status |
 | `tickler hook install` | Installs the SessionStart hook that surfaces the repository's reminders (see At session start) |
 
-`list --json` returns an array, `show --json` one object, keys sorted, absent values `null`: `id`, `title`, `notes`, `due` (`YYYY-MM-DD HH:MM`, local), `dueISO` (ISO 8601 with offset), `originalDue`, `rescheduleCount`, `status` (`open`, `done`, `deleted`), `source` (`claude`, `human`), `sessionId`, `cwd`, `project`, `resumePrompt`, `overdue` (bool), `links` (`[{kind, label, url}]`), `trigger` (awaited event or null), `waiting`, `firedAt`, `firedReason` (why the event fired). There is no `date` key: filter on `due`, and guard against null fields (`select(.due != null and (.due | startswith("2026-10-12")))`), since `startswith` fails on null with "requires string inputs".
+`list --json` returns an array, `show --json` one object, keys sorted, absent values `null`: `id`, `title`, `notes`, `due` (`YYYY-MM-DD HH:MM`, local), `dueISO` (ISO 8601 with offset), `originalDue`, `rescheduleCount`, `status` (`open`, `done`, `deleted`), `source` (`claude`, `human`), `sessionId`, `cwd`, `project`, `resumePrompt`, `overdue` (bool), `links` (`[{kind, label, url}]`), `trigger` (awaited event or null), `waiting`, `firedAt`, `firedReason` (why the event fired), `autoRun` (`read`, `write` or null), `lastRun` (null or `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`). There is no `date` key: filter on `due`, and guard against null fields (`select(.due != null and (.due | startswith("2026-10-12")))`), since `startswith` fails on null with "requires string inputs".
 
 `add` records the creating session and folder from `CLAUDE_CODE_SESSION_ID` and the cwd. Pass `--session <uuid> --cwd <dir>` to point at another session. Links in the notes are detected (MR, Jira, Slack, Grafana, PR) and become buttons in the app and in the notification, so put the full URLs in the notes.
 
@@ -38,6 +39,14 @@ A session may begin with a "Tickler reminders for REPO" block from the hook. Men
 - Spacing: run `tickler list --due all --json` first and keep at least 30 min between any two reminders, including several created in the same request: never two at the same time. If the slot is taken, shift the new one to the next free slot and say so in the confirmation.
 - Confirm in one line: title and date.
 - Moving: `tickler edit <id> --at ...`, never add plus delete (the app counts reschedules). Cancelling: `tickler rm <id>`. Never `done` for either: a completed reminder reads as work actually done, which is misleading. Mark `done` only when the user says the task is done.
+
+## Running unattended
+
+`--auto-run` makes Tickler.app run the `--prompt` in the reminder's session when it is due, with no one at the keyboard.
+
+- Offer `--auto-run read` only when the prompt is a check that only reads (rerun a measurement, read a dashboard, compare to a baseline), never by default.
+- Use `write` only when the user asked for Claude to change things unattended.
+- Write the `--prompt` so it stands alone: the run has no one to answer a question.
 
 ## Waiting for an event
 
