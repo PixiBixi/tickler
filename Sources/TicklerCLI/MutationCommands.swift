@@ -59,11 +59,13 @@ struct EditCommand: TicklerSubcommand {
     @Option(help: "New notes, or - to read them from stdin.") var notes: String?
     @Option(help: "First message sent to Claude on resume; an empty string removes it.") var prompt: String?
     @Option(help: "Event that makes it due now: \(Trigger.usage); an empty string removes it.") var when: String?
+    @Option(help: "Run the resume prompt in the background when due, in Tickler.app: \(AutoRunOption.editUsage).")
+    var autoRun: AutoRunOption?
     @Flag(help: "Print the reminder as JSON.") var json = false
 
     func validate() throws {
-        guard title != nil || at != nil || notes != nil || prompt != nil || when != nil else {
-            throw ValidationError("nothing to change: pass --title, --at, --notes, --prompt or --when")
+        guard title != nil || at != nil || notes != nil || prompt != nil || when != nil || autoRun != nil else {
+            throw ValidationError("nothing to change: pass --title, --at, --notes, --prompt, --when or --auto-run")
         }
         if let when, !when.isEmpty, Trigger(when) == nil {
             throw ValidationError("--when expects \(Trigger.usage), got \"\(when)\"")
@@ -87,9 +89,21 @@ struct EditCommand: TicklerSubcommand {
             } ?? current
             try requireSupportedLink(trigger, links, gitlabHosts: GitLabHosts.current(environment: context.environment))
         }
-        var updated = try store.update(id, title: title, notes: newNotes, dueAt: due, resumePrompt: prompt)
+        var updated: Reminder
+        do {
+            updated = try store.update(id, title: title, notes: newNotes, dueAt: due, resumePrompt: prompt)
+        } catch let error as StoreError where error == .autoRunNeedsPrompt || error == .autoRunNeedsFolder {
+            throw CLIError.usage("--auto-run: \(error)")
+        }
         if when != nil {
             updated = try store.setTrigger(id, trigger)
+        }
+        if let autoRun {
+            do {
+                updated = try store.setAutoRun(id, autoRun.mode)
+            } catch let error as StoreError where error != .notFound(id) {
+                throw CLIError.usage("--auto-run: \(error)")
+            }
         }
         try context.printResult(updated, store: store, json: json)
     }

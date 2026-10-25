@@ -72,6 +72,30 @@ public final class TicklerDatabase: Sendable {
                 table.add(column: "firedReason", .text)
             }
         }
+        migrator.registerMigration("v4-auto-run") { db in
+            try db.alter(table: "reminder") { table in
+                table.add(column: "autoRun", .text)
+            }
+            try db.create(table: "run") { table in
+                table.primaryKey("id", .text)
+                table.column("reminderId", .text).notNull().indexed().references("reminder", onDelete: .cascade)
+                table.column("forDueAt", .datetime).notNull()
+                table.column("sessionId", .text)
+                table.column("mode", .text).notNull()
+                table.column("startedAt", .datetime).notNull()
+                table.column("endedAt", .datetime)
+                table.column("state", .text).notNull()
+                table.column("verdict", .text)
+                table.column("headline", .text)
+                table.column("figures", .text).notNull().defaults(to: "[]")
+                table.column("nextStep", .text)
+                table.column("output", .text)
+                table.column("error", .text)
+                table.column("denials", .integer)
+                table.column("costUsd", .double)
+                table.column("durationMs", .integer)
+            }
+        }
         return migrator
     }
 }

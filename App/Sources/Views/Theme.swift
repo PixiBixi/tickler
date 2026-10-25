@@ -15,6 +15,20 @@ enum Theme {
     /// Dark text on the accent fill: white on it fails contrast.
     static let onAccent = Color(red: 0.11, green: 0.07, blue: 0.03)
 
+    /// Auto-run verdicts: green, yellow, red; an unknown verdict and a run that did not answer stay grey.
+    static let verdictOk = Color(red: 0.30, green: 0.78, blue: 0.45)
+    static let verdictWatch = Color(red: 0.96, green: 0.76, blue: 0.22)
+    static let runNeutral = Color.secondary
+
+    static func verdict(_ verdict: AutoRun.Verdict?) -> Color {
+        switch verdict ?? .unknown {
+        case .ok: verdictOk
+        case .watch: verdictWatch
+        case .ko: overdue
+        case .unknown: runNeutral
+        }
+    }
+
     static func dot(for bucket: DueBucket, soon: Bool) -> Color {
         switch bucket {
         case .overdue: overdue

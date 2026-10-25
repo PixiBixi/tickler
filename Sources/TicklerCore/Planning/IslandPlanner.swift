@@ -23,9 +23,10 @@ public enum IslandPlanner {
 
     public static func plan(open: [Reminder], now: Date, lead: TimeInterval) -> IslandPlan {
         let lead = min(max(lead, leadRange.lowerBound), leadRange.upperBound)
-        // A waiting reminder's due date is only its fallback deadline.
+        // A waiting reminder's due date is only its fallback deadline; an auto-run one needs no action at its due time,
+        // its result notification is the signal.
         let candidates = open
-            .filter { $0.status == .open && !$0.isWaiting && $0.dueAt >= now.addingTimeInterval(-grace) }
+            .filter { $0.status == .open && !$0.isWaiting && $0.autoRun == nil && $0.dueAt >= now.addingTimeInterval(-grace) }
             .sorted { ($0.dueAt, $0.id) < ($1.dueAt, $1.id) }
         let inWindow = candidates.filter { $0.dueAt <= now.addingTimeInterval(lead) }
         let entries = candidates.lazy.filter { $0.dueAt > now.addingTimeInterval(lead) }.map { $0.dueAt.addingTimeInterval(-lead) }

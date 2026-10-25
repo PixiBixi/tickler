@@ -276,3 +276,49 @@ struct AnnouncementTests {
         #expect(NotificationPlanner.staleDelivered(deliveredIds: ["tickler.new@abc"], reminders: []).isEmpty)
     }
 }
+
+struct AutoRunNotificationTests {
+    private func auto(_ id: String, at due: String, status: Reminder.Status = .open) -> Reminder {
+        var item = reminder(id, at: due, status: status)
+        item.autoRun = "read"
+        return item
+    }
+
+    @Test func autoRunNotScheduled() {
+        let item = auto("auto01", at: "2026-10-01 11:00")
+        let pending = NotificationPlanner.requestId(for: item)
+        let plan = NotificationPlanner.plan(reminders: [item], links: [:], pendingIds: [], now: Fixture.now)
+        #expect(plan.add.isEmpty)
+        let stale = NotificationPlanner.plan(reminders: [item], links: [:], pendingIds: [pending], now: Fixture.now)
+        #expect(stale.remove == [pending])
+    }
+
+    @Test func autoRunNoCatchUp() {
+        let item = auto("auto01", at: "2026-10-01 09:30")
+        #expect(NotificationPlanner.catchUp(reminders: [item], alreadyShownIds: [], now: Fixture.now) == .none)
+    }
+
+    @Test func runNotificationNotStale() {
+        let item = auto("auto01", at: "2026-10-01 09:30")
+        let id = NotificationPlanner.runRequestId(reminderId: "auto01", runId: "r1")
+        #expect(id == "auto01@run@r1")
+        #expect(NotificationPlanner.staleDelivered(deliveredIds: [id], reminders: [item]).isEmpty)
+        #expect(NotificationPlanner.reminderId(fromRequestId: id) == "auto01")
+        #expect(NotificationPlanner.isRunRequestId(id))
+        #expect(!NotificationPlanner.isRunRequestId(NotificationPlanner.requestId(for: item)))
+    }
+
+    @Test func runBannerIsNeverRemoved() {
+        let item = auto("auto01", at: "2026-10-01 09:30")
+        let banner = NotificationPlanner.runRequestId(reminderId: "auto01", runId: "r1")
+        let plan = NotificationPlanner.plan(reminders: [item], links: [:], pendingIds: [banner, "gone@x@1"], now: Fixture.now)
+        #expect(plan.remove == ["gone@x@1"])
+    }
+
+    @Test func runNotificationStaleWhenDone() {
+        let item = auto("auto01", at: "2026-10-01 09:30", status: .done)
+        let id = NotificationPlanner.runRequestId(reminderId: "auto01", runId: "r1")
+        #expect(NotificationPlanner.staleDelivered(deliveredIds: [id], reminders: [item]) == [id])
+        #expect(NotificationPlanner.staleDelivered(deliveredIds: [id], reminders: []) == [id])
+    }
+}

@@ -16,6 +16,8 @@ final class NotificationService: NSObject {
         case openSlack = "tickler.open.slack"
         case openLink = "tickler.open.link"
         case done = "tickler.done"
+        case showResult = "tickler.run.show"
+        case runAgain = "tickler.run.again"
     }
 
     private let center = UNUserNotificationCenter.current()
@@ -152,6 +154,28 @@ final class NotificationService: NSObject {
         try? await center.add(request)
     }
 
+    /// Posted right away when a background run ends or is skipped, under the run's own request id.
+    func postRun(reminder: Reminder, runId: String, notice: RunNotice) async {
+        let content = UNMutableNotificationContent()
+        content.title = "\(notice.mark) \(Self.truncated(reminder.title))"
+        content.subtitle = reminder.project ?? ""
+        content.body = notice.body
+        content.sound = .default
+        content.categoryIdentifier = (notice.failed ? NotificationCategory.autoRunFailed : .autoRunResult).rawValue
+        content.threadIdentifier = "tickler"
+        content.userInfo = ["reminderId": reminder.id]
+        let request = UNNotificationRequest(
+            identifier: NotificationPlanner.runRequestId(reminderId: reminder.id, runId: runId),
+            content: content,
+            trigger: nil
+        )
+        try? await center.add(request)
+    }
+
+    private static func truncated(_ title: String, limit: Int = 80) -> String {
+        title.count > limit ? String(title.prefix(limit - 1)) + "…" : title
+    }
+
     func removeDelivered(reminderId: String) async {
         let ids = await center.deliveredNotifications().map(\.request.identifier)
             .filter { NotificationPlanner.reminderId(fromRequestId: $0) == reminderId }
@@ -206,7 +230,7 @@ final class NotificationService: NSObject {
         let link = UNNotificationAction(identifier: Action.openLink.rawValue, title: String(localized: "Open Link"), options: [.foreground])
         let done = UNNotificationAction(identifier: Action.done.rawValue, title: String(localized: "Mark Done"))
 
-        var categories = Set(NotificationCategory.allCases.map { category in
+        var categories = Set(NotificationCategory.allCases.filter { !$0.isAutoRun }.map { category in
             var actions = [resume, snooze15, snooze60, tomorrow, reschedule]
             if category.hasTicket {
                 actions.append(ticket)
@@ -232,7 +256,30 @@ final class NotificationService: NSObject {
             intentIdentifiers: [],
             options: []
         ))
-        return categories
+        return categories.union(runCategories())
+    }
+
+    /// A finished run opens its result or is marked done; a failed or skipped one is resumed or run again.
+    private static func runCategories() -> Set<UNNotificationCategory> {
+        let show = UNNotificationAction(
+            identifier: Action.showResult.rawValue,
+            title: String(localized: "Show result"),
+            options: [.foreground]
+        )
+        let done = UNNotificationAction(
+            identifier: Action.done.rawValue,
+            title: String(localized: "run.action.done", defaultValue: "Done")
+        )
+        let resume = UNNotificationAction(identifier: Action.resume.rawValue, title: String(localized: "Resume"), options: [.foreground])
+        let again = UNNotificationAction(identifier: Action.runAgain.rawValue, title: String(localized: "Run again"))
+        return [
+            UNNotificationCategory(
+                identifier: NotificationCategory.autoRunResult.rawValue, actions: [show, done], intentIdentifiers: [], options: []
+            ),
+            UNNotificationCategory(
+                identifier: NotificationCategory.autoRunFailed.rawValue, actions: [resume, again], intentIdentifiers: [], options: []
+            ),
+        ]
     }
 
     /// A banner left from before a done, delete or reschedule must not act on the reminder as it is now.
@@ -242,13 +289,23 @@ final class NotificationService: NSObject {
             model.showMainWindow()
             return
         }
+        if NotificationPlanner.isRunRequestId(requestId) {
+            handleRun(action: action, reminder: reminder)
+            return
+        }
         guard NotificationPlanner.isCurrent(requestId: requestId, reminder: reminder) else {
             model.reveal(reminderId)
             model.showToast(String(localized: "This notification is out of date: the reminder changed since."))
             return
         }
+        perform(Action(rawValue: action), on: reminder, text: text)
+    }
+
+    private func perform(_ action: Action?, on reminder: Reminder, text: String?) {
+        let model = AppModel.shared
+        let reminderId = reminder.id
         let targets = LinkTargets(links: model.links(of: reminder))
-        switch Action(rawValue: action) {
+        switch action {
         case .resume: model.resume(reminder)
         case .snooze15: model.snooze(reminderId, preset: .fifteenMinutes)
         case .snooze60: model.snooze(reminderId, preset: .oneHour)
@@ -258,7 +315,26 @@ final class NotificationService: NSObject {
         case .openSlack: targets.slack.map(model.open)
         case .openLink: targets.other.map(model.open)
         case .done: model.markDone(reminderId)
-        case nil: model.reveal(reminderId)
+        case .showResult, .runAgain, nil: model.reveal(reminderId)
+        }
+    }
+
+    /// A run banner stays valid while its reminder is open, whatever happened to its due date since.
+    private func handleRun(action: String, reminder: Reminder) {
+        let model = AppModel.shared
+        let action = Action(rawValue: action)
+        guard reminder.status == .open else {
+            model.reveal(reminder.id)
+            if action != .showResult {
+                model.showToast(String(localized: "This notification is out of date: the reminder changed since."))
+            }
+            return
+        }
+        switch action {
+        case .resume where reminder.sessionId != nil: model.resume(reminder)
+        case .runAgain: model.autoRunner.start(reminder)
+        case .done: model.markDone(reminder.id)
+        default: model.reveal(reminder.id)
         }
     }
 

@@ -38,6 +38,7 @@ final class AppModel {
     let calendarSync = CalendarService()
     let liveStatus = LiveStatusStore()
     let triggerWatcher = TriggerWatcher()
+    let autoRunner = AutoRunner()
     let island = IslandController()
     private(set) var store: ReminderStore?
     private(set) var loadError: String?
@@ -45,6 +46,8 @@ final class AppModel {
     private(set) var open: [Reminder] = []
     private(set) var done: [Reminder] = []
     private(set) var links: [String: [ReminderLink]] = [:]
+    /// The newest run of each listed reminder, auto-run or not.
+    private(set) var lastRuns: [String: AutoRun] = [:]
     private(set) var runningSessions: Set<String> = []
     private(set) var now = Date()
 
@@ -118,6 +121,8 @@ final class AppModel {
     }
 
     func start() {
+        // No process survives the app: runs left `running` by a quit or a crash end as interrupted.
+        _ = try? store?.interruptRunning(at: Date())
         reload()
         observer = ChangeObserver {
             Task { @MainActor in AppModel.shared.externalChange() }
@@ -157,6 +162,7 @@ final class AppModel {
             open = try store.list(ReminderFilter(due: .all))
             done = try Array(store.list(ReminderFilter(due: .all, status: .done)).prefix(100))
             links = try store.links(for: (open + done).map(\.id))
+            lastRuns = try store.lastRuns(for: (open + done).map(\.id))
             now = Date()
             refreshSessions()
             island.update()
@@ -230,6 +236,7 @@ final class AppModel {
         }
         // Demo recordings never touch the user's real calendar.
         calendarSync.reconcile(store: store, calendarId: isDemo ? nil : preferences.calendarId)
+        autoRunner.reconcile()
     }
 
     /// Off the main actor: it walks the process table.
@@ -239,9 +246,12 @@ final class AppModel {
 
     private func refreshSessionsNow() async {
         let ids = Set(open.compactMap(\.sessionId))
-        let running = await Task.detached {
+        // Our own background runs are not terminals: a run that ended during the scan still counts as ours.
+        let ownBefore = autoRunner.runningSessions
+        let found = await Task.detached {
             SessionResumer(driver: WezTermDriver(binary: URL(fileURLWithPath: "/usr/bin/false"))).runningSessions(ids)
         }.value
+        let running = found.subtracting(ownBefore).subtracting(autoRunner.runningSessions)
         if running != runningSessions {
             runningSessions = running
         }
@@ -359,6 +369,7 @@ final class AppModel {
     }
 
     func markDone(_ id: String) {
+        autoRunner.stop(reminderId: id)
         perform {
             let reminder = try $0.markDone(id)
             await self.notifications.removeDelivered(reminderId: id)
@@ -400,6 +411,7 @@ final class AppModel {
     }
 
     func delete(_ id: String) {
+        autoRunner.stop(reminderId: id)
         perform {
             try $0.delete(id)
             await self.notifications.removeDelivered(reminderId: id)
@@ -426,6 +438,11 @@ final class AppModel {
 
     func resume(_ reminder: Reminder) {
         guard let sessionId = reminder.sessionId else { return }
+        // Two writers on one transcript conflict, and the headless child has no terminal to focus.
+        guard !autoRunner.runningSessions.contains(sessionId) else {
+            showError(String(localized: "A background run is already using this session"))
+            return
+        }
         let driver = preferences.terminal.driver(weztermPath: preferences.weztermPath)
         let cwd = reminder.cwd
         let prompt = reminder.resumeMessage
@@ -496,6 +513,15 @@ final class AppModel {
             } catch {
                 showError(String(describing: error))
             }
+        }
+    }
+}
+
+extension AppModel {
+    func setAutoRun(_ id: String, _ mode: AutoRunMode?) {
+        perform {
+            try $0.setAutoRun(id, mode)
+            return nil
         }
     }
 }

@@ -6,7 +6,8 @@ private func reminder(
     _ id: String,
     at due: String,
     status: Reminder.Status = .open,
-    trigger: String? = nil
+    trigger: String? = nil,
+    autoRun: String? = nil
 ) -> Reminder {
     let date = Fixture.date(due)
     var reminder = Reminder(
@@ -15,6 +16,7 @@ private func reminder(
         doneAt: nil, createdAt: Fixture.now, updatedAt: Fixture.now
     )
     reminder.trigger = trigger
+    reminder.autoRun = autoRun
     return reminder
 }
 
@@ -38,6 +40,16 @@ struct IslandPlannerTests {
         #expect(plan.shown?.id == "soon01")
         #expect(plan.othersInWindow == 0)
         #expect(plan.nextChange == Fixture.date("2026-10-01 11:00"))
+    }
+
+    @Test func autoRunRemindersAreNeverShown() {
+        let plan = IslandPlanner.plan(
+            open: [reminder("auto01", at: "2026-10-01 10:50", autoRun: "read"), reminder("late01", at: "2026-10-01 11:30")],
+            now: Fixture.now,
+            lead: lead
+        )
+        #expect(plan.shown == nil)
+        #expect(plan.nextChange == Fixture.date("2026-10-01 11:15"))
     }
 
     @Test func windowEdgesAreIncluded() {

@@ -215,22 +215,30 @@ private struct DayTile: View {
 
 struct ReminderRow: View {
     @Environment(AppModel.self) private var model
+    /// Increased on the selected row: tinted text turned unreadable on the accent highlight.
+    @Environment(\.backgroundProminence) private var prominence
     let reminder: Reminder
 
     var body: some View {
         let bucket = reminder.status == .done ? DueBucket.later : DueBucket.of(reminder, now: model.now)
         let soon = reminder.isSoon(now: model.now)
         HStack(spacing: 10) {
-            Circle().fill(Theme.dot(for: bucket, soon: soon)).frame(width: 8, height: 8)
+            AutoRunMark(reminder: reminder, fallback: Theme.dot(for: bucket, soon: soon))
             VStack(alignment: .leading, spacing: 2) {
                 Text(reminder.title).font(.system(size: 13)).lineLimit(1)
                     .strikethrough(reminder.status == .done, color: .secondary)
                 HStack(spacing: 4) {
                     Text(Format.dueLabel(reminder.dueAt, now: model.now))
-                        .foregroundStyle(bucket == .overdue ? Theme.overdue : (soon ? Theme.accent : .secondary))
+                        .foregroundStyle(tinted(bucket == .overdue ? Theme.overdue : (soon ? Theme.accent : .secondary)))
                     if let project = reminder.project {
                         Text("·").foregroundStyle(.tertiary)
                         Text(project).foregroundStyle(.secondary)
+                    }
+                    if let summary = model.autoRunSummary(for: reminder) {
+                        Text("·").foregroundStyle(.tertiary)
+                        Text(summary)
+                            .foregroundStyle(tinted(model.finishedRun(for: reminder)?.tint ?? Theme.accent))
+                            .lineLimit(1)
                     }
                     if reminder.rescheduleCount > 0 {
                         Text("·").foregroundStyle(.tertiary)
@@ -249,5 +257,9 @@ struct ReminderRow: View {
             }
         }
         .padding(.vertical, 3)
+    }
+
+    private func tinted(_ color: Color) -> Color {
+        prominence == .increased ? .primary.opacity(0.85) : color
     }
 }

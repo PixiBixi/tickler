@@ -38,6 +38,13 @@ public struct Reminder: Codable, Hashable, Sendable, Identifiable, FetchableReco
     /// Why the trigger fired, built from the live data: `!412 merged`.
     public var firedReason: String? = nil // swiftlint:disable:this implicit_optional_initialization
 
+    /// Raw `AutoRunMode`: when set, the resume prompt runs in the background once due.
+    public var autoRun: String? = nil // swiftlint:disable:this implicit_optional_initialization
+
+    public var autoRunMode: AutoRunMode? {
+        autoRun.flatMap(AutoRunMode.init)
+    }
+
     public var parsedTrigger: Trigger? {
         trigger.flatMap(Trigger.init)
     }
@@ -77,6 +84,7 @@ public struct ReminderDraft: Sendable {
     public var source: Reminder.Source
     public var externalRef: String?
     public var trigger: Trigger?
+    public var autoRun: AutoRunMode?
 
     public init(
         title: String,
@@ -88,7 +96,8 @@ public struct ReminderDraft: Sendable {
         resumePrompt: String? = nil,
         source: Reminder.Source = .claude,
         externalRef: String? = nil,
-        trigger: Trigger? = nil
+        trigger: Trigger? = nil,
+        autoRun: AutoRunMode? = nil
     ) {
         self.title = title
         self.notes = notes
@@ -100,6 +109,7 @@ public struct ReminderDraft: Sendable {
         self.source = source
         self.externalRef = externalRef
         self.trigger = trigger
+        self.autoRun = autoRun
     }
 }
 

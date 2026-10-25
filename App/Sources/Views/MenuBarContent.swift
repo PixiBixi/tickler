@@ -206,7 +206,7 @@ private struct CompactRow: View {
     var body: some View {
         let bucket = DueBucket.of(reminder, now: model.now)
         HStack(spacing: 10) {
-            Circle().fill(Theme.dot(for: bucket, soon: reminder.isSoon(now: model.now))).frame(width: 8, height: 8)
+            AutoRunMark(reminder: reminder, fallback: Theme.dot(for: bucket, soon: reminder.isSoon(now: model.now)))
             VStack(alignment: .leading, spacing: 2) {
                 Text(reminder.title).font(.system(size: 13)).lineLimit(1)
                 Text(subtitle(bucket))
@@ -252,7 +252,7 @@ private struct CompactRow: View {
     private func subtitle(_ bucket: DueBucket) -> String {
         let when = bucket == .overdue || bucket == .today ? Format.time(reminder.dueAt) : Format.dueLabel(reminder.dueAt, now: model.now)
         let relative = bucket == .overdue ? Format.relative(reminder.dueAt, now: model.now) : reminder.project
-        return [when, relative].compactMap(\.self).joined(separator: " · ")
+        return [when, relative, model.autoRunSummary(for: reminder)].compactMap(\.self).joined(separator: " · ")
     }
 
     private func iconButton(_ symbol: String, help: LocalizedStringKey, action: @escaping () -> Void) -> some View {
@@ -269,6 +269,8 @@ private struct CompactRow: View {
 struct SnoozeMenu: View {
     @Environment(AppModel.self) private var model
     let reminderId: String
+    /// Icon only, where the action row is short of room.
+    var compact = false
     /// "Pick a date…" at the bottom, where the caller can show a date field.
     var onPickDate: (() -> Void)?
 
@@ -287,9 +289,15 @@ struct SnoozeMenu: View {
                 Button("Pick a Date…", action: onPickDate)
             }
         } label: {
-            Label("Snooze", systemImage: "clock")
+            if compact {
+                Image(systemName: "clock")
+            } else {
+                Label("Snooze", systemImage: "clock")
+            }
         }
         .menuStyle(.borderlessButton)
+        .help("Snooze")
+        .accessibilityLabel("Snooze")
         .fixedSize()
         .padding(.horizontal, 10)
         .frame(height: 30)

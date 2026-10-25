@@ -9,10 +9,18 @@ public enum NotificationCategory: String, CaseIterable, Sendable {
     case ticket = "reminder.ticket.none"
     case ticketSlack = "reminder.ticket.slack"
     case ticketLink = "reminder.ticket.link"
+    /// A finished background run: open its result or mark the reminder done.
+    case autoRunResult = "reminder.run.result"
+    /// A failed or skipped background run: resume the session or run again.
+    case autoRunFailed = "reminder.run.failed"
 
     public static let summaryIdentifier = "reminder.summary"
     /// "Claude added a reminder" banners: informational, never tied to a due time.
     public static let announcementPrefix = "tickler.new"
+
+    public var isAutoRun: Bool {
+        self == .autoRunResult || self == .autoRunFailed
+    }
 
     public var hasTicket: Bool {
         self == .ticket || self == .ticketSlack || self == .ticketLink
@@ -87,6 +95,22 @@ public enum NotificationPlanner {
         return String(hash, radix: 16)
     }
 
+    /// `<id>@run@<runId>`: the banner of a finished background run, kept while its reminder is open.
+    public static func runRequestId(reminderId: String, runId: String) -> String {
+        "\(reminderId)@run@\(runId)"
+    }
+
+    private static let runMarker = "@run@"
+
+    public static func isRunRequestId(_ requestId: String) -> Bool {
+        requestId.contains(runMarker)
+    }
+
+    /// Auto-run reminders never get a due notification: their run reports instead.
+    private static func notifiable(_ reminders: [Reminder]) -> [Reminder] {
+        reminders.filter { $0.autoRun == nil }
+    }
+
     public static func reminderId(fromRequestId requestId: String) -> String {
         String(requestId.split(separator: "@").first ?? Substring(requestId))
     }
@@ -98,6 +122,7 @@ public enum NotificationPlanner {
         now: Date,
         limit: Int = pendingLimit
     ) -> (add: [PlannedNotification], remove: [String]) {
+        let reminders = notifiable(reminders)
         let wanted = reminders
             .filter { $0.status == .open && $0.dueAt > now }
             .sorted { $0.dueAt < $1.dueAt }
@@ -108,16 +133,20 @@ public enum NotificationPlanner {
         let keep = Set(wanted.map(\.id)).union(pendingIds.filter { current.contains($0) && !isFuture($0, now: now) })
         return (
             add: wanted.filter { !pendingIds.contains($0.id) },
-            remove: pendingIds.subtracting(keep).sorted()
+            remove: pendingIds.subtracting(keep).filter { !isRunRequestId($0) }.sorted()
         )
     }
 
     /// Delivered banners that no longer match an open reminder at its current time: done, deleted or rescheduled.
     public static func staleDelivered(deliveredIds: [String], reminders: [Reminder]) -> [String] {
         let current = Set(reminders.filter { $0.status == .open }.map(requestId(for:)))
+        let open = Set(reminders.filter { $0.status == .open }.map(\.id))
         return deliveredIds.filter {
-            !$0.hasPrefix(NotificationCategory.summaryIdentifier) && !$0.hasPrefix(NotificationCategory.announcementPrefix) && !current
-                .contains($0)
+            if $0.contains(runMarker) {
+                return !open.contains(reminderId(fromRequestId: $0))
+            }
+            return !$0.hasPrefix(NotificationCategory.summaryIdentifier) && !$0.hasPrefix(NotificationCategory.announcementPrefix)
+                && !current.contains($0)
         }
     }
 
@@ -139,7 +168,7 @@ public enum NotificationPlanner {
     /// Overdue reminders nobody was told about (Mac asleep or app not running at due time).
     /// `alreadyShownIds` holds pending and delivered request ids: those fire or already fired on their own.
     public static func catchUp(reminders: [Reminder], alreadyShownIds: Set<String>, now: Date) -> CatchUp {
-        let missed = reminders
+        let missed = notifiable(reminders)
             .filter { $0.status == .open && $0.dueAt <= now && $0.notifiedAt == nil && !alreadyShownIds.contains(requestId(for: $0)) }
             .sorted { $0.dueAt < $1.dueAt }
         if missed.isEmpty {

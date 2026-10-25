@@ -63,15 +63,16 @@ struct ShowCommand: TicklerSubcommand {
     func execute(_ context: CLIContext) throws {
         let store = try context.openStore(options)
         let reminder = try context.loadReminder(id, from: store)
+        let lastRun = try store.lastRuns(for: [id])[id]
         if json {
             try context.stdout.line(context.encodeJSON(context.json(reminder, store: store)))
         } else if let width = context.terminalWidth {
             let running = reminder.sessionId
                 .map { SessionResumer(driver: WezTermDriver(binary: URL(fileURLWithPath: "/usr/bin/false"))).isRunning(sessionId: $0) }
             let card = ReminderCard(now: context.now(), calendar: context.calendar, width: width, sessionRunning: running)
-            try context.stdout.line(card.render(reminder, links: store.links(for: id)))
+            try context.stdout.line(card.render(reminder, links: store.links(for: id), lastRun: lastRun))
         } else {
-            try context.stdout.line(context.detail(reminder, links: store.links(for: id)))
+            try context.stdout.line(context.detail(reminder, links: store.links(for: id), lastRun: lastRun))
         }
     }
 }

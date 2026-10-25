@@ -93,16 +93,18 @@ public struct SessionResumer: Sendable {
         return sessionIds.filter { live.contains($0) || resumed.contains($0) }
     }
 
+    /// The calling session's markers, removed from the environment of any `claude` we start.
+    public static let scrubbedVariables = [
+        "CLAUDECODE", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CODE_SESSION_ATTENDED",
+        "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_EXECPATH", "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN",
+        "CLAUDE_PID", "CLAUDE_EFFORT",
+    ]
+
     /// Scrubs the calling session's markers: an inherited CLAUDE_CODE_CHILD_SESSION turns transcript saving off.
     /// Login and interactive shell, so PATH and the environment match a normal terminal tab.
     public static func resumeCommand(sessionId: String, prompt: String? = nil) -> [String] {
-        let scrubbed = [
-            "CLAUDECODE", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CODE_SESSION_ATTENDED",
-            "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_EXECPATH", "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN",
-            "CLAUDE_PID", "CLAUDE_EFFORT",
-        ]
         let message = prompt.flatMap { $0.isEmpty ? nil : " -- " + shellJoin([$0]) } ?? ""
-        return ["env"] + scrubbed.flatMap { ["-u", $0] } + ["zsh", "-lic", "claude --resume \(sessionId)\(message)"]
+        return ["env"] + scrubbedVariables.flatMap { ["-u", $0] } + ["zsh", "-lic", "claude --resume \(sessionId)\(message)"]
     }
 }
 

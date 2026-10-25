@@ -6,12 +6,41 @@ import TicklerCore
 /// `id`, `title`, `notes`, `due` ("YYYY-MM-DD HH:MM", local), `dueISO` (ISO 8601 with UTC offset), `originalDue`,
 /// `rescheduleCount`, `status` (open|done|deleted), `source` (claude|human), `sessionId`, `cwd`, `project`,
 /// `resumePrompt` (first message on resume), `overdue` (open and past due), `links` (`[{kind, label, url}]`),
-/// `trigger` (awaited event or null), `waiting` (open and waiting), `firedAt`, `firedReason` (why the trigger fired).
+/// `trigger` (awaited event or null), `waiting` (open and waiting), `firedAt`, `firedReason` (why the trigger fired),
+/// `autoRun` (read|write or null), `lastRun` (latest background run or null: `{state, verdict, headline, figures, nextStep,
+/// denials, startedAt, endedAt}`; `figures` is an array, dates are local like `firedAt`).
 struct ReminderJSON: Encodable {
     struct Link: Encodable {
         let kind: String
         let label: String
         let url: String
+    }
+
+    struct Run: Encodable {
+        let state: String
+        let verdict: String?
+        let headline: String?
+        let figures: [String]
+        let nextStep: String?
+        let denials: Int?
+        let startedAt: String
+        let endedAt: String?
+
+        /// Explicit so that nil values are written as null instead of dropped.
+        func encode(to encoder: Encoder) throws {
+            enum Key: String, CodingKey {
+                case state, verdict, headline, figures, nextStep, denials, startedAt, endedAt
+            }
+            var container = encoder.container(keyedBy: Key.self)
+            try container.encode(state, forKey: .state)
+            try container.encode(verdict, forKey: .verdict)
+            try container.encode(headline, forKey: .headline)
+            try container.encode(figures, forKey: .figures)
+            try container.encode(nextStep, forKey: .nextStep)
+            try container.encode(denials, forKey: .denials)
+            try container.encode(startedAt, forKey: .startedAt)
+            try container.encode(endedAt, forKey: .endedAt)
+        }
     }
 
     let id: String
@@ -33,8 +62,10 @@ struct ReminderJSON: Encodable {
     let waiting: Bool
     let firedAt: String?
     let firedReason: String?
+    let autoRun: String?
+    let lastRun: Run?
 
-    init(_ reminder: Reminder, links: [ReminderLink], context: CLIContext) {
+    init(_ reminder: Reminder, links: [ReminderLink], lastRun: AutoRun? = nil, context: CLIContext) {
         let formatter = ISO8601DateFormatter()
         formatter.timeZone = context.calendar.timeZone
         id = reminder.id
@@ -56,6 +87,15 @@ struct ReminderJSON: Encodable {
         waiting = reminder.isWaiting
         firedAt = reminder.firedAt.map { StrictDate.format($0, calendar: context.calendar) }
         firedReason = reminder.firedReason
+        autoRun = reminder.autoRun
+        self.lastRun = lastRun.map { run in
+            Run(
+                state: run.state.rawValue, verdict: run.verdict?.rawValue, headline: run.headline, figures: run.figures,
+                nextStep: run.nextStep, denials: run.denials,
+                startedAt: StrictDate.format(run.startedAt, calendar: context.calendar),
+                endedAt: run.endedAt.map { StrictDate.format($0, calendar: context.calendar) }
+            )
+        }
     }
 
     /// Explicit so that nil values are written as null instead of dropped.
@@ -63,6 +103,7 @@ struct ReminderJSON: Encodable {
         enum Key: String, CodingKey {
             case id, title, notes, due, dueISO, originalDue, rescheduleCount, status, source
             case sessionId, cwd, project, resumePrompt, overdue, links, trigger, waiting, firedAt, firedReason
+            case autoRun, lastRun
         }
         var container = encoder.container(keyedBy: Key.self)
         try container.encode(id, forKey: .id)
@@ -84,6 +125,8 @@ struct ReminderJSON: Encodable {
         try container.encode(waiting, forKey: .waiting)
         try container.encode(firedAt, forKey: .firedAt)
         try container.encode(firedReason, forKey: .firedReason)
+        try container.encode(autoRun, forKey: .autoRun)
+        try container.encode(lastRun, forKey: .lastRun)
     }
 }
 
@@ -95,7 +138,9 @@ extension CLIContext {
     }
 
     func json(_ reminder: Reminder, store: ReminderStore) throws -> ReminderJSON {
-        try ReminderJSON(reminder, links: store.links(for: reminder.id), context: self)
+        try ReminderJSON(
+            reminder, links: store.links(for: reminder.id), lastRun: store.lastRuns(for: [reminder.id])[reminder.id], context: self
+        )
     }
 
     func summaryLine(_ reminder: Reminder) -> String {
@@ -122,7 +167,7 @@ extension CLIContext {
         }
     }
 
-    func detail(_ reminder: Reminder, links: [ReminderLink]) -> String {
+    func detail(_ reminder: Reminder, links: [ReminderLink], lastRun: AutoRun? = nil) -> String {
         var lines = [
             "id: \(reminder.id)",
             "title: \(reminder.title.displaySafeLine)",
@@ -149,6 +194,12 @@ extension CLIContext {
         }
         if let reason = reminder.firedReason, let firedAt = reminder.firedAt {
             lines.append("fired: \(reason.displaySafeLine) (\(StrictDate.format(firedAt, calendar: calendar)))")
+        }
+        if let mode = reminder.autoRun {
+            lines.append("auto-run: \(mode.displaySafeLine)")
+        }
+        if let lastRun {
+            lines += RunSummary(run: lastRun, calendar: calendar).lines
         }
         if !reminder.notes.isEmpty {
             lines.append("notes:")
