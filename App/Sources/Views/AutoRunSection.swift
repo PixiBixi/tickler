@@ -100,12 +100,28 @@ struct AutoRunResultBlock: View {
     private var fullAnswer: some View {
         if let output = run.output, !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let lines = output.split(separator: "\n", omittingEmptySubsequences: false).count
-            DisclosureGroup(isExpanded: $expanded) {
-                MarkdownView(markdown: output)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .padding(.top, 6)
-            } label: {
-                Text("Full answer (\(lines) lines)").font(.system(size: 12)).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 0) {
+                // A plain DisclosureGroup only reacts on its chevron on macOS: the whole row toggles here.
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) { expanded.toggle() }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .rotationEffect(.degrees(expanded ? 90 : 0))
+                        Text("Full answer (\(lines) lines)").font(.system(size: 12))
+                        Spacer(minLength: 0)
+                    }
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 4)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                if expanded {
+                    MarkdownView(markdown: output)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                        .padding(.top, 6)
+                }
             }
         }
     }
