@@ -1,13 +1,15 @@
 import SwiftUI
 import TicklerCore
 
-/// "Result": the verdict, key figures, next step and the full answer folded, tinted by verdict.
+/// "Result": the verdict, key figures and next step, edged by the verdict colour. The full answer folds in here,
+/// or sits in its own card (`AutoRunAnswerCard`) when the pane is wide.
 struct AutoRunResultBlock: View {
     let run: AutoRun
+    var showsFullAnswer = true
     @State private var expanded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             header
             if run.state == .skipped {
                 Text("Session open, start it manually").font(.system(size: 13)).foregroundStyle(.secondary)
@@ -15,21 +17,26 @@ struct AutoRunResultBlock: View {
                 verdictLine
                 figures
                 nextStep
-                denials
-                fullAnswer
+                if showsFullAnswer {
+                    fullAnswer
+                }
             }
         }
-        .padding(12)
+        .padding(.vertical, 14)
+        .padding(.leading, 18)
+        .padding(.trailing, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(run.tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(run.tint.opacity(0.35)))
+        .background(Color.primary.opacity(0.04))
+        .overlay(alignment: .leading) { run.tint.frame(width: 3) }
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private var header: some View {
         HStack(spacing: 8) {
             Text("Result").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
-            Spacer()
-            Text(meta).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+            denials
+            Spacer(minLength: 8)
+            Text(meta).font(.system(size: 10.5)).foregroundStyle(.tertiary).lineLimit(1)
         }
     }
 
@@ -56,8 +63,9 @@ struct AutoRunResultBlock: View {
                 .padding(.vertical, 2)
                 .background(run.tint.opacity(0.18), in: RoundedRectangle(cornerRadius: 5))
             if let text = run.headline ?? run.error {
-                Text(text).font(.system(size: 13, weight: .semibold)).lineLimit(run.headline == nil ? 3 : 1)
-                    .help(text)
+                Text(text).font(.system(size: 14, weight: .semibold)).lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
             }
         }
     }
@@ -65,25 +73,35 @@ struct AutoRunResultBlock: View {
     @ViewBuilder
     private var figures: some View {
         if !run.figures.isEmpty {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 5) {
                 label("Key figures")
                 ForEach(Array(run.figures.enumerated()), id: \.offset) { _, figure in
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("·").foregroundStyle(.tertiary)
-                        Text(verbatim: figure).font(.system(size: 12.5)).textSelection(.enabled)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(Image(systemName: "circle.fill")).font(.system(size: 5)).baselineOffset(2.5).foregroundStyle(run.tint)
+                        Text(Self.inline(figure)).font(.system(size: 13)).textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
         }
     }
 
+    /// The step the owner takes next, set apart: it is what they act on after reading the verdict.
     @ViewBuilder
     private var nextStep: some View {
         if let step = run.nextStep, !step.isEmpty {
-            VStack(alignment: .leading, spacing: 4) {
-                label("Next step")
-                Text(verbatim: step).font(.system(size: 12.5)).textSelection(.enabled)
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Image(systemName: "arrow.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    label("Next step")
+                    Text(Self.inline(step)).font(.system(size: 13)).textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
         }
     }
 
@@ -91,16 +109,20 @@ struct AutoRunResultBlock: View {
     private var denials: some View {
         if let count = run.denials, count > 0 {
             Label("\(count) actions denied", systemImage: "hand.raised")
-                .font(.system(size: 11.5))
+                .font(.system(size: 10.5, weight: .semibold))
                 .foregroundStyle(Theme.verdictWatch)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 2)
+                .background(Theme.verdictWatch.opacity(0.15), in: RoundedRectangle(cornerRadius: 5))
+                .fixedSize()
         }
     }
 
     @ViewBuilder
     private var fullAnswer: some View {
-        if let output = run.output, !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let lines = output.split(separator: "\n", omittingEmptySubsequences: false).count
+        if let output = run.trimmedOutput {
             VStack(alignment: .leading, spacing: 0) {
+                Divider().padding(.bottom, 6)
                 // A plain DisclosureGroup only reacts on its chevron on macOS: the whole row toggles here.
                 Button {
                     withAnimation(.easeInOut(duration: 0.15)) { expanded.toggle() }
@@ -109,7 +131,7 @@ struct AutoRunResultBlock: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 10, weight: .semibold))
                             .rotationEffect(.degrees(expanded ? 90 : 0))
-                        Text("Full answer (\(lines) lines)").font(.system(size: 12))
+                        Text("Full answer (\(run.outputLineCount) lines)").font(.system(size: 12))
                         Spacer(minLength: 0)
                     }
                     .foregroundStyle(.secondary)
@@ -128,6 +150,41 @@ struct AutoRunResultBlock: View {
 
     private func label(_ text: LocalizedStringKey) -> some View {
         Text(text).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+    }
+
+    /// `code` spans in monospace, as Claude writes paths and values; anything else stays plain text.
+    static func inline(_ text: String) -> AttributedString {
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        return (try? AttributedString(markdown: text, options: options)) ?? AttributedString(text)
+    }
+}
+
+/// The whole answer, unfolded in the side column of a wide pane.
+struct AutoRunAnswerCard: View {
+    let run: AutoRun
+
+    var body: some View {
+        if let output = run.trimmedOutput {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Claude's answer").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                MarkdownView(markdown: output)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .padding(14)
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+            }
+        }
+    }
+}
+
+extension AutoRun {
+    /// The answer, nil when Claude printed nothing.
+    var trimmedOutput: String? {
+        guard let output, !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return output
+    }
+
+    var outputLineCount: Int {
+        output?.split(separator: "\n", omittingEmptySubsequences: false).count ?? 0
     }
 }
 
@@ -173,12 +230,13 @@ struct AutoRunRunningRow: View {
 struct AutoRunRunsList: View {
     @Environment(AppModel.self) private var model
     let reminder: Reminder
+    /// 2 in one column, where a single run is already the result block; 1 in the wide side column.
+    var minimum = 2
     @State private var runs: [AutoRun] = []
 
     var body: some View {
         Group {
-            // One run is already the result block above.
-            if runs.count > 1 {
+            if runs.count >= minimum {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Runs").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
                     ForEach(runs.prefix(10)) { run in

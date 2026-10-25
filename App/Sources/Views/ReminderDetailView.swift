@@ -28,7 +28,7 @@ struct ReminderDetailView: View {
                             header
                             doneSuggestion
                             actions
-                            resultBlock
+                            resultBlock(wide: true)
                             notesSection(minHeight: max(260, paneSize.height - 280))
                         }
                         .frame(maxWidth: 820, alignment: .leading)
@@ -36,8 +36,11 @@ struct ReminderDetailView: View {
                             TriggerRow(reminder: reminder)
                             LiveStatusSection(reminder: reminder)
                             linksSection
-                            sessionSection
-                            AutoRunRunsList(reminder: reminder)
+                            sessionSection(strip: false)
+                            if let run = model.finishedRun(for: reminder) {
+                                AutoRunAnswerCard(run: run)
+                            }
+                            AutoRunRunsList(reminder: reminder, minimum: 1)
                         }
                         .frame(width: 400)
                     }
@@ -48,12 +51,15 @@ struct ReminderDetailView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         header
                         actions
-                        resultBlock
+                        resultBlock(wide: false)
+                        if showsStrip {
+                            AutoRunSessionStrip(reminder: reminder, busy: sessionBusy)
+                        }
                         TriggerRow(reminder: reminder)
                         LiveStatusSection(reminder: reminder)
                         notesSection(minHeight: 120)
                         linksSection
-                        sessionSection
+                        sessionSection(strip: showsStrip)
                         AutoRunRunsList(reminder: reminder)
                     }
                     .padding(.horizontal, 28)
@@ -156,6 +162,15 @@ struct ReminderDetailView: View {
         }
         .buttonStyle(.plain)
         .help("Change the date")
+        .popover(isPresented: $editingDate, arrowEdge: .bottom) {
+            ReschedulePopover(current: reminder.dueAt, initialText: dateText) { date in
+                editingDate = false
+                if let date {
+                    model.reschedule(reminder.id, to: date)
+                }
+            }
+            .environment(model)
+        }
     }
 
     // MARK: Done suggestion
@@ -201,26 +216,24 @@ struct ReminderDetailView: View {
 
     private var actions: some View {
         let targets = LinkTargets(links: model.links(of: reminder))
+        // After a run the verdict is read and ticked: Done leads, the rest steps back.
+        let ranOpen = reminder.status == .open && reminder.autoRunMode != nil && !autoRunning
+            && model.hasRun(forCurrentDueDateOf: reminder)
         return FlowLayout(spacing: 8) {
-            autoRunPrimary
-            resumeButton
-            if reminder.status == .open {
+            if ranOpen {
+                doneButton.buttonStyle(PrimaryButtonStyle())
+                resumeButton
+                SnoozeMenu(reminderId: reminder.id, compact: true) { startRescheduling() }
+                Button { model.autoRunner.start(reminder) } label: { Image(systemName: "arrow.clockwise") }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .help("Run again")
+            } else if reminder.status == .open {
+                autoRunPrimary
+                resumeButton
                 SnoozeMenu(reminderId: reminder.id) { startRescheduling() }
-                Button { startRescheduling() } label: { Label("Reschedule", systemImage: "calendar") }
-                    .buttonStyle(SecondaryButtonStyle())
-                    .popover(isPresented: $editingDate, arrowEdge: .bottom) {
-                        ReschedulePopover(current: reminder.dueAt, initialText: dateText) { date in
-                            editingDate = false
-                            if let date {
-                                model.reschedule(reminder.id, to: date)
-                            }
-                        }
-                        .environment(model)
-                    }
-                Button { model.markDone(reminder.id) } label: { Label("Done", systemImage: "checkmark") }
-                    .buttonStyle(SecondaryButtonStyle())
-                    .help("⌘↩")
+                doneButton.buttonStyle(SecondaryButtonStyle())
             } else {
+                resumeButton
                 Button { reopen() } label: { Label("Reopen", systemImage: "arrow.uturn.backward") }
                     .buttonStyle(SecondaryButtonStyle())
             }
@@ -233,6 +246,11 @@ struct ReminderDetailView: View {
                     .buttonStyle(SecondaryButtonStyle())
             }
         }
+    }
+
+    private var doneButton: some View {
+        Button { model.markDone(reminder.id) } label: { Label("Done", systemImage: "checkmark") }
+            .help("⌘↩")
     }
 
     // MARK: Sections
@@ -271,20 +289,23 @@ struct ReminderDetailView: View {
         }
     }
 
+    /// With `strip`, the session row and the auto-run controls are already in the strip under the result: only the prompt stays.
     @ViewBuilder
-    private var sessionSection: some View {
+    private func sessionSection(strip: Bool) -> some View {
         if reminder.sessionId != nil || autoRunning {
             VStack(alignment: .leading, spacing: 6) {
                 sectionTitle("Claude Session")
                 if autoRunning {
                     AutoRunRunningRow(reminder: reminder)
-                } else if let sessionId = reminder.sessionId {
+                } else if let sessionId = reminder.sessionId, !strip {
                     sessionRow(sessionId)
                 }
                 if reminder.sessionId != nil {
                     ResumePromptField(reminder: reminder)
                 }
-                autoRunControls
+                if !strip {
+                    autoRunControls
+                }
             }
         } else {
             autoRunControls
@@ -294,13 +315,21 @@ struct ReminderDetailView: View {
     /// The whole row resumes the session: state first, the id truncated in the middle when space runs out.
     private func sessionRow(_ sessionId: String) -> some View {
         let running = model.runningSessions.contains(sessionId)
+        // A finished background run says when it ran: a grey "Ended" read like a failure.
+        let lastRun = running ? nil : model.finishedRun(for: reminder)
         return Button { model.resume(reminder) } label: {
             HStack(spacing: 8) {
-                Circle().fill(running ? Color.green : Color.secondary.opacity(0.6)).frame(width: 7, height: 7)
-                Text(running ? "Running" : "Ended")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(running ? .green : .secondary)
-                    .fixedSize()
+                Circle().fill(running ? Color.green : (lastRun?.tint ?? Color.secondary.opacity(0.6))).frame(width: 7, height: 7)
+                Group {
+                    if let ended = lastRun?.endedAt {
+                        Text("Last run · \(Format.relative(ended, now: model.now))")
+                    } else {
+                        Text(running ? "Running" : "Ended")
+                    }
+                }
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(running ? .green : .secondary)
+                .fixedSize()
                 Text(verbatim: sessionId)
                     .font(.system(size: 11.5, design: .monospaced))
                     .foregroundStyle(.secondary)
@@ -389,17 +418,12 @@ struct ReminderDetailView: View {
 extension ReminderDetailView {
     // MARK: Auto-run
 
-    /// "Run now" while an auto-run is scheduled and has not run for this date; "Run again" once it has.
+    /// "Run now" while an auto-run is scheduled and has not run for this date; once it has, the actions offer "Run again".
     @ViewBuilder
     private var autoRunPrimary: some View {
-        if reminder.status == .open, reminder.autoRunMode != nil, !autoRunning {
-            if !model.hasRun(forCurrentDueDateOf: reminder) {
-                Button { model.autoRunner.start(reminder) } label: { Label("Run now", systemImage: "play.fill") }
-                    .buttonStyle(PrimaryButtonStyle())
-            } else {
-                Button { model.autoRunner.start(reminder) } label: { Label("Run again", systemImage: "arrow.clockwise") }
-                    .buttonStyle(SecondaryButtonStyle())
-            }
+        if reminder.status == .open, reminder.autoRunMode != nil, !autoRunning, !model.hasRun(forCurrentDueDateOf: reminder) {
+            Button { model.autoRunner.start(reminder) } label: { Label("Run now", systemImage: "play.fill") }
+                .buttonStyle(PrimaryButtonStyle())
         }
     }
 
@@ -420,7 +444,7 @@ extension ReminderDetailView {
             let button = Button { model.resume(reminder) } label: { resumeLabel(scheduled: scheduled, finished: finished) }
                 .disabled(sessionBusy)
                 .help(reminder.resumeMessage.map { "⌘R: \($0)" } ?? "⌘R")
-            if !scheduled || finished {
+            if !scheduled {
                 button.buttonStyle(PrimaryButtonStyle())
             } else {
                 button.buttonStyle(SecondaryButtonStyle())
@@ -431,7 +455,8 @@ extension ReminderDetailView {
     @ViewBuilder
     private func resumeLabel(scheduled: Bool, finished: Bool) -> some View {
         if finished {
-            Label("Continue in terminal", systemImage: "terminal")
+            Label("Terminal", systemImage: "terminal")
+                .help("Continue in terminal")
         } else if scheduled {
             Label("Resume in terminal", systemImage: "terminal")
         } else if let prompt = reminder.resumeMessage {
@@ -444,11 +469,18 @@ extension ReminderDetailView {
         }
     }
 
+    /// Wide panes show the full answer in the side column instead of folded in the block.
     @ViewBuilder
-    private var resultBlock: some View {
+    private func resultBlock(wide: Bool) -> some View {
         if let run = model.finishedRun(for: reminder) {
-            AutoRunResultBlock(run: run)
+            AutoRunResultBlock(run: run, showsFullAnswer: !wide)
         }
+    }
+
+    /// One column after a run: the session and its auto-run mode sit on one line under the result, not below the notes.
+    private var showsStrip: Bool {
+        reminder.status == .open && reminder.sessionId != nil && reminder.autoRunMode != nil && !autoRunning
+            && model.finishedRun(for: reminder) != nil
     }
 
     @ViewBuilder

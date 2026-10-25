@@ -269,6 +269,8 @@ private struct CompactRow: View {
 struct SnoozeMenu: View {
     @Environment(AppModel.self) private var model
     let reminderId: String
+    /// Icon only, where the action row is short of room.
+    var compact = false
     /// "Pick a date…" at the bottom, where the caller can show a date field.
     var onPickDate: (() -> Void)?
 
@@ -287,9 +289,15 @@ struct SnoozeMenu: View {
                 Button("Pick a Date…", action: onPickDate)
             }
         } label: {
-            Label("Snooze", systemImage: "clock")
+            if compact {
+                Image(systemName: "clock")
+            } else {
+                Label("Snooze", systemImage: "clock")
+            }
         }
         .menuStyle(.borderlessButton)
+        .help("Snooze")
+        .accessibilityLabel("Snooze")
         .fixedSize()
         .padding(.horizontal, 10)
         .frame(height: 30)

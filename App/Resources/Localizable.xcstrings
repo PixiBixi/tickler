@@ -444,12 +444,42 @@
         }
       }
     },
+    "Claude's answer": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réponse de Claude"
+          }
+        }
+      }
+    },
+    "Last run · %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dernier run · %@"
+          }
+        }
+      }
+    },
     "Notch": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Encoche"
+          }
+        }
+      }
+    },
+    "Session": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session"
           }
         }
       }
@@ -1593,6 +1623,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Raccourci"
+          }
+        }
+      }
+    },
+    "Turn off auto-run": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Désactiver l'auto-run"
           }
         }
       }
@@ -3414,10 +3454,40 @@
     },
     "%lld actions denied": {
       "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld action denied"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld actions denied"
+                }
+              }
+            }
+          }
+        },
         "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld actions refusées"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld action refusée"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld actions refusées"
+                }
+              }
+            }
           }
         }
       }
