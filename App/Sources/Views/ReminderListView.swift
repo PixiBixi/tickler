@@ -221,7 +221,7 @@ struct ReminderRow: View {
         let bucket = reminder.status == .done ? DueBucket.later : DueBucket.of(reminder, now: model.now)
         let soon = reminder.isSoon(now: model.now)
         HStack(spacing: 10) {
-            Circle().fill(Theme.dot(for: bucket, soon: soon)).frame(width: 8, height: 8)
+            AutoRunMark(reminder: reminder, fallback: Theme.dot(for: bucket, soon: soon))
             VStack(alignment: .leading, spacing: 2) {
                 Text(reminder.title).font(.system(size: 13)).lineLimit(1)
                     .strikethrough(reminder.status == .done, color: .secondary)
@@ -231,6 +231,12 @@ struct ReminderRow: View {
                     if let project = reminder.project {
                         Text("·").foregroundStyle(.tertiary)
                         Text(project).foregroundStyle(.secondary)
+                    }
+                    if let summary = model.autoRunSummary(for: reminder) {
+                        Text("·").foregroundStyle(.tertiary)
+                        Text(summary)
+                            .foregroundStyle(model.finishedRun(for: reminder)?.tint ?? Theme.accent)
+                            .lineLimit(1)
                     }
                     if reminder.rescheduleCount > 0 {
                         Text("·").foregroundStyle(.tertiary)

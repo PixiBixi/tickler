@@ -206,7 +206,7 @@ private struct CompactRow: View {
     var body: some View {
         let bucket = DueBucket.of(reminder, now: model.now)
         HStack(spacing: 10) {
-            Circle().fill(Theme.dot(for: bucket, soon: reminder.isSoon(now: model.now))).frame(width: 8, height: 8)
+            AutoRunMark(reminder: reminder, fallback: Theme.dot(for: bucket, soon: reminder.isSoon(now: model.now)))
             VStack(alignment: .leading, spacing: 2) {
                 Text(reminder.title).font(.system(size: 13)).lineLimit(1)
                 Text(subtitle(bucket))
@@ -252,7 +252,7 @@ private struct CompactRow: View {
     private func subtitle(_ bucket: DueBucket) -> String {
         let when = bucket == .overdue || bucket == .today ? Format.time(reminder.dueAt) : Format.dueLabel(reminder.dueAt, now: model.now)
         let relative = bucket == .overdue ? Format.relative(reminder.dueAt, now: model.now) : reminder.project
-        return [when, relative].compactMap(\.self).joined(separator: " · ")
+        return [when, relative, model.autoRunSummary(for: reminder)].compactMap(\.self).joined(separator: " · ")
     }
 
     private func iconButton(_ symbol: String, help: LocalizedStringKey, action: @escaping () -> Void) -> some View {

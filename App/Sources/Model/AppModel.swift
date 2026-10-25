@@ -516,3 +516,12 @@ final class AppModel {
         }
     }
 }
+
+extension AppModel {
+    func setAutoRun(_ id: String, _ mode: AutoRunMode?) {
+        perform {
+            try $0.setAutoRun(id, mode)
+            return nil
+        }
+    }
+}
