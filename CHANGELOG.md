@@ -4,6 +4,12 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.10.1](https://github.com/PixiBixi/tickler/compare/v0.10.0..v0.10.1) - 2026-10-25
+#### Bug Fixes
+- (**auto-run**) apply the user's claude shell function - ([fd98863](https://github.com/PixiBixi/tickler/commit/fd988635c944799f3aeee4559993b3f965859e76)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.10.0](https://github.com/PixiBixi/tickler/compare/v0.9.2..v0.10.0) - 2026-10-25
 #### Features
 - (**app**) rework the auto-run detail pane - ([075c0a3](https://github.com/PixiBixi/tickler/commit/075c0a3f5cb9ba0177d93617b7d588f8110eb0e7)) - [@PixiBixi](https://github.com/PixiBixi)
