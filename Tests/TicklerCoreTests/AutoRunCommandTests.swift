@@ -6,9 +6,10 @@ struct AutoRunCommandTests {
         let args = AutoRunCommand.claudeArguments(prompt: "go", sessionId: "abc", mode: .read)
         #expect(args == [
             "-p", "--resume", "abc", "--output-format", "json", "--permission-mode", "dontAsk",
-            "--permission-prompts", "none", "--append-system-prompt", AutoRunCommand.reportFormat, "--", "go",
+            "--permission-prompts", "none", "--", "go\n\n" + AutoRunCommand.reportFormat,
         ])
         #expect(!args.contains("bypassPermissions"))
+        #expect(!args.contains("--append-system-prompt"))
     }
 
     @Test func writeModeArgs() {
@@ -24,7 +25,7 @@ struct AutoRunCommandTests {
 
     @Test func messageStartingWithDash() {
         let args = AutoRunCommand.claudeArguments(prompt: "-x", sessionId: nil, mode: .read)
-        #expect(Array(args.suffix(2)) == ["--", "-x"])
+        #expect(Array(args.suffix(2)) == ["--", "-x\n\n" + AutoRunCommand.reportFormat])
     }
 
     @Test func reportFormatText() {

@@ -26,7 +26,7 @@ The app runs, in the reminder's `cwd`, through a new runner built like `SessionR
 ```
 claude -p --resume <sessionId> --output-format json \
   --permission-mode <dontAsk | acceptEdits> --permission-prompts none \
-  --append-system-prompt <REPORT_FORMAT> -- <resumeMessage>
+  -- "<resumeMessage>\n\n<REPORT_FORMAT>"
 ```
 
 - Arguments are passed as an argv array, never interpolated into a shell string (same rule as `LiveStatusFetcher`).
@@ -37,7 +37,7 @@ claude -p --resume <sessionId> --output-format json \
 - One run at a time per session: a reminder whose session is already being auto-run by another reminder waits for that run to end, then starts. Reminders on different sessions run in parallel.
 - Marking the reminder done or deleting it terminates its running process; the run ends `cancelled` (or disappears with the reminder).
 
-`REPORT_FORMAT` is a fixed English string in `TicklerCore` asking Claude to end its answer with:
+`REPORT_FORMAT` is a fixed English string in `TicklerCore`, appended to the prompt after a blank line (not as a system prompt: `--system-prompt-snapshot` reuses the first request's system prompt on every resume, so an appended one is ignored). The prompt still starts with the owner's text. It asks Claude to end its answer with:
 
 ```
 Verdict: OK | WATCH | KO - one sentence

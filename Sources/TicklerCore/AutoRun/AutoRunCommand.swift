@@ -2,7 +2,7 @@ import Foundation
 
 /// The `claude` command line of a background run.
 public enum AutoRunCommand {
-    /// Appended to the system prompt so the answer ends with a block `AutoRunParser` can read.
+    /// Appended to the prompt (a system prompt is ignored on a resumed session) so the answer ends with a block `AutoRunParser` can read.
     public static let reportFormat = """
     End your answer with this block, in English, nothing after it:
     Verdict: OK | WATCH | KO - one sentence
@@ -19,7 +19,7 @@ public enum AutoRunCommand {
         }
         args += [
             "--output-format", "json", "--permission-mode", mode.permissionMode, "--permission-prompts", "none",
-            "--append-system-prompt", reportFormat, "--", prompt,
+            "--", "\(prompt)\n\n\(reportFormat)",
         ]
         return args
     }
