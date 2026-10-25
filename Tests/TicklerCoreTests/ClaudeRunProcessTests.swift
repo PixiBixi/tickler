@@ -32,14 +32,15 @@ struct ClaudeRunProcessTests {
 
     @Test func timesOut() async {
         let start = Date()
-        let result = await shell("sleep 5", timeout: 0.5).run()
+        let result = await shell("sleep 30", timeout: 0.5).run()
         #expect(result.timedOut)
         #expect(!result.cancelled)
-        #expect(Date().timeIntervalSince(start) < 3)
+        // Far below the sleep, loose enough for a loaded CI runner (3.1 s seen).
+        #expect(Date().timeIntervalSince(start) < 10)
     }
 
     @Test func cancelTerminates() async throws {
-        let process = shell("sleep 5")
+        let process = shell("sleep 30")
         let start = Date()
         let task = Task { await process.run() }
         try await Task.sleep(nanoseconds: 200_000_000)
@@ -47,7 +48,7 @@ struct ClaudeRunProcessTests {
         let result = await task.value
         #expect(result.cancelled)
         #expect(!result.timedOut)
-        #expect(Date().timeIntervalSince(start) < 2)
+        #expect(Date().timeIntervalSince(start) < 10)
     }
 
     @Test func cancelBeforeRunDoesNotLaunch() async {
