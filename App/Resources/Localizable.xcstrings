@@ -3252,16 +3252,6 @@
         }
       }
     },
-    "Set a resume prompt and a session folder from the reminder": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Définis un prompt de reprise et un dossier de session depuis le reminder"
-          }
-        }
-      }
-    },
     "Run automatically when due": {
       "localizations": {
         "fr": {

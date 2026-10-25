@@ -47,11 +47,18 @@ extension Format {
 }
 
 extension AppModel {
-    /// The last run when it answers the reminder's current due date and is not in progress.
+    /// The newest run that is not in progress, whatever due date it answered: a reschedule keeps the last result visible.
     func finishedRun(for reminder: Reminder) -> AutoRun? {
-        guard reminder.status == .open, reminder.autoRunMode != nil, let run = lastRuns[reminder.id],
-              run.state != .running, run.forDueAt == reminder.dueAt else { return nil }
-        return run
+        guard reminder.status == .open, reminder.autoRunMode != nil, let last = lastRuns[reminder.id] else { return nil }
+        if last.state != .running {
+            return last
+        }
+        return (try? store?.runs(for: reminder.id))?.first { $0.state != .running }
+    }
+
+    /// Whether a run already answers the reminder's current due date (running or finished).
+    func hasRun(forCurrentDueDateOf reminder: Reminder) -> Bool {
+        lastRuns[reminder.id]?.forDueAt == reminder.dueAt
     }
 
     /// One short line for the list and the menu bar: elapsed time while running, else the last outcome.

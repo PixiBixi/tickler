@@ -393,7 +393,7 @@ extension ReminderDetailView {
     @ViewBuilder
     private var autoRunPrimary: some View {
         if reminder.status == .open, reminder.autoRunMode != nil, !autoRunning {
-            if model.finishedRun(for: reminder) == nil {
+            if !model.hasRun(forCurrentDueDateOf: reminder) {
                 Button { model.autoRunner.start(reminder) } label: { Label("Run now", systemImage: "play.fill") }
                     .buttonStyle(PrimaryButtonStyle())
             } else {
@@ -416,7 +416,7 @@ extension ReminderDetailView {
     private var resumeButton: some View {
         if reminder.sessionId != nil {
             let scheduled = reminder.status == .open && reminder.autoRunMode != nil
-            let finished = model.finishedRun(for: reminder) != nil
+            let finished = model.hasRun(forCurrentDueDateOf: reminder)
             let button = Button { model.resume(reminder) } label: { resumeLabel(scheduled: scheduled, finished: finished) }
                 .disabled(sessionBusy)
                 .help(reminder.resumeMessage.map { "⌘R: \($0)" } ?? "⌘R")

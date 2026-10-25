@@ -1,5 +1,8 @@
 import Foundation
+import os
 import TicklerCore
+
+private let log = Logger(subsystem: "io.github.pixibixi.tickler", category: "auto-run")
 
 /// Runs due auto-run reminders in their Claude session in the background, one run at a time per session,
 /// stores the result and notifies with the verdict.
@@ -181,11 +184,11 @@ final class AutoRunner {
         startTimes[reminder.id] = nil
         runningSessions = Set(sessionKeys.values)
         guard let store = model.store else { return }
-        if (try? store.finishRun(run.id, result, at: Date())) == true {
+        if write("finish the run", { try store.finishRun(run.id, result, at: Date()) }) == true {
             // The reminder as it was when the run started: a reschedule meanwhile keeps its own notification.
             var asRun = reminder
             asRun.dueAt = run.forDueAt
-            try? store.markNotified([asRun], at: Date())
+            write("mark the reminder notified") { try store.markNotified([asRun], at: Date()) }
             if result.state != .cancelled {
                 let notice = Self.notice(for: result)
                 Task { await model.notifications.postRun(reminder: reminder, runId: run.id, notice: notice) }
@@ -196,10 +199,22 @@ final class AutoRunner {
         reconcile()
     }
 
+    /// Runs a store write and logs its failure instead of dropping it.
+    @discardableResult
+    private func write<T>(_ what: String, _ body: () throws -> T) -> T? {
+        do {
+            return try body()
+        } catch {
+            log.error("Could not \(what, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
     private func skip(_ reminder: Reminder) {
         guard let store = model.store,
-              let run = try? store.recordSkipped(reminder.id, reason: Self.skippedReason, at: Date()) else { return }
-        try? store.markNotified([reminder], at: Date())
+              let run = write("record the skipped run", { try store.recordSkipped(reminder.id, reason: Self.skippedReason, at: Date()) })
+        else { return }
+        write("mark the reminder notified") { try store.markNotified([reminder], at: Date()) }
         let notice = RunNotice(
             mark: "⚠️",
             body: String(localized: "Session open, start it manually"),

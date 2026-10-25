@@ -5,7 +5,6 @@ import TicklerCore
 struct AutoRunToggle: View {
     @Binding var mode: AutoRunMode?
     let isAvailable: Bool
-    var unavailableHelp: LocalizedStringKey = "Needs a resume prompt and a session folder"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -32,7 +31,7 @@ struct AutoRunToggle: View {
             }
         }
         .disabled(mode == nil && !isAvailable)
-        .help(mode == nil && !isAvailable ? unavailableHelp : "")
+        .help(mode == nil && !isAvailable ? "Needs a resume prompt and a session folder" : "")
     }
 
     private var enabled: Binding<Bool> {

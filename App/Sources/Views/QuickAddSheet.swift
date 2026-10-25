@@ -24,11 +24,6 @@ struct QuickAddSheet: View {
             VStack(alignment: .leading, spacing: 18) {
                 whenSection(due)
                 notesSection
-                AutoRunToggle(
-                    mode: .constant(nil),
-                    isAvailable: false,
-                    unavailableHelp: "Set a resume prompt and a session folder from the reminder"
-                )
             }
             .padding(.horizontal, 22)
             .padding(.vertical, 18)

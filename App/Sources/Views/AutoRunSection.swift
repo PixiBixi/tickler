@@ -33,9 +33,13 @@ struct AutoRunResultBlock: View {
         }
     }
 
-    /// "10:00 → 10:07 · 7 min · $0.84"
+    /// "10:00 → 10:07 · 7 min · $0.84", led by the day when the run did not end today.
     private var meta: String {
         var parts = [Format.time(run.startedAt)]
+        if !Calendar.current.isDateInToday(run.endedAt ?? run.startedAt) {
+            parts[0] = (run.endedAt ?? run.startedAt).formatted(Date.FormatStyle().weekday(.abbreviated).day().month(.abbreviated)
+                .locale(Format.locale)) + " " + parts[0]
+        }
         if let ended = run.endedAt {
             parts[0] += " → " + Format.time(ended)
         }
