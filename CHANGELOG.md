@@ -4,6 +4,29 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.10.0](https://github.com/PixiBixi/tickler/compare/v0.9.2..v0.10.0) - 2026-10-25
+#### Features
+- (**app**) rework the auto-run detail pane - ([075c0a3](https://github.com/PixiBixi/tickler/commit/075c0a3f5cb9ba0177d93617b7d588f8110eb0e7)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) show auto-run state and results - ([9335704](https://github.com/PixiBixi/tickler/commit/93357048fc0b53035296587b39ae2260a1f379ac)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) run due auto-run reminders in the background - ([ba983b2](https://github.com/PixiBixi/tickler/commit/ba983b2e8d4cbb41acc94a4722d7710a720efdf0)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**auto-run**) run claude with cwd, timeout and cancel - ([6974e8a](https://github.com/PixiBixi/tickler/commit/6974e8a0f219a674e45b8dcf2da749075228e583)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**auto-run**) build the claude command and parse its result - ([2e93feb](https://github.com/PixiBixi/tickler/commit/2e93feb913c99a916db4425abc99209021055c24)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**cli**) configure auto-run and show the last run - ([57d4a0f](https://github.com/PixiBixi/tickler/commit/57d4a0fd9b3ee9e896f1d29b52234b211b6be5fc)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**planning**) decide auto-runs and keep them out of due notifications - ([77b4813](https://github.com/PixiBixi/tickler/commit/77b481334605ae6ef03eb3b130c84db194a2811e)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**skill**) offer auto-run for read-only checks - ([04cd7b7](https://github.com/PixiBixi/tickler/commit/04cd7b7390e9bca5348e6f891acf10c577447ef5)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**store**) record auto-run mode and runs - ([10508e0](https://github.com/PixiBixi/tickler/commit/10508e00edcda8171b0f227f6b23fcc24b763d55)) - [@PixiBixi](https://github.com/PixiBixi)
+#### Bug Fixes
+- (**app**) keep the selected row's date and verdict readable - ([c77d676](https://github.com/PixiBixi/tickler/commit/c77d6761491e0ecd95b6e9015dcb0f53204b0426)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) make the whole full-answer row toggle - ([0a72ae0](https://github.com/PixiBixi/tickler/commit/0a72ae0e0814c35799f124830f9f82afbea41f3d)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**app**) show the last result and log run write failures - ([e42e330](https://github.com/PixiBixi/tickler/commit/e42e33082bb1ca290052888e3573ed2166c2fa56)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**auto-run**) send the report format in the prompt - ([370e1f5](https://github.com/PixiBixi/tickler/commit/370e1f5826b13e819cfae91e60dabbe31420519a)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**cli**) refuse a blank prompt with --auto-run - ([314081b](https://github.com/PixiBixi/tickler/commit/314081b6af46793694e1fced2a726686f9b97272)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**planning**) keep auto-run reminders out of the notch island - ([57bd40b](https://github.com/PixiBixi/tickler/commit/57bd40bd038456b52527486623ddd73687c7786a)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**planning**) keep run banners out of removals - ([2fc43fe](https://github.com/PixiBixi/tickler/commit/2fc43fe5e056d4506efdf11fb0e07297f3e2b714)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**store**) keep auto-run reminders runnable - ([2eec7f5](https://github.com/PixiBixi/tickler/commit/2eec7f57dedc848c4b0fab6df3f7afc85fd3ea3e)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.9.2](https://github.com/PixiBixi/tickler/compare/v0.9.1..v0.9.2) - 2026-10-21
 #### Bug Fixes
 - (**resume**) spawn the WezTerm tab next to the focused pane - ([d28f3a0](https://github.com/PixiBixi/tickler/commit/d28f3a09a7a7d282fad2e6e2909fa04033b0d969)) - [@PixiBixi](https://github.com/PixiBixi)
