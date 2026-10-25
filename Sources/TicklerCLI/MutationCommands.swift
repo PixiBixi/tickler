@@ -89,7 +89,12 @@ struct EditCommand: TicklerSubcommand {
             } ?? current
             try requireSupportedLink(trigger, links, gitlabHosts: GitLabHosts.current(environment: context.environment))
         }
-        var updated = try store.update(id, title: title, notes: newNotes, dueAt: due, resumePrompt: prompt)
+        var updated: Reminder
+        do {
+            updated = try store.update(id, title: title, notes: newNotes, dueAt: due, resumePrompt: prompt)
+        } catch let error as StoreError where error == .autoRunNeedsPrompt || error == .autoRunNeedsFolder {
+            throw CLIError.usage("--auto-run: \(error)")
+        }
         if when != nil {
             updated = try store.setTrigger(id, trigger)
         }

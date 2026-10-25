@@ -145,6 +145,13 @@ public final class ReminderStore: Sendable {
             try reschedule(id, to: dueAt)
         }
         guard title != nil || notes != nil || resumePrompt != nil else { return try require(id) }
+        if let resumePrompt {
+            var current = try require(id)
+            if current.autoRun != nil {
+                current.resumePrompt = Self.normalized(resumePrompt)
+                try Self.requireRunnable(current)
+            }
+        }
         return try mutate(id) { reminder, _ in
             if let resumePrompt {
                 reminder.resumePrompt = Self.normalized(resumePrompt)
@@ -170,7 +177,7 @@ public final class ReminderStore: Sendable {
 
     /// One line, no control or format characters, trimmed; nothing left means no prompt.
     /// It is typed into Claude Code, so a leading `/` or `!` (slash command, bash mode) gets a `Resume: ` prefix.
-    static func normalized(_ prompt: String?) -> String? {
+    public static func normalized(_ prompt: String?) -> String? {
         let joined = (prompt ?? "").split(whereSeparator: \.isNewline).joined(separator: " ")
         let kept = joined.unicodeScalars.filter { $0.properties.generalCategory != .control && $0.properties.generalCategory != .format }
         let line = String(String.UnicodeScalarView(kept)).trimmingCharacters(in: .whitespaces)
@@ -199,11 +206,15 @@ public final class ReminderStore: Sendable {
     @discardableResult
     public func setAutoRun(_ id: String, _ mode: AutoRunMode?) throws -> Reminder {
         if mode != nil {
-            let current = try require(id)
-            guard current.resumePrompt != nil else { throw StoreError.autoRunNeedsPrompt }
-            guard let cwd = current.cwd, !cwd.isEmpty else { throw StoreError.autoRunNeedsFolder }
+            try Self.requireRunnable(require(id))
         }
         return try mutate(id) { reminder, _ in reminder.autoRun = mode?.rawValue }
+    }
+
+    /// A background run needs a resume prompt and a session folder; shared by `setAutoRun` and `update`.
+    private static func requireRunnable(_ reminder: Reminder) throws {
+        guard reminder.resumePrompt != nil else { throw StoreError.autoRunNeedsPrompt }
+        guard let cwd = reminder.cwd, !cwd.isEmpty else { throw StoreError.autoRunNeedsFolder }
     }
 
     /// Makes a waiting reminder due at `date`. Only an open reminder still waiting for `trigger` changes, so a second firing

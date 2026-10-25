@@ -47,6 +47,17 @@ struct AutoRunStoreTests {
         #expect(AutoRunMode.write.permissionMode == "acceptEdits")
     }
 
+    @Test func updateCannotClearThePromptOfAnAutoRunReminder() throws {
+        let store = try Fixture.store()
+        let full = try reminder(store, mode: .read)
+        #expect(throws: StoreError.autoRunNeedsPrompt) { try store.update(full.id, resumePrompt: "") }
+        #expect(throws: StoreError.autoRunNeedsPrompt) { try store.update(full.id, resumePrompt: "  ") }
+        #expect(try store.require(full.id).resumePrompt != nil)
+        #expect(try store.update(full.id, resumePrompt: "other").resumePrompt == "other")
+        let plain = try reminder(store, mode: nil)
+        #expect(try store.update(plain.id, resumePrompt: "").resumePrompt == nil)
+    }
+
     @Test func setAutoRunNeedsPromptAndFolder() throws {
         let store = try Fixture.store()
         let bare = try store.add(Fixture.draft("bare", at: "2026-10-06 09:30"))
