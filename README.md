@@ -83,12 +83,12 @@ tickler hook install
 
 | Command | Does |
 |---|---|
-| `tickler add <title> --at "YYYY-MM-DD HH:MM"` | Creates a reminder. `--when <event>` (`merged`, `pipeline-green`, `pipeline-failed`, `approved`, `jira:done`, `jira:<status>`; without `--at`, the deadline is 3 working days at 09:30), `--notes <text>` or `--notes -` (stdin), `--link <url>` (repeatable), `--session <uuid>`, `--cwd <dir>`, `--prompt <text>` (first message to Claude on resume), `--json` |
+| `tickler add <title> --at "YYYY-MM-DD HH:MM"` | Creates a reminder. `--when <event>` (`merged`, `pipeline-green`, `pipeline-failed`, `approved`, `jira:done`, `jira:<status>`; without `--at`, the deadline is 3 working days at 09:30), `--notes <text>` or `--notes -` (stdin), `--link <url>` (repeatable), `--session <uuid>`, `--cwd <dir>`, `--prompt <text>` (first message to Claude on resume), `--auto-run <read\|write>` (needs `--prompt` and a folder), `--json` |
 | `tickler list` (alias `ls`) | Open reminders. `--due today` (default, overdue included), `week`, `overdue`, `all`; `--project <name>`; `--status done`; `--waiting`; `--json` |
 | `tickler show <id>` | One reminder with notes, links and session. `--json` |
 | `tickler done <id>` | Marks it done |
 | `tickler snooze <id> --for 1h` | Pushes it back from now: `15m`, `1h`, `2d`. Or `--to "YYYY-MM-DD HH:MM"` |
-| `tickler edit <id>` | `--title`, `--at`, `--notes <text>` or `--notes -`, `--prompt <text>` (`""` removes it), `--when <event>` (`""` removes it) |
+| `tickler edit <id>` | `--title`, `--at`, `--notes <text>` or `--notes -`, `--prompt <text>` (`""` removes it), `--when <event>` (`""` removes it), `--auto-run <read\|write\|off>` |
 | `tickler rm <id>` | Deletes it |
 | `tickler resume <id>` | Focuses the tab of the reminder's Claude session in WezTerm, Ghostty or iTerm2, or reopens it with `claude --resume` in the reminder's folder. A resume prompt is sent as the first message of a reopened session, and typed without Return into a running one (WezTerm, iTerm2). `TICKLER_TERMINAL=wezterm\|ghostty\|iterm` picks where new tabs open |
 | `tickler status <id>` | Live state of the linked GitLab MRs, Jira issues and GitHub PRs (pipeline, approvals, ticket status, checks). `--json` |
@@ -130,11 +130,13 @@ tickler hook install
   "overdue": false,
   "trigger": null,
   "waiting": false,
+  "autoRun": null,
+  "lastRun": null,
   "links": [{ "kind": "jira", "label": "OPS-2204", "url": "https://acme.atlassian.net/browse/OPS-2204" }]
 }
 ```
 
-`trigger` is the awaited event; once it fires, `firedReason` says why (`MR !412 merged`) and the reminder is due at `firedAt`.
+`trigger` is the awaited event; once it fires, `firedReason` says why (`MR !412 merged`) and the reminder is due at `firedAt`. `autoRun` is `read`, `write` or null; `lastRun` is null or `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`. Runs happen in Tickler.app only, never from the CLI.
 
 Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 
