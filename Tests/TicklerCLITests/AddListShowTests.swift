@@ -32,13 +32,13 @@ struct AddListShowTests {
         #expect(links.allSatisfy { $0["label"] != nil && $0["url"] != nil })
     }
 
-    @Test func jsonKeysAreSortedAndNullsAreWritten() {
+    @Test func jsonKeysAreSortedAndNullsAreWritten() throws {
         let cli = CLIHarness()
         let out = cli.run("add", "Plain", "--at", "2026-10-02 09:00", "--json").out
         #expect(out.contains("\"sessionId\" : null"))
-        let cwdIndex = out.range(of: "\"cwd\"")?.lowerBound
-        let dueIndex = out.range(of: "\"due\"")?.lowerBound
-        #expect(cwdIndex != nil && dueIndex != nil && cwdIndex! < dueIndex!)
+        let cwdIndex = try #require(out.range(of: "\"cwd\"")?.lowerBound)
+        let dueIndex = try #require(out.range(of: "\"due\"")?.lowerBound)
+        #expect(cwdIndex < dueIndex)
     }
 
     @Test func addPrintsTabSeparatedSummary() {
