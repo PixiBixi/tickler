@@ -136,7 +136,7 @@ tickler hook install
 }
 ```
 
-`trigger` is the awaited event; once it fires, `firedReason` says why (`MR !412 merged`) and the reminder is due at `firedAt`. `autoRun` is `read`, `write` or null; `lastRun` is null or `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`. Runs happen in Tickler.app only, never from the CLI.
+`trigger` is the awaited event; once it fires, `firedReason` says why (`MR !412 merged`) and the reminder is due at `firedAt`. `autoRun` is `read`, `write` or null; `lastRun` is null or `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`. Runs happen in Tickler.app only, never from the CLI. `read` runs only what your Claude Code allow rules already permit (`dontAsk`), so a broad allowlist widens it.
 
 Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 
