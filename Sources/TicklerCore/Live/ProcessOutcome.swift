@@ -60,7 +60,7 @@ struct ProcessOutcome: Sendable {
 }
 
 /// Collects a pipe through a readability handler: no thread waits on it, so stopping it leaves nothing blocked.
-private final class PipeReader: Sendable {
+final class PipeReader: Sendable {
     private let handle: FileHandle
     private let buffer = OSAllocatedUnfairLock(initialState: Data())
     private let finished = DispatchSemaphore(value: 0)
