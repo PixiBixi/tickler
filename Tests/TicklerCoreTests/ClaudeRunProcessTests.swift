@@ -51,6 +51,32 @@ struct ClaudeRunProcessTests {
         #expect(Date().timeIntervalSince(start) < 10)
     }
 
+    /// The login shell runs `claude` as a child, not through `exec`: a stop must reach it too.
+    @Test func cancelStopsGrandchildren() async throws {
+        let pidFile = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
+        let process = shell("sleep 30 & echo $! > \(pidFile); wait")
+        let task = Task { await process.run() }
+        let pid =
+            try #require(await poll {
+                Int32(text(FileManager.default.contents(atPath: pidFile) ?? Data()).trimmingCharacters(in: .whitespacesAndNewlines))
+            })
+        process.cancel()
+        _ = await task.value
+        // The orphan is reaped by launchd, not by us: give it a moment.
+        #expect(await poll { kill(pid, 0) != 0 ? true : nil } == true)
+    }
+
+    /// Retries every 50 ms for up to 10 s: parallel suites can starve a fixed sleep.
+    private func poll<T>(_ probe: () -> T?) async -> T? {
+        for _ in 0 ..< 200 {
+            if let value = probe() {
+                return value
+            }
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+        return nil
+    }
+
     @Test func cancelBeforeRunDoesNotLaunch() async {
         let marker = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
         let process = shell("touch \(marker)")
