@@ -21,7 +21,7 @@ Out of scope: recurring runs (a reminder runs once per due date; "Relancer" reru
 
 ## How a run works
 
-The app runs, in the reminder's `cwd`, through a new runner built like `SessionResumer.resumeCommand`: `env -u <the same scrubbed CLAUDE_* variables> zsh -lic 'exec claude "$@"' claude <args>`, so `claude` has the owner's PATH (`~/.local/bin` included) and credentials, with the arguments as positional parameters. `AppToolRunner` is not reused: its fixed search path misses `~/.local/bin`, and it has no working directory, no stderr and no cancellation.
+The app runs, in the reminder's `cwd`, through a new runner built like `SessionResumer.resumeCommand`: `env -u <the same scrubbed CLAUDE_* variables> zsh -lic 'setopt no_monitor; claude "$@"' claude <args>`, so `claude` has the owner's PATH (`~/.local/bin` included) and credentials, with the arguments as positional parameters. No `exec`, which would skip a `claude` shell function from the owner's zsh files (extra `--settings`, plugins); `no_monitor` keeps `claude` in the shell's process group, and a stop or timeout signals that whole group. `AppToolRunner` is not reused: its fixed search path misses `~/.local/bin`, and it has no working directory, no stderr and no cancellation.
 
 ```
 claude -p --resume <sessionId> --output-format json \

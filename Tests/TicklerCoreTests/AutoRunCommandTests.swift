@@ -45,10 +45,11 @@ struct AutoRunCommandTests {
         #expect(command.contains("CLAUDE_CODE_SESSION_ID"))
         let index = command.firstIndex(of: "CLAUDE_CODE_SESSION_ID")
         #expect(index.map { command[$0 - 1] } == "-u")
-        #expect(command.contains(#"exec claude "$@""#))
-        #expect(!#"exec claude "$@""#.contains("secret prompt"))
+        #expect(command.contains(AutoRunCommand.script))
+        #expect(!AutoRunCommand.script.contains("secret prompt"))
+        #expect(!AutoRunCommand.script.contains("exec"))
         let zsh = command.firstIndex(of: "zsh") ?? 0
-        #expect(Array(command[zsh...].prefix(4)) == ["zsh", "-lic", #"exec claude "$@""#, "claude"])
+        #expect(Array(command[zsh...].prefix(4)) == ["zsh", "-lic", AutoRunCommand.script, "claude"])
         #expect(Array(command[(zsh + 4)...]) == args)
     }
 }

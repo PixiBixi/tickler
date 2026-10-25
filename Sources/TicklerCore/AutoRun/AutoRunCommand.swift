@@ -24,9 +24,13 @@ public enum AutoRunCommand {
         return args
     }
 
+    /// No `exec`: it skips shell functions, and a `claude` function in the user's zsh files must apply (plugins, settings).
+    /// `no_monitor` keeps `claude` in the shell's process group, which a stop signals.
+    static let script = #"setopt no_monitor; claude "$@""#
+
     /// The arguments reach the login shell as positional parameters, never inside the script text.
     public static func command(claudeArguments: [String]) -> [String] {
         ["env"] + SessionResumer.scrubbedVariables.flatMap { ["-u", $0] }
-            + ["zsh", "-lic", #"exec claude "$@""#, "claude"] + claudeArguments
+            + ["zsh", "-lic", script, "claude"] + claudeArguments
     }
 }

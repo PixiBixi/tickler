@@ -43,7 +43,7 @@ public final class ClaudeRunProcess: Sendable {
         }
     }
 
-    /// Stops the run (SIGTERM, then SIGKILL). Before `run()` it prevents the launch; after exit it does nothing.
+    /// Stops the run and its children (SIGTERM, then SIGKILL). Before `run()` it prevents the launch; after exit it does nothing.
     public func cancel() {
         let process: Process? = state.withLock { state in
             guard !state.finished else { return nil }
@@ -54,12 +54,13 @@ public final class ClaudeRunProcess: Sendable {
         Self.stop(process)
     }
 
+    /// `Process` starts the child as leader of its own group: signalling the group also stops what the login shell launched.
     private static func stop(_ process: Process) {
-        process.terminate()
-        let pid = process.processIdentifier
+        let group = -process.processIdentifier
+        kill(group, SIGTERM)
         DispatchQueue.global().asyncAfter(deadline: .now() + killGrace) {
-            if process.isRunning {
-                kill(pid, SIGKILL)
+            if kill(group, 0) == 0 {
+                kill(group, SIGKILL)
             }
         }
     }
