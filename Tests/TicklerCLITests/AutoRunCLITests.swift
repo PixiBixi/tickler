@@ -53,6 +53,25 @@ struct AutoRunCLITests {
         #expect(result.err.contains("resume prompt"))
     }
 
+    @Test func editClearingThePromptOfAnAutoRunReminderIsRefused() throws {
+        let cli = CLIHarness()
+        let id = try #require(cli.run(
+            "add", "check", "--at", "2026-10-02 10:00", "--prompt", "p", "--cwd", "/w", "--auto-run", "read", "--json"
+        ).jsonObject()["id"] as? String)
+        let result = cli.run("edit", id, "--prompt", "")
+        #expect(result.code == 2)
+        #expect(result.err.contains("resume prompt"))
+        #expect(try cli.run("show", id, "--json").jsonObject()["resumePrompt"] as? String == "p")
+    }
+
+    @Test func addAutoRunRefusesABlankPrompt() {
+        let result = CLIHarness().run(
+            "add", "check", "--at", "2026-10-02 10:00", "--session", "s1", "--prompt", "   ", "--auto-run", "read"
+        )
+        #expect(result.code == 2)
+        #expect(result.err.contains("--prompt"))
+    }
+
     @Test func jsonLastRunNullWithoutRuns() throws {
         let object = try CLIHarness().run("add", "plain", "--at", "2026-10-02 10:00", "--json").jsonObject()
         #expect(object["autoRun"] is NSNull)

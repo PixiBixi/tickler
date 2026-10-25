@@ -28,7 +28,7 @@ struct AddCommand: TicklerSubcommand {
         if autoRun == .off {
             throw ValidationError("--auto-run expects \(AutoRunOption.addUsage), got \"off\"")
         }
-        if autoRun != nil, prompt?.isEmpty != false {
+        if autoRun != nil, ReminderStore.normalized(prompt) == nil {
             throw ValidationError("--auto-run needs --prompt: the run has no one to answer a question")
         }
     }
