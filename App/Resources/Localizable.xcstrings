@@ -3175,6 +3175,72 @@
           }
         }
       }
+    },
+    "A background run is already using this session": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une exécution en arrière-plan utilise déjà cette session"
+          }
+        }
+      }
+    },
+    "The session is open in a terminal: continue there": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La session est ouverte dans un terminal : continue là-bas"
+          }
+        }
+      }
+    },
+    "Session open, start it manually": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session ouverte, lancement manuel"
+          }
+        }
+      }
+    },
+    "Show result": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voir le résultat"
+          }
+        }
+      }
+    },
+    "Run again": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relancer"
+          }
+        }
+      }
+    },
+    "run.action.done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminé"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

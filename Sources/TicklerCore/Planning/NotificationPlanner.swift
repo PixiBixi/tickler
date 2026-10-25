@@ -9,10 +9,18 @@ public enum NotificationCategory: String, CaseIterable, Sendable {
     case ticket = "reminder.ticket.none"
     case ticketSlack = "reminder.ticket.slack"
     case ticketLink = "reminder.ticket.link"
+    /// A finished background run: open its result or mark the reminder done.
+    case autoRunResult = "reminder.run.result"
+    /// A failed or skipped background run: resume the session or run again.
+    case autoRunFailed = "reminder.run.failed"
 
     public static let summaryIdentifier = "reminder.summary"
     /// "Claude added a reminder" banners: informational, never tied to a due time.
     public static let announcementPrefix = "tickler.new"
+
+    public var isAutoRun: Bool {
+        self == .autoRunResult || self == .autoRunFailed
+    }
 
     public var hasTicket: Bool {
         self == .ticket || self == .ticketSlack || self == .ticketLink
@@ -93,6 +101,10 @@ public enum NotificationPlanner {
     }
 
     private static let runMarker = "@run@"
+
+    public static func isRunRequestId(_ requestId: String) -> Bool {
+        requestId.contains(runMarker)
+    }
 
     /// Auto-run reminders never get a due notification: their run reports instead.
     private static func notifiable(_ reminders: [Reminder]) -> [Reminder] {

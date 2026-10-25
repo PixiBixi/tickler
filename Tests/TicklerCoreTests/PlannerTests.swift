@@ -304,6 +304,8 @@ struct AutoRunNotificationTests {
         #expect(id == "auto01@run@r1")
         #expect(NotificationPlanner.staleDelivered(deliveredIds: [id], reminders: [item]).isEmpty)
         #expect(NotificationPlanner.reminderId(fromRequestId: id) == "auto01")
+        #expect(NotificationPlanner.isRunRequestId(id))
+        #expect(!NotificationPlanner.isRunRequestId(NotificationPlanner.requestId(for: item)))
     }
 
     @Test func runNotificationStaleWhenDone() {
