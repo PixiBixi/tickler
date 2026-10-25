@@ -9,7 +9,7 @@ struct ReminderCard {
     let width: Int
     let sessionRunning: Bool?
 
-    func render(_ reminder: Reminder, links: [ReminderLink]) -> String {
+    func render(_ reminder: Reminder, links: [ReminderLink], lastRun: AutoRun? = nil) -> String {
         var lines: [String] = []
         lines.append(Ansi.style(reminder.title.displaySafeLine, .bold))
         lines.append(dueLine(reminder))
@@ -23,6 +23,14 @@ struct ReminderCard {
         if let reason = reminder.firedReason, let firedAt = reminder.firedAt {
             let when = Ansi.style("(\(StrictDate.format(firedAt, calendar: calendar)))", .dim)
             lines.append("\(Ansi.style("fired", .dim)) \(reason.displaySafeLine) \(when)")
+        }
+
+        if let mode = reminder.autoRun {
+            lines.append("\(Ansi.style("auto-run", .dim)) \(Ansi.style(mode.displaySafeLine, .accent))")
+        }
+        if let lastRun {
+            let summary = RunSummary(run: lastRun, calendar: calendar)
+            lines += ["", Ansi.style(summary.title, .heading)] + summary.body.map { "  \($0)" }
         }
 
         if !reminder.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

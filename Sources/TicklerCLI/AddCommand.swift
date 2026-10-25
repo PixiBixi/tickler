@@ -15,6 +15,8 @@ struct AddCommand: TicklerSubcommand {
     @Option(help: "Claude session id. Defaults to $CLAUDE_CODE_SESSION_ID.") var session: String?
     @Option(help: "Session folder. Defaults to the current directory when a session id is known.") var cwd: String?
     @Option(help: "First message sent to Claude when the session is resumed.") var prompt: String?
+    @Option(help: "Run the resume prompt in the background when due, in Tickler.app: \(AutoRunOption.addUsage).")
+    var autoRun: AutoRunOption?
     @Flag(help: "Print the reminder as JSON.") var json = false
 
     func validate() throws {
@@ -22,6 +24,12 @@ struct AddCommand: TicklerSubcommand {
         guard at != nil || when != nil else { throw ValidationError("pass --at, --when, or both") }
         if let when, Trigger(when) == nil {
             throw ValidationError("--when expects \(Trigger.usage), got \"\(when)\"")
+        }
+        if autoRun == .off {
+            throw ValidationError("--auto-run expects \(AutoRunOption.addUsage), got \"off\"")
+        }
+        if autoRun != nil, prompt?.isEmpty != false {
+            throw ValidationError("--auto-run needs --prompt: the run has no one to answer a question")
         }
     }
 
@@ -40,9 +48,13 @@ struct AddCommand: TicklerSubcommand {
         let sessionId = session ?? envSession
         // A human without a session gets no folder: a cwd alone would offer a Resume that cannot work.
         let folder = cwd ?? (sessionId == nil ? nil : context.currentDirectory)
+        if autoRun != nil, folder?.isEmpty != false {
+            throw CLIError.usage("--auto-run needs --cwd, or a session id so the current directory is used")
+        }
         let draft = ReminderDraft(
             title: title, notes: noteText, dueAt: due, links: links, sessionId: sessionId, cwd: folder,
-            resumePrompt: prompt, source: sessionId == nil ? .human : .claude, trigger: trigger
+            resumePrompt: prompt, source: sessionId == nil ? .human : .claude, trigger: trigger,
+            autoRun: autoRun?.mode
         )
         let store = try context.openStore(options)
         try context.printResult(store.add(draft), store: store, json: json)
