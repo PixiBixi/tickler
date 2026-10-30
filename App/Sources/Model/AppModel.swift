@@ -450,25 +450,7 @@ final class AppModel {
             let result = await Task.detached {
                 Result { try SessionResumer(driver: driver).resume(sessionId: sessionId, fallbackCwd: cwd, prompt: prompt) }
             }.value
-            switch result {
-            case .success(.focused(_, typedPrompt: true)):
-                showToast(String(localized: "Prompt typed in the session, press Return to send it"))
-            case .success(.focused):
-                if let prompt {
-                    // The terminal cannot type into a running session (Ghostty): hand the prompt over the clipboard.
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(prompt, forType: .string)
-                    showToast(String(localized: "Session brought to the front, prompt copied: paste it with ⌘V"))
-                } else {
-                    showToast(String(localized: "Session brought to the front"))
-                }
-            case .success:
-                showToast(prompt == nil
-                    ? String(localized: "Session reopened in the terminal")
-                    : String(localized: "Session reopened, prompt sent to Claude"))
-            case let .failure(error):
-                showError(String(describing: error))
-            }
+            report(result, prompt: prompt)
             refreshSessions(until: sessionId)
         }
     }
@@ -518,6 +500,41 @@ final class AppModel {
 }
 
 extension AppModel {
+    func report(_ result: Result<ResumeOutcome, any Error>, prompt: String?) {
+        switch result {
+        case .success(.focused(_, typedPrompt: true)):
+            showToast(String(localized: "Prompt typed in the session, press Return to send it"))
+        case .success(.openedInDesktop):
+            // The desktop app link carries no prompt.
+            handOver(
+                prompt,
+                copied: String(localized: "Session opened in Claude, prompt copied: paste it with ⌘V"),
+                plain: String(localized: "Session opened in Claude")
+            )
+        case .success(.focused):
+            // The terminal cannot type into a running session (Ghostty).
+            handOver(
+                prompt,
+                copied: String(localized: "Session brought to the front, prompt copied: paste it with ⌘V"),
+                plain: String(localized: "Session brought to the front")
+            )
+        case .success:
+            showToast(prompt == nil
+                ? String(localized: "Session reopened in the terminal")
+                : String(localized: "Session reopened, prompt sent to Claude"))
+        case let .failure(error):
+            showError(String(describing: error))
+        }
+    }
+
+    /// Puts the prompt on the clipboard when the session could not receive it.
+    func handOver(_ prompt: String?, copied: String, plain: String) {
+        guard let prompt else { return showToast(plain) }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(prompt, forType: .string)
+        showToast(copied)
+    }
+
     func setAutoRun(_ id: String, _ mode: AutoRunMode?) {
         perform {
             try $0.setAutoRun(id, mode)
