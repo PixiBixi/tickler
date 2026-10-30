@@ -23,7 +23,7 @@ extension ClaudeSkill {
     | `tickler edit <id> --auto-run read\|write\|off` | Sets or removes the background run |
     | `tickler snooze <id> --for 1h` | Pushes it back from now (`15m`, `1h`, `2d`) |
     | `tickler rm <id>` | Deletes an obsolete reminder |
-    | `tickler resume <id>` | Reopens the reminder's Claude session in WezTerm, Ghostty or iTerm2 |
+    | `tickler resume <id>` | Reopens the reminder's Claude session in WezTerm, Ghostty, iTerm2 or the Claude desktop app |
     | `tickler status <id> --json` | Live state of the linked MRs, Jira issues and PRs: pipeline, approvals, ticket status |
     | `tickler hook install` | Installs the SessionStart hook that surfaces the repository's reminders (see At session start) |
 

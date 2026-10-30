@@ -2447,6 +2447,26 @@
         }
       }
     },
+    "Session opened in Claude": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session ouverte dans Claude"
+          }
+        }
+      }
+    },
+    "Session opened in Claude, prompt copied: paste it with ⌘V": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session ouverte dans Claude, prompt copié : colle-le avec ⌘V"
+          }
+        }
+      }
+    },
     "Session reopened in the terminal": {
       "localizations": {
         "fr": {

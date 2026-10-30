@@ -73,14 +73,38 @@ final class FakeDriver: TerminalDriver, @unchecked Sendable {
     }
 }
 
+final class FakeOpener: URLOpening, @unchecked Sendable {
+    var opened: [URL] = []
+    var failure: ResumeError?
+
+    func open(_ url: URL) throws {
+        if let failure {
+            throw failure
+        }
+        opened.append(url)
+    }
+}
+
 struct SessionResumerTests {
     let registryDir: URL
+    let desktopDir: URL
     let folder: String
+    let opener = FakeOpener()
 
     init() throws {
         registryDir = FileManager.default.temporaryDirectory.appendingPathComponent("sessions-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: registryDir, withIntermediateDirectories: true)
+        desktopDir = FileManager.default.temporaryDirectory.appendingPathComponent("desktop-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: desktopDir, withIntermediateDirectories: true)
         folder = FileManager.default.temporaryDirectory.path
+    }
+
+    /// Same layout as the app: `<account>/<org>/local_<id>.json`.
+    func writeDesktopSession(_ desktopId: String, wrapping cliId: String = sessionId) throws {
+        let dir = desktopDir.appendingPathComponent("account/org")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let json = #"{"sessionId":"\#(desktopId)","cliSessionId":"\#(cliId)","cwd":"/tmp","isArchived":false}"#
+        try json.write(to: dir.appendingPathComponent("local_file-\(UUID().uuidString).json"), atomically: true, encoding: .utf8)
     }
 
     func writeRecord(pid: Int32, cwd: String = "/tmp", id: String = sessionId) throws {
@@ -89,7 +113,89 @@ struct SessionResumerTests {
     }
 
     func resumer(_ inspector: FakeInspector, _ driver: FakeDriver) -> SessionResumer {
-        SessionResumer(registry: SessionRegistry(directory: registryDir), inspector: inspector, driver: driver)
+        SessionResumer(
+            registry: SessionRegistry(directory: registryDir),
+            inspector: inspector,
+            driver: driver,
+            desktopSessions: DesktopSessionIndex(directory: desktopDir),
+            opener: opener
+        )
+    }
+
+    @Test func runningDesktopSessionOpensInTheApp() throws {
+        try writeDesktopSession("local_f57a972d-21e4-4355-96c9-f6b130cc8418")
+        let inspector = FakeInspector()
+        inspector.resumePid = 300
+        let driver = FakeDriver()
+
+        let outcome = try resumer(inspector, driver).resume(sessionId: sessionId, fallbackCwd: folder, prompt: "check it")
+        #expect(outcome == .openedInDesktop)
+        #expect(opener.opened.map(\.absoluteString) == ["claude://code/continue?session=local_f57a972d-21e4-4355-96c9-f6b130cc8418"])
+        #expect(driver.calls.isEmpty)
+    }
+
+    @Test func endedDesktopSessionOpensInTheAppNotInATerminal() throws {
+        try writeDesktopSession("local_abc")
+        let driver = FakeDriver()
+        #expect(try resumer(FakeInspector(), driver).resume(sessionId: sessionId, fallbackCwd: folder) == .openedInDesktop)
+        #expect(driver.calls.isEmpty)
+    }
+
+    @Test func terminalPaneWinsOverTheDesktopApp() throws {
+        try writeRecord(pid: 100)
+        try writeDesktopSession("local_abc")
+        let inspector = FakeInspector()
+        inspector.alive = [100]
+        inspector.ttys = [100: "/dev/ttys003"]
+        let driver = FakeDriver()
+        driver.panes = ["/dev/ttys003": "3"]
+        #expect(try resumer(inspector, driver).resume(sessionId: sessionId, fallbackCwd: nil) == .focused(paneId: "3"))
+        #expect(opener.opened.isEmpty)
+    }
+
+    @Test func desktopSessionLastResumedInATerminalGoesBackToTheApp() throws {
+        try writeRecord(pid: 100)
+        try writeDesktopSession("local_abc")
+        let driver = FakeDriver()
+        #expect(try resumer(FakeInspector(), driver).resume(sessionId: sessionId, fallbackCwd: folder) == .openedInDesktop)
+        #expect(driver.calls.isEmpty)
+    }
+
+    @Test func endedDesktopSessionFallsBackToATerminalWhenTheAppCannotOpen() throws {
+        try writeDesktopSession("local_abc")
+        opener.failure = .desktopApp("no application knows how to open claude://")
+        let driver = FakeDriver()
+        #expect(try resumer(FakeInspector(), driver).resume(sessionId: sessionId, fallbackCwd: folder) == .spawned(paneId: "42"))
+        #expect(driver.calls == ["spawn \(folder)", "activate 42", "front"])
+    }
+
+    @Test func runningDesktopSessionReportsWhyTheAppCannotOpen() throws {
+        try writeDesktopSession("local_abc")
+        opener.failure = .desktopApp("no application knows how to open claude://")
+        let inspector = FakeInspector()
+        inspector.resumePid = 300
+        #expect(throws: ResumeError.desktopApp("no application knows how to open claude://")) {
+            try resumer(inspector, FakeDriver()).resume(sessionId: sessionId, fallbackCwd: folder)
+        }
+    }
+
+    @Test func systemOpenerFailureIsADesktopAppError() throws {
+        let opener = SystemURLOpener(binary: URL(fileURLWithPath: "/usr/bin/false"))
+        #expect {
+            try opener.open(#require(URL(string: "claude://code/continue?session=local_abc")))
+        } throws: { error in
+            guard case let ResumeError.desktopApp(message) = error else { return false }
+            return message.hasPrefix("false claude://code/continue?session=local_abc failed")
+        }
+    }
+
+    @Test func ignoresOtherAndMalformedDesktopSessions() throws {
+        try writeDesktopSession("local_other", wrapping: "11111111-2222-3333-4444-555555555555")
+        try writeDesktopSession("local_../evil")
+        try writeDesktopSession("session_abc")
+        let driver = FakeDriver()
+        #expect(try resumer(FakeInspector(), driver).resume(sessionId: sessionId, fallbackCwd: folder) == .spawned(paneId: "42"))
+        #expect(opener.opened.isEmpty)
     }
 
     @Test func focusesTheRunningPane() throws {

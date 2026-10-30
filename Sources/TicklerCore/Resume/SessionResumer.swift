@@ -5,6 +5,8 @@ public enum ResumeOutcome: Equatable, Sendable {
     case focused(paneId: String, typedPrompt: Bool = false)
     case spawned(paneId: String)
     case startedWindow
+    /// The Claude desktop app owns the session; its link carries no prompt.
+    case openedInDesktop
 }
 
 public enum ResumeError: Error, Equatable, CustomStringConvertible {
@@ -13,6 +15,7 @@ public enum ResumeError: Error, Equatable, CustomStringConvertible {
     case folderMissing(String)
     case notInWezTerm(pid: Int32)
     case terminal(String)
+    case desktopApp(String)
 
     public var description: String {
         switch self {
@@ -21,24 +24,32 @@ public enum ResumeError: Error, Equatable, CustomStringConvertible {
         case let .folderMissing(path): "folder \(path) does not exist"
         case let .notInWezTerm(pid): "the session runs as pid \(pid) but not in a WezTerm pane"
         case let .terminal(message): message
+        case let .desktopApp(message): "cannot open the session in the Claude desktop app: \(message)"
         }
     }
 }
 
-/// Brings a Claude Code session back: focus its pane if it still runs, otherwise reopen it with `claude --resume`.
+/// Brings a Claude Code session back: focus its pane if it still runs, hand a desktop app session to the app,
+/// otherwise reopen it with `claude --resume`.
 public struct SessionResumer: Sendable {
     let registry: SessionRegistry
     let inspector: ProcessInspecting
     let driver: TerminalDriver
+    let desktopSessions: DesktopSessionIndex
+    let opener: URLOpening
 
     public init(
         registry: SessionRegistry = SessionRegistry(),
         inspector: ProcessInspecting = SystemProcessInspector(),
-        driver: TerminalDriver
+        driver: TerminalDriver,
+        desktopSessions: DesktopSessionIndex = DesktopSessionIndex(),
+        opener: URLOpening = SystemURLOpener()
     ) {
         self.registry = registry
         self.inspector = inspector
         self.driver = driver
+        self.desktopSessions = desktopSessions
+        self.opener = opener
     }
 
     /// `prompt` becomes the first message of a reopened session; a running one gets it typed, never sent.
@@ -46,14 +57,29 @@ public struct SessionResumer: Sendable {
         guard sessionId.wholeMatch(of: /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/) != nil else {
             throw ResumeError.invalidSessionId(sessionId)
         }
-        if let pid = livePid(of: sessionId) {
-            guard driver.isRunning(), let tty = inspector.ttyPath(of: pid), let pane = try driver.paneId(forTTY: tty) else {
-                throw ResumeError.notInWezTerm(pid: pid)
-            }
+        let pid = livePid(of: sessionId)
+        if let pid, let pane = try terminalPane(of: pid) {
             try driver.activate(paneId: pane)
             driver.bringToFront()
             guard let prompt, !prompt.isEmpty else { return .focused(paneId: pane) }
             return .focused(paneId: pane, typedPrompt: (try? driver.type(prompt, intoPane: pane)) == true)
+        }
+        // A desktop session reopened with `claude --resume` in a terminal would fork its transcript away from the app.
+        if let desktopId = desktopSessions.desktopSessionId(wrapping: sessionId),
+           let url = DesktopSessionIndex.continueURL(desktopSessionId: desktopId)
+        {
+            do {
+                try opener.open(url)
+                return .openedInDesktop
+            } catch {
+                // The app can be gone while its session files remain: only an ended session can reopen in a terminal.
+                if pid != nil {
+                    throw error
+                }
+            }
+        }
+        if let pid {
+            throw ResumeError.notInWezTerm(pid: pid)
         }
 
         guard let folder = fallbackCwd, !folder.isEmpty else { throw ResumeError.noFolder }
@@ -70,6 +96,11 @@ public struct SessionResumer: Sendable {
         try driver.activate(paneId: pane)
         driver.bringToFront()
         return .spawned(paneId: pane)
+    }
+
+    private func terminalPane(of pid: Int32) throws -> String? {
+        guard driver.isRunning(), let tty = inspector.ttyPath(of: pid) else { return nil }
+        return try driver.paneId(forTTY: tty)
     }
 
     /// The registry covers sessions started normally; a session resumed from another one has no file, so match its command line.

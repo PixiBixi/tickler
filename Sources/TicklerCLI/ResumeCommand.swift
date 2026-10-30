@@ -5,7 +5,7 @@ import TicklerCore
 struct ResumeCommand: TicklerSubcommand {
     static let configuration = CommandConfiguration(
         commandName: "resume",
-        abstract: "Bring a reminder's Claude session back in WezTerm, Ghostty or iTerm2."
+        abstract: "Bring a reminder's Claude session back in WezTerm, Ghostty, iTerm2 or the Claude desktop app."
     )
 
     @OptionGroup var options: GlobalOptions
@@ -31,6 +31,7 @@ struct ResumeCommand: TicklerSubcommand {
             "focused the running session in pane \(pane)" + (typed ? ", prompt typed, press Return to send" : "")
         case let .spawned(pane): "resumed the session in a new tab, pane \(pane)"
         case .startedWindow: "started the terminal with the resumed session"
+        case .openedInDesktop: "opened the session in the Claude desktop app"
         }
     }
 
@@ -40,7 +41,7 @@ struct ResumeCommand: TicklerSubcommand {
         let calling = "wezterm:\(wezterm)"
         switch outcome {
         case let .focused(pane, _), let .spawned(pane): return pane == calling ? nil : calling
-        case .startedWindow: return nil
+        case .startedWindow, .openedInDesktop: return nil
         }
     }
 }

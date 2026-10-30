@@ -41,6 +41,7 @@ struct ResumeTests {
         PaneCase(outcome: .focused(paneId: "wezterm:5"), environment: ["WEZTERM_PANE": "9", "CLAUDECODE": "1"], expected: nil),
         PaneCase(outcome: .focused(paneId: "wezterm:5"), environment: [:], expected: nil),
         PaneCase(outcome: .startedWindow, environment: ["WEZTERM_PANE": "9"], expected: nil),
+        PaneCase(outcome: .openedInDesktop, environment: ["WEZTERM_PANE": "9"], expected: nil),
     ])
     func closesOnlyAHumanShellInAnotherPane(_ row: PaneCase) {
         #expect(ResumeCommand.callingPaneToClose(after: row.outcome, environment: row.environment) == row.expected)
