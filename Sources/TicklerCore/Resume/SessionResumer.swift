@@ -15,6 +15,7 @@ public enum ResumeError: Error, Equatable, CustomStringConvertible {
     case folderMissing(String)
     case notInWezTerm(pid: Int32)
     case terminal(String)
+    case desktopApp(String)
 
     public var description: String {
         switch self {
@@ -23,6 +24,7 @@ public enum ResumeError: Error, Equatable, CustomStringConvertible {
         case let .folderMissing(path): "folder \(path) does not exist"
         case let .notInWezTerm(pid): "the session runs as pid \(pid) but not in a WezTerm pane"
         case let .terminal(message): message
+        case let .desktopApp(message): "cannot open the session in the Claude desktop app: \(message)"
         }
     }
 }
@@ -66,8 +68,15 @@ public struct SessionResumer: Sendable {
         if let desktopId = desktopSessions.desktopSessionId(wrapping: sessionId),
            let url = DesktopSessionIndex.continueURL(desktopSessionId: desktopId)
         {
-            try opener.open(url)
-            return .openedInDesktop
+            do {
+                try opener.open(url)
+                return .openedInDesktop
+            } catch {
+                // The app can be gone while its session files remain: only an ended session can reopen in a terminal.
+                if pid != nil {
+                    throw error
+                }
+            }
         }
         if let pid {
             throw ResumeError.notInWezTerm(pid: pid)

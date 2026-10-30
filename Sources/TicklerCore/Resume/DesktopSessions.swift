@@ -51,9 +51,17 @@ public protocol URLOpening: Sendable {
 
 /// `/usr/bin/open` rather than NSWorkspace: the core links no AppKit.
 public struct SystemURLOpener: URLOpening {
-    public init() {}
+    let binary: URL
+
+    public init(binary: URL = URL(fileURLWithPath: "/usr/bin/open")) {
+        self.binary = binary
+    }
 
     public func open(_ url: URL) throws {
-        _ = try WezTermDriver.execute(URL(fileURLWithPath: "/usr/bin/open"), [url.absoluteString], timeout: 10)
+        do {
+            _ = try WezTermDriver.execute(binary, [url.absoluteString], timeout: 10)
+        } catch let ResumeError.terminal(message) {
+            throw ResumeError.desktopApp(message)
+        }
     }
 }
