@@ -75,8 +75,12 @@ final class FakeDriver: TerminalDriver, @unchecked Sendable {
 
 final class FakeOpener: URLOpening, @unchecked Sendable {
     var opened: [URL] = []
+    var failure: ResumeError?
 
     func open(_ url: URL) throws {
+        if let failure {
+            throw failure
+        }
         opened.append(url)
     }
 }
@@ -147,6 +151,42 @@ struct SessionResumerTests {
         driver.panes = ["/dev/ttys003": "3"]
         #expect(try resumer(inspector, driver).resume(sessionId: sessionId, fallbackCwd: nil) == .focused(paneId: "3"))
         #expect(opener.opened.isEmpty)
+    }
+
+    @Test func desktopSessionLastResumedInATerminalGoesBackToTheApp() throws {
+        try writeRecord(pid: 100)
+        try writeDesktopSession("local_abc")
+        let driver = FakeDriver()
+        #expect(try resumer(FakeInspector(), driver).resume(sessionId: sessionId, fallbackCwd: folder) == .openedInDesktop)
+        #expect(driver.calls.isEmpty)
+    }
+
+    @Test func endedDesktopSessionFallsBackToATerminalWhenTheAppCannotOpen() throws {
+        try writeDesktopSession("local_abc")
+        opener.failure = .desktopApp("no application knows how to open claude://")
+        let driver = FakeDriver()
+        #expect(try resumer(FakeInspector(), driver).resume(sessionId: sessionId, fallbackCwd: folder) == .spawned(paneId: "42"))
+        #expect(driver.calls == ["spawn \(folder)", "activate 42", "front"])
+    }
+
+    @Test func runningDesktopSessionReportsWhyTheAppCannotOpen() throws {
+        try writeDesktopSession("local_abc")
+        opener.failure = .desktopApp("no application knows how to open claude://")
+        let inspector = FakeInspector()
+        inspector.resumePid = 300
+        #expect(throws: ResumeError.desktopApp("no application knows how to open claude://")) {
+            try resumer(inspector, FakeDriver()).resume(sessionId: sessionId, fallbackCwd: folder)
+        }
+    }
+
+    @Test func systemOpenerFailureIsADesktopAppError() throws {
+        let opener = SystemURLOpener(binary: URL(fileURLWithPath: "/usr/bin/false"))
+        #expect {
+            try opener.open(#require(URL(string: "claude://code/continue?session=local_abc")))
+        } throws: { error in
+            guard case let ResumeError.desktopApp(message) = error else { return false }
+            return message.hasPrefix("false claude://code/continue?session=local_abc failed")
+        }
     }
 
     @Test func ignoresOtherAndMalformedDesktopSessions() throws {
