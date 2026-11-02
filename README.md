@@ -6,6 +6,8 @@
 
 <p align="center">Reminders that Claude Code writes for you, with a macOS menu bar app that notifies you on time and brings the Claude session back in one click.</p>
 
+Website: [tickler.jdelgado.fr](https://tickler.jdelgado.fr)
+
 ![Tickler: a reminder with the live status of its merge request and Jira issue](assets/screenshots/live-status.png)
 
 - **The Claude Code skill** ([`skills/tickler`](skills/tickler/SKILL.md)): teaches Claude when and how to create reminders, with the session, the links and the prompt to resume with, and to offer follow-ups on its own (chase a review two days after opening an MR, re-measure 24 h after a rollout).
@@ -197,10 +199,11 @@ For notifications to stay on screen until you act, set Tickler's alert style to 
 | `scripts/bump.sh [--push]` | Cuts a release: next version from the commits ([cocogitto](https://github.com/cocogitto/cocogitto)), `CHANGELOG.md`, signed commit and tag; the pushed tag runs the release workflow |
 | `make release VERSION=x.y.z SIGN_IDENTITY=<name>` | Universal signed zip in `dist/`, as the release workflow publishes on a `v*` tag |
 | `scripts/create-release-signing-certificate.sh <owner/repo>` | Once: creates the release certificate and stores it as the repository's secrets |
+| `cd site && npm ci && npm run dev` | The website ([Astro](https://astro.build)), deployed to GitHub Pages by the `site` workflow on changes under `site/` and on every `v*` tag |
 
 `lefthook install` sets up the pre-commit (format, lint, gitleaks, markdownlint, actionlint) commit-msg (Conventional Commits) and pre-push (`swift test`, plus `make app` when the app or the core changed) hooks. Debug builds write PNGs of their windows when started with `TICKLER_SNAPSHOT=<dir>`.
 
-Layout: `Sources/TicklerCore` (model, store, date parsing, planners, session resume, live status), `Sources/TicklerCLI`, `App/` (SwiftUI app), `project.yml` (XcodeGen), `assets/brand` (icon masters). Design notes live in `docs/superpowers`.
+Layout: `Sources/TicklerCore` (model, store, date parsing, planners, session resume, live status), `Sources/TicklerCLI`, `App/` (SwiftUI app), `project.yml` (XcodeGen), `assets/brand` (icon masters), `site/` (website). Design notes live in `docs/superpowers`.
 
 ## License
 
