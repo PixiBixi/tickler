@@ -4,6 +4,16 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.11.0](https://github.com/PixiBixi/tickler/compare/v0.10.1..v0.11.0) - 2026-11-03
+#### Features
+- (**resume**) open Claude desktop app sessions through its deep link - ([faf4700](https://github.com/PixiBixi/tickler/commit/faf4700f33dc55ba476f5429366567ee0576b4d8)) - Sebastien Duval
+#### Bug Fixes
+- (**deps**) update dependency astro to v7.4.4 - ([e57041f](https://github.com/PixiBixi/tickler/commit/e57041f3633a68579d2efcd27d04783bf3c7363e)) - renovate[bot]
+- (**deps**) update dependency astro to v7.4.3 - ([7bf265f](https://github.com/PixiBixi/tickler/commit/7bf265f7bdfc0c510b8faf8f9ab4aa25642f5dcf)) - renovate[bot]
+- (**resume**) fall back to the terminal when the desktop app cannot open - ([9020e07](https://github.com/PixiBixi/tickler/commit/9020e078fde28de9606ae6b0a674d79b3ce85d4f)) - Sebastien Duval
+
+- - -
+
 ## [v0.10.1](https://github.com/PixiBixi/tickler/compare/v0.10.0..v0.10.1) - 2026-10-25
 #### Bug Fixes
 - (**auto-run**) apply the user's claude shell function - ([fd98863](https://github.com/PixiBixi/tickler/commit/fd988635c944799f3aeee4559993b3f965859e76)) - [@PixiBixi](https://github.com/PixiBixi)
