@@ -16,6 +16,8 @@ public enum ResumeError: Error, Equatable, CustomStringConvertible {
     case notInWezTerm(pid: Int32)
     case terminal(String)
     case desktopApp(String)
+    case freshNeedsPrompt
+    case freshNeedsFolder
 
     public var description: String {
         switch self {
@@ -25,6 +27,8 @@ public enum ResumeError: Error, Equatable, CustomStringConvertible {
         case let .notInWezTerm(pid): "the session runs as pid \(pid) but not in a WezTerm pane"
         case let .terminal(message): message
         case let .desktopApp(message): "cannot open the session in the Claude desktop app: \(message)"
+        case .freshNeedsPrompt: "a fresh session needs a resume prompt: set one with edit --prompt"
+        case .freshNeedsFolder: "a fresh session needs a folder to start in: the reminder has none"
         }
     }
 }
@@ -83,11 +87,22 @@ public struct SessionResumer: Sendable {
         }
 
         guard let folder = fallbackCwd, !folder.isEmpty else { throw ResumeError.noFolder }
+        return try open(Self.resumeCommand(sessionId: sessionId, prompt: prompt), in: folder)
+    }
+
+    /// Starts a new session in `cwd` with `prompt` as its first message: no running pane is focused, no desktop app involved.
+    public func startFresh(cwd: String?, prompt: String?) throws -> ResumeOutcome {
+        guard let folder = cwd, !folder.isEmpty else { throw ResumeError.freshNeedsFolder }
+        guard let prompt, !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ResumeError.freshNeedsPrompt }
+        return try open(Self.freshCommand(prompt: prompt), in: folder)
+    }
+
+    /// Runs `command` in `folder`, in a new tab or in a terminal started for it.
+    private func open(_ command: [String], in folder: String) throws -> ResumeOutcome {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: folder, isDirectory: &isDirectory), isDirectory.boolValue else {
             throw ResumeError.folderMissing(folder)
         }
-        let command = Self.resumeCommand(sessionId: sessionId, prompt: prompt)
         guard driver.isRunning() else {
             _ = try driver.start(cwd: folder, command: command)
             return .startedWindow
@@ -136,6 +151,11 @@ public struct SessionResumer: Sendable {
     public static func resumeCommand(sessionId: String, prompt: String? = nil) -> [String] {
         let message = prompt.flatMap { $0.isEmpty ? nil : " -- " + shellJoin([$0]) } ?? ""
         return ["env"] + scrubbedVariables.flatMap { ["-u", $0] } + ["zsh", "-lic", "claude --resume \(sessionId)\(message)"]
+    }
+
+    /// A new session with `prompt` as its first message; same scrubbing and login shell as `resumeCommand`.
+    public static func freshCommand(prompt: String) -> [String] {
+        ["env"] + scrubbedVariables.flatMap { ["-u", $0] } + ["zsh", "-lic", "claude -- " + shellJoin([prompt])]
     }
 }
 

@@ -301,6 +301,42 @@ struct SessionResumerTests {
         #expect(command.suffix(3) == ["zsh", "-lic", "claude --resume \(sessionId)"])
     }
 
+    @Test func freshCommandStartsANewSessionWithThePrompt() {
+        let command = SessionResumer.freshCommand(prompt: "-read it's $(rm -rf ~)")
+        #expect(command.first == "env")
+        #expect(command.contains("CLAUDE_CODE_CHILD_SESSION"))
+        #expect(command.contains("CLAUDE_CODE_SESSION_ID"))
+        #expect(command.suffix(3) == ["zsh", "-lic", #"claude -- '-read it'\''s $(rm -rf ~)'"#])
+        #expect(!command.joined(separator: " ").contains("--resume"))
+    }
+
+    @Test func freshSkipsTheRunningPaneAndTheDesktopApp() throws {
+        try writeDesktopSession("local_f57a972d-21e4-4355-96c9-f6b130cc8418")
+        try writeRecord(pid: 100)
+        let inspector = FakeInspector()
+        inspector.alive = [100]
+        inspector.ttys = [100: "/dev/ttys003"]
+        let driver = FakeDriver()
+        driver.panes = ["/dev/ttys003": "3"]
+
+        let outcome = try resumer(inspector, driver).startFresh(cwd: folder, prompt: "Read HANDOFF.md")
+        #expect(outcome == .spawned(paneId: "42"))
+        #expect(driver.calls == ["spawn \(folder)", "activate 42", "front"])
+        #expect(driver.lastCommand.last == "claude -- 'Read HANDOFF.md'")
+        #expect(opener.opened.isEmpty)
+    }
+
+    @Test func freshNeedsAPromptAndAFolder() throws {
+        let driver = FakeDriver()
+        let resumer = resumer(FakeInspector(), driver)
+        #expect(throws: ResumeError.freshNeedsFolder) { try resumer.startFresh(cwd: nil, prompt: "go") }
+        #expect(throws: ResumeError.freshNeedsFolder) { try resumer.startFresh(cwd: "", prompt: "go") }
+        #expect(throws: ResumeError.freshNeedsPrompt) { try resumer.startFresh(cwd: folder, prompt: nil) }
+        #expect(throws: ResumeError.freshNeedsPrompt) { try resumer.startFresh(cwd: folder, prompt: "  ") }
+        #expect(throws: ResumeError.folderMissing("/nope/nowhere")) { try resumer.startFresh(cwd: "/nope/nowhere", prompt: "go") }
+        #expect(driver.calls.isEmpty)
+    }
+
     @Test func wezTermListDecoding() throws {
         let json = #"[{"pane_id":3,"tty_name":"/dev/ttys003","cwd":"file:///x"},{"pane_id":7,"tty_name":null}]"#
         let panes = try WezTermDriver.decodePanes(Data(json.utf8))
