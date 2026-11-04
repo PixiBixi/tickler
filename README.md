@@ -201,7 +201,7 @@ For notifications to stay on screen until you act, set Tickler's alert style to 
 | `scripts/create-release-signing-certificate.sh <owner/repo>` | Once: creates the release certificate and stores it as the repository's secrets |
 | `cd site && npm ci && npm run dev` | The website ([Astro](https://astro.build)), deployed to GitHub Pages by the `site` workflow on changes under `site/` and on every `v*` tag |
 
-`lefthook install` sets up the pre-commit (format, lint, gitleaks, markdownlint, actionlint) commit-msg (Conventional Commits) and pre-push (`swift test`, plus `make app` when the app or the core changed) hooks. Debug builds write PNGs of their windows when started with `TICKLER_SNAPSHOT=<dir>`.
+`prek install` sets up the pre-commit (format, lint, gitleaks, markdownlint, actionlint) commit-msg (Conventional Commits) and pre-push (`swift test`, plus `make app` when the app or the core changed) hooks. Debug builds write PNGs of their windows when started with `TICKLER_SNAPSHOT=<dir>`.
 
 Layout: `Sources/TicklerCore` (model, store, date parsing, planners, session resume, live status), `Sources/TicklerCLI`, `App/` (SwiftUI app), `project.yml` (XcodeGen), `assets/brand` (icon masters), `site/` (website). Design notes live in `docs/superpowers`.
 
