@@ -14,19 +14,25 @@ struct ResumeCommand: TicklerSubcommand {
     func execute(_ context: CLIContext) throws {
         let store = try context.openStore(options)
         let reminder = try context.loadReminder(id, from: store)
-        guard let sessionId = reminder.sessionId else { throw CLIError.runtime("reminder \(id) has no Claude session") }
+        guard reminder.fresh || reminder.sessionId != nil else { throw CLIError.runtime("reminder \(id) has no Claude session") }
         guard let driver = context.makeDriver() else { throw CLIError.runtime("no supported terminal found (WezTerm, Ghostty or iTerm2)") }
-        let outcome = try SessionResumer(driver: driver)
-            .resume(sessionId: sessionId, fallbackCwd: reminder.cwd, prompt: reminder.resumeMessage)
-        context.stdout.line(Self.describe(outcome))
+        let resumer = SessionResumer(driver: driver)
+        let outcome = if let sessionId = reminder.continuedSessionId {
+            try resumer.resume(sessionId: sessionId, fallbackCwd: reminder.cwd, prompt: reminder.resumeMessage)
+        } else {
+            try resumer.startFresh(cwd: reminder.cwd, prompt: reminder.resumeMessage)
+        }
+        context.stdout.line(Self.describe(outcome, fresh: reminder.fresh))
         if let pane = Self.callingPaneToClose(after: outcome, environment: context.environment) {
             // The pane the user typed in is now redundant; failing to close it must not fail the resume.
             try? driver.killPane(pane)
         }
     }
 
-    static func describe(_ outcome: ResumeOutcome) -> String {
+    static func describe(_ outcome: ResumeOutcome, fresh: Bool = false) -> String {
         switch outcome {
+        case let .spawned(pane) where fresh: "started a fresh session in a new tab, pane \(pane)"
+        case .startedWindow where fresh: "started the terminal with a fresh session"
         case let .focused(pane, typed):
             "focused the running session in pane \(pane)" + (typed ? ", prompt typed, press Return to send" : "")
         case let .spawned(pane): "resumed the session in a new tab, pane \(pane)"

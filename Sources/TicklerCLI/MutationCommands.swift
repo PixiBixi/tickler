@@ -61,11 +61,14 @@ struct EditCommand: TicklerSubcommand {
     @Option(help: "Event that makes it due now: \(Trigger.usage); an empty string removes it.") var when: String?
     @Option(help: "Run the resume prompt in the background when due, in Tickler.app: \(AutoRunOption.editUsage).")
     var autoRun: AutoRunOption?
+    @Flag(inversion: .prefixedNo, help: "Resume starts a new session in the folder with the prompt; use it with a handoff file.")
+    var fresh: Bool?
     @Flag(help: "Print the reminder as JSON.") var json = false
 
     func validate() throws {
-        guard title != nil || at != nil || notes != nil || prompt != nil || when != nil || autoRun != nil else {
-            throw ValidationError("nothing to change: pass --title, --at, --notes, --prompt, --when or --auto-run")
+        let changes: [Any?] = [title, at, notes, prompt, when, autoRun, fresh]
+        guard changes.contains(where: { $0 != nil }) else {
+            throw ValidationError("nothing to change: pass --title, --at, --notes, --prompt, --when, --auto-run or --fresh")
         }
         if let when, !when.isEmpty, Trigger(when) == nil {
             throw ValidationError("--when expects \(Trigger.usage), got \"\(when)\"")
@@ -97,6 +100,9 @@ struct EditCommand: TicklerSubcommand {
         }
         if when != nil {
             updated = try store.setTrigger(id, trigger)
+        }
+        if let fresh {
+            updated = try store.setFresh(id, fresh)
         }
         if let autoRun {
             do {
