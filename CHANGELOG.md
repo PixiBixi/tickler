@@ -4,6 +4,17 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.12.0](https://github.com/PixiBixi/tickler/compare/v0.11.0..v0.12.0) - 2026-11-04
+#### Features
+- (**app**) resume and auto-run fresh reminders in a new session - ([9c403ea](https://github.com/PixiBixi/tickler/commit/9c403eafdcfa6ac8277d7e43629d37b3a0d9c345)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**cli**) add --fresh to add and edit, route resume through it - ([2cf3658](https://github.com/PixiBixi/tickler/commit/2cf36586e87e007457fb03dc61bbe49d7d5bd2e8)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**planning**) let fresh auto-runs ignore the creating session - ([99486d7](https://github.com/PixiBixi/tickler/commit/99486d70bc0242b64d4752bb5cbd757165c88f3f)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**resume**) start a fresh session in the reminder's folder - ([aff8c0e](https://github.com/PixiBixi/tickler/commit/aff8c0e7728708e644aa5ee4a382a9138b7fdf53)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**skill**) offer --fresh for resumes from a handoff file - ([03c952d](https://github.com/PixiBixi/tickler/commit/03c952d549d3dc780656cfa0768c30db6ed42424)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**store**) record whether a reminder resumes in a fresh session - ([0037947](https://github.com/PixiBixi/tickler/commit/003794740f2b277d378be55549e53e22e1fb59ad)) - [@PixiBixi](https://github.com/PixiBixi)
+
+- - -
+
 ## [v0.11.0](https://github.com/PixiBixi/tickler/compare/v0.10.1..v0.11.0) - 2026-11-03
 #### Features
 - (**resume**) open Claude desktop app sessions through its deep link - ([faf4700](https://github.com/PixiBixi/tickler/commit/faf4700f33dc55ba476f5429366567ee0576b4d8)) - Sebastien Duval
