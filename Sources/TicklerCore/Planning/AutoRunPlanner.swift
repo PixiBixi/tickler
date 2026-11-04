@@ -26,7 +26,7 @@ public enum AutoRunPlanner {
         var claimed = Set<String>()
         var decisions: [AutoRunDecision] = []
         for reminder in candidates {
-            guard let session = reminder.sessionId else {
+            guard let session = reminder.continuedSessionId else {
                 decisions.append(.start(reminder))
                 continue
             }
