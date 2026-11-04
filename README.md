@@ -85,14 +85,14 @@ tickler hook install
 
 | Command | Does |
 |---|---|
-| `tickler add <title> --at "YYYY-MM-DD HH:MM"` | Creates a reminder. `--when <event>` (`merged`, `pipeline-green`, `pipeline-failed`, `approved`, `jira:done`, `jira:<status>`; without `--at`, the deadline is 3 working days at 09:30), `--notes <text>` or `--notes -` (stdin), `--link <url>` (repeatable), `--session <uuid>`, `--cwd <dir>`, `--prompt <text>` (first message to Claude on resume), `--auto-run <read\|write>` (needs `--prompt` and a folder), `--json` |
+| `tickler add <title> --at "YYYY-MM-DD HH:MM"` | Creates a reminder. `--when <event>` (`merged`, `pipeline-green`, `pipeline-failed`, `approved`, `jira:done`, `jira:<status>`; without `--at`, the deadline is 3 working days at 09:30), `--notes <text>` or `--notes -` (stdin), `--link <url>` (repeatable), `--session <uuid>`, `--cwd <dir>`, `--prompt <text>` (first message to Claude on resume), `--auto-run <read\|write>` (needs `--prompt` and a folder), `--fresh` (Resume starts a new session in the folder with the prompt; use it with a handoff file; needs `--prompt`), `--json` |
 | `tickler list` (alias `ls`) | Open reminders. `--due today` (default, overdue included), `week`, `overdue`, `all`; `--project <name>`; `--status done`; `--waiting`; `--json` |
 | `tickler show <id>` | One reminder with notes, links and session. `--json` |
 | `tickler done <id>` | Marks it done |
 | `tickler snooze <id> --for 1h` | Pushes it back from now: `15m`, `1h`, `2d`. Or `--to "YYYY-MM-DD HH:MM"` |
-| `tickler edit <id>` | `--title`, `--at`, `--notes <text>` or `--notes -`, `--prompt <text>` (`""` removes it), `--when <event>` (`""` removes it), `--auto-run <read\|write\|off>` |
+| `tickler edit <id>` | `--title`, `--at`, `--notes <text>` or `--notes -`, `--prompt <text>` (`""` removes it), `--when <event>` (`""` removes it), `--auto-run <read\|write\|off>`, `--fresh` or `--no-fresh` |
 | `tickler rm <id>` | Deletes it |
-| `tickler resume <id>` | Focuses the tab of the reminder's Claude session in WezTerm, Ghostty or iTerm2, or reopens it with `claude --resume` in the reminder's folder. A session of the Claude desktop app opens in the app instead, through its `claude://code/continue` link, which carries no prompt. A resume prompt is sent as the first message of a reopened session, and typed without Return into a running one (WezTerm, iTerm2). `TICKLER_TERMINAL=wezterm\|ghostty\|iterm` picks where new tabs open |
+| `tickler resume <id>` | Focuses the tab of the reminder's Claude session in WezTerm, Ghostty or iTerm2, or reopens it with `claude --resume` in the reminder's folder. A session of the Claude desktop app opens in the app instead, through its `claude://code/continue` link, which carries no prompt. A resume prompt is sent as the first message of a reopened session, and typed without Return into a running one (WezTerm, iTerm2). A `--fresh` reminder skips all of this and starts a new session in its folder with `claude -- <prompt>`. `TICKLER_TERMINAL=wezterm\|ghostty\|iterm` picks where new tabs open |
 | `tickler status <id>` | Live state of the linked GitLab MRs, Jira issues and GitHub PRs (pipeline, approvals, ticket status, checks). `--json` |
 | `tickler completion zsh` | Prints the shell completion script (also `bash`, `fish`): subcommands, options, and reminder ids with their title |
 | `tickler skill install` / `status` | Installs the Claude Code skill of this version in `~/.claude/skills/tickler` (`$CLAUDE_CONFIG_DIR` honored); an edited skill is only replaced with `--force` |
@@ -133,12 +133,13 @@ tickler hook install
   "trigger": null,
   "waiting": false,
   "autoRun": null,
+  "fresh": false,
   "lastRun": null,
   "links": [{ "kind": "jira", "label": "OPS-2204", "url": "https://acme.atlassian.net/browse/OPS-2204" }]
 }
 ```
 
-`trigger` is the awaited event; once it fires, `firedReason` says why (`MR !412 merged`) and the reminder is due at `firedAt`. `autoRun` is `read`, `write` or null; `lastRun` is null or `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`. Runs happen in Tickler.app only, never from the CLI. `read` runs only what your Claude Code allow rules already permit (`dontAsk`), so a broad allowlist widens it.
+`trigger` is the awaited event; once it fires, `firedReason` says why (`MR !412 merged`) and the reminder is due at `firedAt`. `autoRun` is `read`, `write` or null; `fresh` is true when Resume, and an auto-run, start a new session in `cwd` instead of continuing `sessionId`; `lastRun` is null or `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`. Runs happen in Tickler.app only, never from the CLI. `read` runs only what your Claude Code allow rules already permit (`dontAsk`), so a broad allowlist widens it.
 
 Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 
