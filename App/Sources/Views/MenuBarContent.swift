@@ -173,7 +173,7 @@ private struct NextCard: View {
                 }
             }
             HStack(spacing: 6) {
-                if reminder.sessionId != nil {
+                if reminder.canResume {
                     Button { model.resume(reminder) } label: {
                         Label("Resume", systemImage: "terminal").frame(maxWidth: .infinity)
                     }
@@ -217,7 +217,7 @@ private struct CompactRow: View {
             Spacer(minLength: 4)
             if hovering {
                 HStack(spacing: 2) {
-                    if reminder.sessionId != nil {
+                    if reminder.canResume {
                         iconButton("terminal", help: "Resume Session") { model.resume(reminder) }
                     }
                     iconButton("clock", help: "Snooze 1 hour") { model.snooze(reminder.id, preset: .oneHour) }
@@ -240,7 +240,7 @@ private struct CompactRow: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { model.reveal(reminder.id) }
         .accessibilityActions {
-            if reminder.sessionId != nil {
+            if reminder.canResume {
                 Button("Resume Session") { model.resume(reminder) }
             }
             Button("Snooze 1 hour") { model.snooze(reminder.id, preset: .oneHour) }

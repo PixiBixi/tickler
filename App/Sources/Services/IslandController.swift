@@ -58,7 +58,7 @@ final class IslandController {
             .first { $0.kind == .gitlabMR || $0.kind == .githubPR }
         let view = IslandView(
             reminder: reminder, others: others, topInset: notch, rowHeight: Self.rowHeight,
-            reviewLink: reviewLink, canResume: reminder.sessionId != nil
+            reviewLink: reviewLink, canResume: reminder.canResume
         ) { action in
             AppModel.shared.island.dismiss(reminder)
             switch action {

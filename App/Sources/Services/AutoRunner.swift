@@ -14,7 +14,8 @@ final class AutoRunner {
 
     /// Keyed by reminder id.
     private(set) var running: [String: ClaudeRunProcess] = [:]
-    /// Sessions our own `claude -p --resume` children hold, or the reminder id for a run that starts a new session.
+    /// Sessions our own `claude -p --resume` children hold, or the reminder id for a run that starts a new session
+    /// (no session id, or a fresh reminder).
     private(set) var runningSessions: Set<String> = []
 
     @ObservationIgnored private var sessionKeys: [String: String] = [:]
@@ -61,7 +62,7 @@ final class AutoRunner {
             armTimer()
             return
         }
-        let ids = Set(model.open.filter { $0.autoRunMode != nil }.compactMap(\.sessionId))
+        let ids = Set(model.open.filter { $0.autoRunMode != nil }.compactMap(\.continuedSessionId))
         // A run that ended during the scan was still in the process table: its session is ours, not a terminal's.
         let ownBefore = runningSessions
         let live = await Self.liveSessions(ids)
@@ -124,14 +125,14 @@ final class AutoRunner {
     /// "Run now" and "Run again": bypasses the once-per-due-date rule, never a session in use.
     func start(_ reminder: Reminder) {
         guard reminder.status == .open, reminder.autoRunMode != nil, running[reminder.id] == nil else { return }
-        if let session = reminder.sessionId, runningSessions.contains(session) {
+        if let session = reminder.continuedSessionId, runningSessions.contains(session) {
             model.showError(String(localized: "A background run is already using this session"))
             return
         }
         Task { [weak self] in
-            let live = await Self.liveSessions(Set([reminder.sessionId].compactMap(\.self)))
+            let live = await Self.liveSessions(Set([reminder.continuedSessionId].compactMap(\.self)))
             guard let self else { return }
-            if let session = reminder.sessionId, live.contains(session), !runningSessions.contains(session) {
+            if let session = reminder.continuedSessionId, live.contains(session), !runningSessions.contains(session) {
                 model.showError(String(localized: "The session is open in a terminal: continue there"))
                 return
             }
@@ -152,12 +153,13 @@ final class AutoRunner {
         guard let store = model.store, running[decided.id] == nil,
               let reminder = try? store.get(decided.id), reminder.status == .open, reminder.autoRunMode != nil
         else { return }
-        let key = reminder.sessionId ?? reminder.id
+        let key = reminder.continuedSessionId ?? reminder.id
         guard !runningSessions.contains(key), let run = try? store.startRun(reminder.id, at: Date()) else { return }
         guard let cwd = reminder.cwd, !cwd.isEmpty, let prompt = reminder.resumeMessage, !prompt.isEmpty else {
             finish(run, reminder: reminder, result: RunResult(state: .failed, error: "No folder or resume prompt to run"))
             return
         }
+        // A fresh reminder records no session on its run (`continuedSessionId`), so this starts a new one.
         let arguments = AutoRunCommand.claudeArguments(prompt: prompt, sessionId: run.sessionId, mode: run.mode)
         let process = ClaudeRunProcess(command: AutoRunCommand.command(claudeArguments: arguments), cwd: cwd)
         running[reminder.id] = process

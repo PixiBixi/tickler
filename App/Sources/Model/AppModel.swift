@@ -436,10 +436,12 @@ final class AppModel {
         }
     }
 
+    /// A fresh reminder starts a new session in its folder; any other reopens its session.
     func resume(_ reminder: Reminder) {
-        guard let sessionId = reminder.sessionId else { return }
+        guard reminder.canResume else { return }
+        let sessionId = reminder.continuedSessionId
         // Two writers on one transcript conflict, and the headless child has no terminal to focus.
-        guard !autoRunner.runningSessions.contains(sessionId) else {
+        if let sessionId, autoRunner.runningSessions.contains(sessionId) {
             showError(String(localized: "A background run is already using this session"))
             return
         }
@@ -448,10 +450,16 @@ final class AppModel {
         let prompt = reminder.resumeMessage
         Task {
             let result = await Task.detached {
-                Result { try SessionResumer(driver: driver).resume(sessionId: sessionId, fallbackCwd: cwd, prompt: prompt) }
+                Result {
+                    let resumer = SessionResumer(driver: driver)
+                    guard let sessionId else { return try resumer.startFresh(cwd: cwd, prompt: prompt) }
+                    return try resumer.resume(sessionId: sessionId, fallbackCwd: cwd, prompt: prompt)
+                }
             }.value
             report(result, prompt: prompt)
-            refreshSessions(until: sessionId)
+            if let sessionId {
+                refreshSessions(until: sessionId)
+            }
         }
     }
 

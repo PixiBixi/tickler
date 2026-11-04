@@ -3601,6 +3601,26 @@
           }
         }
       }
+    },
+    "Fresh session": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouvelle session"
+          }
+        }
+      }
+    },
+    "Resume starts a new session in the folder with the prompt": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reprendre démarre une nouvelle session dans le dossier avec le prompt"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
