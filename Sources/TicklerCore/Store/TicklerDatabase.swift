@@ -96,6 +96,11 @@ public final class TicklerDatabase: Sendable {
                 table.column("durationMs", .integer)
             }
         }
+        migrator.registerMigration("v5-fresh") { db in
+            try db.alter(table: "reminder") { table in
+                table.add(column: "fresh", .boolean).notNull().defaults(to: false)
+            }
+        }
         return migrator
     }
 }

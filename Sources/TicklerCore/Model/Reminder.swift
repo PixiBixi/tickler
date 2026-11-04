@@ -40,9 +40,21 @@ public struct Reminder: Codable, Hashable, Sendable, Identifiable, FetchableReco
 
     /// Raw `AutoRunMode`: when set, the resume prompt runs in the background once due.
     public var autoRun: String? = nil // swiftlint:disable:this implicit_optional_initialization
+    /// Resume starts a new session in `cwd` with the resume message instead of reopening `sessionId`.
+    public var fresh: Bool = false
 
     public var autoRunMode: AutoRunMode? {
         autoRun.flatMap(AutoRunMode.init)
+    }
+
+    /// The session a resume or a background run continues: none when it starts fresh.
+    public var continuedSessionId: String? {
+        fresh ? nil : sessionId
+    }
+
+    /// Resume has something to do: reopen the session, or start a fresh one in the folder.
+    public var canResume: Bool {
+        fresh ? cwd?.isEmpty == false : sessionId != nil
     }
 
     public var parsedTrigger: Trigger? {
@@ -85,6 +97,7 @@ public struct ReminderDraft: Sendable {
     public var externalRef: String?
     public var trigger: Trigger?
     public var autoRun: AutoRunMode?
+    public var fresh: Bool
 
     public init(
         title: String,
@@ -97,7 +110,8 @@ public struct ReminderDraft: Sendable {
         source: Reminder.Source = .claude,
         externalRef: String? = nil,
         trigger: Trigger? = nil,
-        autoRun: AutoRunMode? = nil
+        autoRun: AutoRunMode? = nil,
+        fresh: Bool = false
     ) {
         self.title = title
         self.notes = notes
@@ -110,6 +124,7 @@ public struct ReminderDraft: Sendable {
         self.externalRef = externalRef
         self.trigger = trigger
         self.autoRun = autoRun
+        self.fresh = fresh
     }
 }
 

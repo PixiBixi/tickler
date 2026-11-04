@@ -98,7 +98,7 @@ public final class ReminderStore: Sendable {
                 rescheduleCount: 0, status: .open, sessionId: draft.sessionId, cwd: draft.cwd,
                 resumePrompt: Self.normalized(draft.resumePrompt), source: draft.source,
                 externalRef: draft.externalRef, notifiedAt: nil, doneAt: nil, createdAt: stamp, updatedAt: stamp,
-                trigger: draft.trigger?.rawValue, autoRun: draft.autoRun?.rawValue
+                trigger: draft.trigger?.rawValue, autoRun: draft.autoRun?.rawValue, fresh: draft.fresh
             )
             try reminder.insert(db)
             for link in LinkExtractor.links(reminderId: id, notes: draft.notes, explicit: draft.links) {
@@ -211,6 +211,12 @@ public final class ReminderStore: Sendable {
         return try mutate(id) { reminder, _ in reminder.autoRun = mode?.rawValue }
     }
 
+    /// Whether Resume (and a background run) starts a new session in the folder instead of reopening the creating one.
+    @discardableResult
+    public func setFresh(_ id: String, _ fresh: Bool) throws -> Reminder {
+        try mutate(id) { reminder, _ in reminder.fresh = fresh }
+    }
+
     /// A background run needs a resume prompt and a session folder; shared by `setAutoRun` and `update`.
     private static func requireRunnable(_ reminder: Reminder) throws {
         guard reminder.resumePrompt != nil else { throw StoreError.autoRunNeedsPrompt }
@@ -282,7 +288,7 @@ public final class ReminderStore: Sendable {
                 .fetchCount(db)
             guard running == 0 else { return nil }
             let run = try AutoRun(
-                id: Self.newRunId(db), reminderId: reminderId, forDueAt: reminder.dueAt, sessionId: reminder.sessionId,
+                id: Self.newRunId(db), reminderId: reminderId, forDueAt: reminder.dueAt, sessionId: reminder.continuedSessionId,
                 mode: reminder.autoRunMode ?? .read, startedAt: date, state: .running
             )
             try run.insert(db)
@@ -300,7 +306,7 @@ public final class ReminderStore: Sendable {
         let run = try database.pool.write { db in
             guard let reminder = try Reminder.fetchOne(db, key: reminderId) else { throw StoreError.notFound(reminderId) }
             let run = try AutoRun(
-                id: Self.newRunId(db), reminderId: reminderId, forDueAt: reminder.dueAt, sessionId: reminder.sessionId,
+                id: Self.newRunId(db), reminderId: reminderId, forDueAt: reminder.dueAt, sessionId: reminder.continuedSessionId,
                 mode: reminder.autoRunMode ?? .read, startedAt: date, endedAt: date, state: .skipped, error: reason
             )
             try run.insert(db)

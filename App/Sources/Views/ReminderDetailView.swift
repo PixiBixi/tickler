@@ -292,7 +292,7 @@ struct ReminderDetailView: View {
     /// With `strip`, the session row and the auto-run controls are already in the strip under the result: only the prompt stays.
     @ViewBuilder
     private func sessionSection(strip: Bool) -> some View {
-        if reminder.sessionId != nil || autoRunning {
+        if reminder.sessionId != nil || reminder.fresh || autoRunning {
             VStack(alignment: .leading, spacing: 6) {
                 sectionTitle("Claude Session")
                 if autoRunning {
@@ -300,7 +300,13 @@ struct ReminderDetailView: View {
                 } else if let sessionId = reminder.sessionId, !strip {
                     sessionRow(sessionId)
                 }
-                if reminder.sessionId != nil {
+                if reminder.fresh {
+                    Label("Fresh session", systemImage: "sparkles")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .help("Resume starts a new session in the folder with the prompt")
+                }
+                if reminder.sessionId != nil || reminder.fresh {
                     ResumePromptField(reminder: reminder)
                 }
                 if !strip {
@@ -433,12 +439,12 @@ extension ReminderDetailView {
 
     /// Resuming is refused while a background run holds the session.
     private var sessionBusy: Bool {
-        autoRunning || reminder.sessionId.map { model.autoRunner.runningSessions.contains($0) } == true
+        autoRunning || reminder.continuedSessionId.map { model.autoRunner.runningSessions.contains($0) } == true
     }
 
     @ViewBuilder
     private var resumeButton: some View {
-        if reminder.sessionId != nil {
+        if reminder.canResume {
             let scheduled = reminder.status == .open && reminder.autoRunMode != nil
             let finished = model.hasRun(forCurrentDueDateOf: reminder)
             let button = Button { model.resume(reminder) } label: { resumeLabel(scheduled: scheduled, finished: finished) }

@@ -12,7 +12,7 @@ extension ClaudeSkill {
 
     | Command | Does |
     |---|---|
-    | `tickler add "<title>" --at "YYYY-MM-DD HH:MM" [--when <event>] [--notes -] [--link <url>]... [--prompt "<text>"] [--auto-run read]` | Creates the reminder, prints `id<TAB>title<TAB>date` |
+    | `tickler add "<title>" --at "YYYY-MM-DD HH:MM" [--when <event>] [--notes -] [--link <url>]... [--prompt "<text>"] [--auto-run read] [--fresh]` | Creates the reminder, prints `id<TAB>title<TAB>date`. `--fresh`: Resume starts a new session in the folder with the prompt; use it with a handoff file |
     | `tickler list --due today --json` | Open reminders due up to the end of today, overdue included |
     | `tickler list --due all --json` | Every open reminder |
     | `tickler list --waiting --json` | Reminders waiting for an event, whatever their date |
@@ -21,6 +21,7 @@ extension ClaudeSkill {
     | `tickler edit <id> --at "YYYY-MM-DD HH:MM"` | Reschedules it (also `--title`, `--notes`, `--prompt`) |
     | `tickler edit <id> --when <event>` | Sets or replaces the trigger; `--when ""` removes it |
     | `tickler edit <id> --auto-run read\|write\|off` | Sets or removes the background run |
+    | `tickler edit <id> --fresh\|--no-fresh` | Resume starts a new session in the folder with the prompt; use it with a handoff file |
     | `tickler snooze <id> --for 1h` | Pushes it back from now (`15m`, `1h`, `2d`) |
     | `tickler rm <id>` | Deletes an obsolete reminder |
     | `tickler resume <id>` | Reopens the reminder's Claude session in WezTerm, Ghostty, iTerm2 or the Claude desktop app |

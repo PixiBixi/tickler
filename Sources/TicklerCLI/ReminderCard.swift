@@ -28,6 +28,9 @@ struct ReminderCard {
         if let mode = reminder.autoRun {
             lines.append("\(Ansi.style("auto-run", .dim)) \(Ansi.style(mode.displaySafeLine, .accent))")
         }
+        if reminder.fresh {
+            lines.append("\(Ansi.style("resume", .dim)) \(Ansi.style("fresh session", .accent))")
+        }
         if let lastRun {
             let summary = RunSummary(run: lastRun, calendar: calendar)
             lines += ["", Ansi.style(summary.title, .heading)] + summary.body.map { "  \($0)" }

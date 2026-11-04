@@ -7,8 +7,8 @@ import TicklerCore
 /// `rescheduleCount`, `status` (open|done|deleted), `source` (claude|human), `sessionId`, `cwd`, `project`,
 /// `resumePrompt` (first message on resume), `overdue` (open and past due), `links` (`[{kind, label, url}]`),
 /// `trigger` (awaited event or null), `waiting` (open and waiting), `firedAt`, `firedReason` (why the trigger fired),
-/// `autoRun` (read|write or null), `lastRun` (latest background run or null: `{state, verdict, headline, figures, nextStep,
-/// denials, startedAt, endedAt}`; `figures` is an array, dates are local like `firedAt`).
+/// `autoRun` (read|write or null), `fresh` (Resume starts a new session in `cwd`), `lastRun` (latest background run or null:
+/// `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`; `figures` is an array, dates are local like `firedAt`).
 struct ReminderJSON: Encodable {
     struct Link: Encodable {
         let kind: String
@@ -63,6 +63,7 @@ struct ReminderJSON: Encodable {
     let firedAt: String?
     let firedReason: String?
     let autoRun: String?
+    let fresh: Bool
     let lastRun: Run?
 
     init(_ reminder: Reminder, links: [ReminderLink], lastRun: AutoRun? = nil, context: CLIContext) {
@@ -88,6 +89,7 @@ struct ReminderJSON: Encodable {
         firedAt = reminder.firedAt.map { StrictDate.format($0, calendar: context.calendar) }
         firedReason = reminder.firedReason
         autoRun = reminder.autoRun
+        fresh = reminder.fresh
         self.lastRun = lastRun.map { run in
             Run(
                 state: run.state.rawValue, verdict: run.verdict?.rawValue, headline: run.headline, figures: run.figures,
@@ -103,7 +105,7 @@ struct ReminderJSON: Encodable {
         enum Key: String, CodingKey {
             case id, title, notes, due, dueISO, originalDue, rescheduleCount, status, source
             case sessionId, cwd, project, resumePrompt, overdue, links, trigger, waiting, firedAt, firedReason
-            case autoRun, lastRun
+            case autoRun, fresh, lastRun
         }
         var container = encoder.container(keyedBy: Key.self)
         try container.encode(id, forKey: .id)
@@ -126,6 +128,7 @@ struct ReminderJSON: Encodable {
         try container.encode(firedAt, forKey: .firedAt)
         try container.encode(firedReason, forKey: .firedReason)
         try container.encode(autoRun, forKey: .autoRun)
+        try container.encode(fresh, forKey: .fresh)
         try container.encode(lastRun, forKey: .lastRun)
     }
 }
@@ -197,6 +200,9 @@ extension CLIContext {
         }
         if let mode = reminder.autoRun {
             lines.append("auto-run: \(mode.displaySafeLine)")
+        }
+        if reminder.fresh {
+            lines.append("resume: fresh session")
         }
         if let lastRun {
             lines += RunSummary(run: lastRun, calendar: calendar).lines

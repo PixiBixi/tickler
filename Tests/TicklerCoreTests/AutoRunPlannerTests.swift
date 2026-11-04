@@ -38,6 +38,15 @@ struct AutoRunPlannerTests {
         #expect(decide([due]) == [.start(due)])
     }
 
+    /// A fresh run starts a new session: the creating one being open in a terminal or busy does not hold it back.
+    @Test func freshIgnoresTheCreatingSession() {
+        var first = autoReminder("a", session: "s-1")
+        first.fresh = true
+        var second = autoReminder("b", session: "s-1")
+        second.fresh = true
+        #expect(decide([first, second], terminal: ["s-1"], auto: ["s-1"]) == [.start(first), .start(second)])
+    }
+
     @Test func notBeforeDue() {
         #expect(decide([autoReminder("a", at: "2026-10-01 11:00")]).isEmpty)
     }

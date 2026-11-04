@@ -331,7 +331,7 @@ final class NotificationService: NSObject {
             return
         }
         switch action {
-        case .resume where reminder.sessionId != nil: model.resume(reminder)
+        case .resume where reminder.canResume: model.resume(reminder)
         case .runAgain: model.autoRunner.start(reminder)
         case .done: model.markDone(reminder.id)
         default: model.reveal(reminder.id)

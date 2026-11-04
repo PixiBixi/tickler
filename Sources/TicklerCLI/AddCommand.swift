@@ -17,6 +17,7 @@ struct AddCommand: TicklerSubcommand {
     @Option(help: "First message sent to Claude when the session is resumed.") var prompt: String?
     @Option(help: "Run the resume prompt in the background when due, in Tickler.app: \(AutoRunOption.addUsage).")
     var autoRun: AutoRunOption?
+    @Flag(help: "Resume starts a new session in the folder with the prompt; use it with a handoff file.") var fresh = false
     @Flag(help: "Print the reminder as JSON.") var json = false
 
     func validate() throws {
@@ -30,6 +31,9 @@ struct AddCommand: TicklerSubcommand {
         }
         if autoRun != nil, ReminderStore.normalized(prompt) == nil {
             throw ValidationError("--auto-run needs --prompt: the run has no one to answer a question")
+        }
+        if fresh, ReminderStore.normalized(prompt) == nil {
+            throw ValidationError("--fresh needs --prompt: it is the first message of the new session")
         }
     }
 
@@ -51,10 +55,12 @@ struct AddCommand: TicklerSubcommand {
         if autoRun != nil, folder?.isEmpty != false {
             throw CLIError.usage("--auto-run needs --cwd, or a session id so the current directory is used")
         }
+        // Resume has no session to fall back on: the folder is the only place to start the new one.
+        let folderForFresh = fresh ? folder ?? context.currentDirectory : folder
         let draft = ReminderDraft(
-            title: title, notes: noteText, dueAt: due, links: links, sessionId: sessionId, cwd: folder,
+            title: title, notes: noteText, dueAt: due, links: links, sessionId: sessionId, cwd: folderForFresh,
             resumePrompt: prompt, source: sessionId == nil ? .human : .claude, trigger: trigger,
-            autoRun: autoRun?.mode
+            autoRun: autoRun?.mode, fresh: fresh
         )
         let store = try context.openStore(options)
         try context.printResult(store.add(draft), store: store, json: json)

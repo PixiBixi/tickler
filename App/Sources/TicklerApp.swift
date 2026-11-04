@@ -32,7 +32,7 @@ struct TicklerApp: App {
             CommandMenu("Reminder") {
                 Button("Resume Session") { model.resumeSelected() }
                     .keyboardShortcut("r")
-                    .disabled(model.selectedReminder?.sessionId == nil)
+                    .disabled(model.selectedReminder?.canResume != true)
                 Button("Mark Done") { model.markSelectedDone() }
                     .keyboardShortcut(.return, modifiers: .command)
                     .disabled(model.selectedReminder == nil)
