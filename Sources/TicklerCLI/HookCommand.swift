@@ -18,6 +18,12 @@ struct HookSessionStartCommand: TicklerSubcommand {
 
     @OptionGroup var options: GlobalOptions
 
+    /// A failed read of the moves only drops that section.
+    private func moves(_ store: ReminderStore, now: Date, calendar: Calendar) -> [ScheduleMove] {
+        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: now)) else { return [] }
+        return (try? store.moves(since: yesterday)) ?? []
+    }
+
     /// Never fails: a hook error would greet every session, so any problem prints nothing.
     func execute(_ context: CLIContext) throws {
         let input = (try? JSONSerialization.jsonObject(with: Data(context.readStdin().utf8))) as? [String: Any]
@@ -25,7 +31,8 @@ struct HookSessionStartCommand: TicklerSubcommand {
         guard let store = try? context.openStore(options),
               let reminders = try? store.list(ReminderFilter(due: .all)),
               let digest = SessionDigest.digest(
-                  reminders: reminders, sessionFolder: folder, now: context.now(), calendar: context.calendar,
+                  reminders: reminders, moves: moves(store, now: context.now(), calendar: context.calendar),
+                  sessionFolder: folder, now: context.now(), calendar: context.calendar,
                   gitRoot: GitRoot.budgeted(lookup: context.gitRoot), folderExists: context.folderExists
               )
         else { return }

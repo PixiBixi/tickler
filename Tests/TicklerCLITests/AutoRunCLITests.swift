@@ -4,6 +4,12 @@ import Testing
 import TicklerCore
 
 struct AutoRunCLITests {
+    @Test func autoRunNeedsAtOrWhen() {
+        let result = CLIHarness().run("add", "check", "--prompt", "rerun", "--cwd", "/w", "--auto-run", "read")
+        #expect(result.code == 2)
+        #expect(result.err.contains("--auto-run needs --at, --when, or both"))
+    }
+
     @Test func addAutoRunNeedsPrompt() {
         let result = CLIHarness().run("add", "check", "--at", "2026-10-02 10:00", "--session", "s1", "--auto-run", "read")
         #expect(result.code == 2)

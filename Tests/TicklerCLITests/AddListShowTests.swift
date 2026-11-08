@@ -44,11 +44,13 @@ struct AddListShowTests {
     @Test func addPrintsTabSeparatedSummary() {
         let cli = CLIHarness()
         let result = cli.run("add", "Call back", "--at", "2026-10-02 09:00")
-        let fields = result.out.trimmingCharacters(in: .newlines).components(separatedBy: "\t")
+        let first = result.out.components(separatedBy: "\n")[0]
+        let fields = first.components(separatedBy: "\t")
         #expect(fields.count == 3)
         #expect(fields[0].count == 6)
         #expect(fields[1] == "Call back")
-        #expect(fields[2] == "2026-10-02 09:00")
+        // 09:00 is before the working day: the planner slides it to the opening.
+        #expect(fields[2] == "2026-10-02 09:30")
     }
 
     @Test func sessionAndCwdDefaultFromTheEnvironment() throws {
@@ -128,7 +130,7 @@ struct AddListShowTests {
 
     @Test func missingOptionAndBadEnumExitWithUsageError() {
         let cli = CLIHarness()
-        #expect(cli.run("add", "no date").code == 2)
+        #expect(cli.run("add", "bad date", "--at", "tomorrow").code == 2)
         #expect(cli.run("list", "--due", "someday").code == 2)
     }
 

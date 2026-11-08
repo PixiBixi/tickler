@@ -27,7 +27,7 @@ struct TriggerCLITests {
 
     @Test func addRefusesBadTriggers() {
         let cli = CLIHarness()
-        #expect(cli.run("add", "rebase").code == 2)
+        #expect(cli.run("add", "rebase", "--when", "merged").code == 2)
         #expect(cli.run("add", "rebase", "--link", mr, "--when", "soon").code == 2)
         let unsupported = cli.run("add", "rebase", "--link", mr, "--when", "jira:done")
         #expect(unsupported.code == 2)

@@ -13,8 +13,11 @@ struct DoneCommand: TicklerSubcommand {
         let store = try context.openStore(options)
         let current = try context.loadReminder(id, from: store)
         // Already done: keep the original doneAt instead of restamping it.
-        let reminder = current.status == .done ? current : try store.markDone(id)
-        try context.printResult(reminder, store: store, json: json)
+        guard current.status != .done else { return try context.printResult(current, store: store, json: json) }
+        let reminder = try store.markDone(id)
+        // Nothing touched: a fresh copy replans the day, a stale one writes nothing.
+        let outcome = try context.runSchedule(store, cause: .routine, touched: nil)
+        try printSchedule(outcome, placed: reminder, asked: nil, context: context, store: store, json: json)
     }
 }
 
@@ -38,14 +41,19 @@ struct SnoozeCommand: TicklerSubcommand {
         let store = try context.openStore(options)
         _ = try context.loadReminder(id, from: store)
         let due: Date
+        var asked: Date?
         if let duration, let interval = SnoozeDuration.parse(duration) {
             due = context.now().addingTimeInterval(interval)
         } else if let to {
             due = try context.parseFutureDate(to, flag: "--to")
+            asked = due
         } else {
             throw CLIError.usage("pass exactly one of --for and --to")
         }
-        try context.printResult(store.reschedule(id, to: due), store: store, json: json)
+        let moved = try store.reschedule(id, to: due)
+        let outcome = try context.runSchedule(store, cause: .routine, touched: id)
+        let shown = try store.require(id)
+        try printSchedule(outcome, placed: shown, asked: moved.holdsItsTime ? nil : asked, context: context, store: store, json: json)
     }
 }
 
@@ -55,7 +63,10 @@ struct EditCommand: TicklerSubcommand {
     @OptionGroup var options: GlobalOptions
     @Argument(help: "Reminder id.", completion: .custom(IDCompletion.complete)) var id: String
     @Option(help: "New title.") var title: String?
-    @Option(help: "New due date, \"YYYY-MM-DD HH:MM\" in local time.") var at: String?
+    @Option(help: "New earliest time (due date for a fixed reminder), \"YYYY-MM-DD HH:MM\" or \"YYYY-MM-DD\", local.") var at: String?
+    @Option(help: "New duration: 15m, 1h, 90m.") var duration: String?
+    @Flag(inversion: .prefixedNo, help: "Pin the reminder to its time, or let the planner move it again.") var fixed: Bool?
+    @Option(help: "Latest acceptable start, \"YYYY-MM-DD[ HH:MM]\", or none to remove it.") var deadline: String?
     @Option(help: "New notes, or - to read them from stdin.") var notes: String?
     @Option(help: "First message sent to Claude on resume; an empty string removes it.") var prompt: String?
     @Option(help: "Event that makes it due now: \(Trigger.usage); an empty string removes it.") var when: String?
@@ -66,9 +77,11 @@ struct EditCommand: TicklerSubcommand {
     @Flag(help: "Print the reminder as JSON.") var json = false
 
     func validate() throws {
-        let changes: [Any?] = [title, at, notes, prompt, when, autoRun, fresh]
+        let changes: [Any?] = [title, at, duration, fixed, deadline, notes, prompt, when, autoRun, fresh]
         guard changes.contains(where: { $0 != nil }) else {
-            throw ValidationError("nothing to change: pass --title, --at, --notes, --prompt, --when, --auto-run or --fresh")
+            throw ValidationError(
+                "nothing to change: pass --title, --at, --duration, --fixed, --deadline, --notes, --prompt, --when, --auto-run or --fresh"
+            )
         }
         if let when, !when.isEmpty, Trigger(when) == nil {
             throw ValidationError("--when expects \(Trigger.usage), got \"\(when)\"")
@@ -81,7 +94,10 @@ struct EditCommand: TicklerSubcommand {
     func execute(_ context: CLIContext) throws {
         let store = try context.openStore(options)
         let existing = try context.loadReminder(id, from: store)
-        let due = try at.map { try context.parseFutureDate($0, flag: "--at") }
+        let schedule = try store.schedule()
+        let asked = try at.map { try context.parseScheduleDate($0, flag: "--at", dayTime: schedule.start) }
+        let minutes = try duration.map { try context.parseDurationMinutes($0, schedule: schedule) }
+        let latest = try parseDeadline(context, schedule: schedule)
         let newNotes = notes.map(context.readNotes)
         let trigger = when.flatMap(Trigger.init)
         // Checked before any write, against the links the edit leaves.
@@ -92,26 +108,49 @@ struct EditCommand: TicklerSubcommand {
             } ?? current
             try requireSupportedLink(trigger, links, gitlabHosts: GitLabHosts.current(environment: context.environment))
         }
-        var updated: Reminder
+        // Pinning first, so that --at below moves the right field; a refusal leaves everything untouched.
+        if let fixed {
+            do {
+                _ = try store.setFixed(id, fixed)
+            } catch let error as StoreError {
+                guard case .invalid = error else { throw error }
+                throw CLIError.usage("\(error)")
+            }
+        }
         do {
-            updated = try store.update(id, title: title, notes: newNotes, dueAt: due, resumePrompt: prompt)
+            _ = try store.update(id, title: title, notes: newNotes, dueAt: asked?.date, resumePrompt: prompt)
         } catch let error as StoreError where error == .autoRunNeedsPrompt || error == .autoRunNeedsFolder {
             throw CLIError.usage("--auto-run: \(error)")
         }
         if when != nil {
-            updated = try store.setTrigger(id, trigger)
+            _ = try store.setTrigger(id, trigger)
         }
         if let fresh {
-            updated = try store.setFresh(id, fresh)
+            _ = try store.setFresh(id, fresh)
         }
         if let autoRun {
             do {
-                updated = try store.setAutoRun(id, autoRun.mode)
+                _ = try store.setAutoRun(id, autoRun.mode)
             } catch let error as StoreError where error != .notFound(id) {
                 throw CLIError.usage("--auto-run: \(error)")
             }
         }
-        try context.printResult(updated, store: store, json: json)
+        if let minutes {
+            _ = try store.setDuration(id, minutes: minutes)
+        }
+        if deadline != nil {
+            _ = try store.setDeadline(id, latest)
+        }
+        let outcome = try context.runSchedule(store, cause: .routine, touched: id)
+        let shown = try store.require(id)
+        let typed = asked.flatMap { $0.hasTime && !shown.holdsItsTime ? $0.date : nil }
+        try printSchedule(outcome, placed: shown, asked: typed, context: context, store: store, json: json)
+    }
+
+    /// `none` removes the deadline; nil when the flag is absent or `none`.
+    private func parseDeadline(_ context: CLIContext, schedule: WorkSchedule) throws -> Date? {
+        guard let deadline, deadline != "none" else { return nil }
+        return try context.parseScheduleDate(deadline, flag: "--deadline", dayTime: schedule.end).date
     }
 }
 

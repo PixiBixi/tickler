@@ -23,14 +23,17 @@ struct MutationTests {
         #expect(object["rescheduleCount"] as? Int == 1)
         #expect(object["originalDue"] as? String == "2026-10-01 16:00")
         let days = try cli.run("snooze", id, "--for", "2d", "--json").jsonObject()
-        #expect(days["due"] as? String == "2026-10-03 10:45")
+        // Saturday is not a working day: the planner places it on Monday.
+        #expect(days["due"] as? String == "2026-10-05 09:30")
     }
 
     @Test func snoozeToSetsTheDate() throws {
         let cli = CLIHarness()
         let id = try addReminder(cli)
-        let object = try cli.run("snooze", id, "--to", "2026-10-05 08:15", "--json").jsonObject()
-        #expect(object["due"] as? String == "2026-10-05 08:15")
+        let object = try cli.run("snooze", id, "--to", "2026-10-05 11:15", "--json").jsonObject()
+        #expect(object["due"] as? String == "2026-10-05 11:15")
+        let early = try cli.run("snooze", id, "--to", "2026-10-06 08:15", "--json").jsonObject()
+        #expect(early["due"] as? String == "2026-10-06 09:30")
     }
 
     @Test func snoozeRejectsBadInput() throws {
