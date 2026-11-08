@@ -9,23 +9,24 @@ Every reminder Claude creates goes through the `tickler` CLI ([PixiBixi/tickler]
 
 | Command | Does |
 |---|---|
-| `tickler add "<title>" --at "YYYY-MM-DD HH:MM" [--when <event>] [--notes -] [--link <url>]... [--prompt "<text>"] [--auto-run read] [--fresh]` | Creates the reminder, prints `id<TAB>title<TAB>date`. `--fresh`: Resume starts a new session in the folder with the prompt; use it with a handoff file |
+| `tickler add "<title>" [--at "YYYY-MM-DD[ HH:MM]"] [--duration 1h] [--fixed] [--deadline "YYYY-MM-DD[ HH:MM]"] [--when <event>] [--notes -] [--link <url>]... [--prompt "<text>"] [--auto-run read] [--fresh]` | Creates the reminder, prints `id<TAB>title<TAB>date`. `--fresh`: Resume starts a new session in the folder with the prompt; use it with a handoff file |
 | `tickler list --due today --json` | Open reminders due up to the end of today, overdue included |
 | `tickler list --due all --json` | Every open reminder |
 | `tickler list --waiting --json` | Reminders waiting for an event, whatever their date |
 | `tickler show <id> --json` | One reminder with notes, links, session and folder |
 | `tickler done <id>` | Marks it done, only once the task is actually complete; to cancel, use `rm` |
-| `tickler edit <id> --at "YYYY-MM-DD HH:MM"` | Reschedules it (also `--title`, `--notes`, `--prompt`) |
+| `tickler edit <id> --at "YYYY-MM-DD[ HH:MM]"` | Reschedules it (also `--title`, `--notes`, `--prompt`, `--duration`, `--fixed`/`--no-fixed`, `--deadline` or `--deadline none`) |
 | `tickler edit <id> --when <event>` | Sets or replaces the trigger; `--when ""` removes it |
 | `tickler edit <id> --auto-run read\|write\|off` | Sets or removes the background run |
 | `tickler edit <id> --fresh\|--no-fresh` | Resume starts a new session in the folder with the prompt; use it with a handoff file |
+| `tickler plan [YYYY-MM-DD]` | Shows a day: busy blocks, reminders with times and durations, free gaps |
 | `tickler snooze <id> --for 1h` | Pushes it back from now (`15m`, `1h`, `2d`) |
 | `tickler rm <id>` | Deletes an obsolete reminder |
 | `tickler resume <id>` | Reopens the reminder's Claude session in WezTerm, Ghostty, iTerm2 or the Claude desktop app |
 | `tickler status <id> --json` | Live state of the linked MRs, Jira issues and PRs: pipeline, approvals, ticket status |
 | `tickler hook install` | Installs the SessionStart hook that surfaces the repository's reminders (see At session start) |
 
-`list --json` returns an array, `show --json` one object, keys sorted, absent values `null`: `id`, `title`, `notes`, `due` (`YYYY-MM-DD HH:MM`, local), `dueISO` (ISO 8601 with offset), `originalDue`, `rescheduleCount`, `status` (`open`, `done`, `deleted`), `source` (`claude`, `human`), `sessionId`, `cwd`, `project`, `resumePrompt`, `overdue` (bool), `links` (`[{kind, label, url}]`), `trigger` (awaited event or null), `waiting`, `firedAt`, `firedReason` (why the event fired), `autoRun` (`read`, `write` or null), `lastRun` (null or `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`). There is no `date` key: filter on `due`, and guard against null fields (`select(.due != null and (.due | startswith("2026-10-12")))`), since `startswith` fails on null with "requires string inputs".
+`list --json` returns an array, `show --json` one object, keys sorted, absent values `null`: `id`, `title`, `notes`, `due` (`YYYY-MM-DD HH:MM`, local; the planned time of a flexible reminder), `dueISO` (ISO 8601 with offset), `durationMinutes`, `fixed` (bool), `notBefore`, `deadline`, `late` (bool), `originalDue`, `rescheduleCount`, `status` (`open`, `done`, `deleted`), `source` (`claude`, `human`), `sessionId`, `cwd`, `project`, `resumePrompt`, `overdue` (bool), `links` (`[{kind, label, url}]`), `trigger` (awaited event or null), `waiting`, `firedAt`, `firedReason` (why the event fired), `autoRun` (`read`, `write` or null), `lastRun` (null or `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`). There is no `date` key: filter on `due`, and guard against null fields (`select(.due != null and (.due | startswith("2026-10-12")))`), since `startswith` fails on null with "requires string inputs".
 
 `add` records the creating session and folder from `CLAUDE_CODE_SESSION_ID` and the cwd. Pass `--session <uuid> --cwd <dir>` to point at another session. Links in the notes are detected (MR, Jira, Slack, Grafana, PR) and become buttons in the app and in the notification, so put the full URLs in the notes.
 
@@ -35,10 +36,17 @@ A session may begin with a "Tickler reminders for REPO" block from the hook. Men
 
 ## Creating
 
-- Resolve relative dates ("demain 9h30") against today's date from the context, in local time. `--at` only takes `YYYY-MM-DD HH:MM`.
+- Resolve relative dates ("demain 9h30") against today's date from the context, in local time. `--at` takes `YYYY-MM-DD HH:MM` or a bare `YYYY-MM-DD`.
 - Title: the action, self-contained, readable on a lock screen. Never a relative offset ("J+7", "dans 3 jours", "demain"): it loses its anchor once read later. Write the absolute date of the reference point instead ("7 jours après le fix du 28/09"). Notes: the exact command or file path needed to resume, since the next session has no memory of this one. The phrase the user would say to Claude on resume goes in `--prompt` ("compare ws-ports"), not in the notes: Resume sends it as the session's first message. Pass multi-line notes on stdin with `--notes -`.
 - Large session, late reminder: when the due time is more than 1h away or `--when` is set, and the session holds 80k tokens of context or more, always create it with `--fresh`. Past 1h the prompt cache has expired, so resuming this session would re-write its whole context. Context size: `tail -n 200 "$(command fd -1 "$CLAUDE_CODE_SESSION_ID.jsonl" ~/.claude/projects)" | jq -s '[.[] | select(.type == "assistant" and .message.usage)] | last.message.usage | .input_tokens + .cache_read_input_tokens + .cache_creation_input_tokens'`. First write a handoff file at `~/.claude/handoffs/<YYYY-MM-DD-HHMM>-<slug>.md` (goal, state with links and absolute paths, open items with the next action first, decisions taken, no secret values), then pass `--prompt 'Read <absolute path> and continue from "Open"'` and put the path in the notes. Done when the reminder shows `fresh: true` in `tickler show <id> --json`.
-- Spacing: run `tickler list --due all --json` first and keep at least 30 min between any two reminders, including several created in the same request: never two at the same time. If the slot is taken, shift the new one to the next free slot and say so in the confirmation.
+- Scheduling: Tickler places a flexible reminder itself, in the first free gap of the working schedule, around meetings and other reminders, and moves it when the day changes. Never compute slots or repack by hand. `add` without `--at` places the reminder unless the owner set scheduling to `off`.
+  - "As soon as possible", no time given: no `--at`.
+  - A named day ("lundi"): a date-only `--at "YYYY-MM-DD"`, the earliest time Tickler may use.
+  - Longer than the default duration (a rework, a write-up): `--duration 1h`.
+  - `--fixed` only when the time itself matters (a meeting, a deploy window, a rollback at a given hour, a re-measure 24h after a rollout, `--auto-run`, "à 14h pile"): it needs a full `--at "YYYY-MM-DD HH:MM"` and is never moved.
+  - The owner gave a limit ("avant jeudi"): `--deadline "YYYY-MM-DD"`, not with `--fixed`.
+  - To show a day: `tickler plan <YYYY-MM-DD>`. Do not move a reminder with `source: human` unless asked.
+- Say the placed time in the confirmation, read from the `due` of the `add` output.
 - Confirm in one line: title and date.
 - Moving: `tickler edit <id> --at ...`, never add plus delete (the app counts reschedules). Cancelling: `tickler rm <id>`. Never `done` for either: a completed reminder reads as work actually done, which is misleading. Mark `done` only when the user says the task is done.
 
@@ -64,7 +72,7 @@ When the action depends on an event rather than a time, pass `--when` with the l
 | "si c'est pas mergé d'ici jeudi" | `--when merged --at "<thursday> 09:30"` |
 
 - The link must be on the reminder (`--link` or in the notes): MR or PR for `merged`, `pipeline-*` and `approved`, a Jira issue for `jira:*`. With several, all must reach the state, except `pipeline-failed`, which fires on the first failure.
-- Without a stated deadline, omit `--at`: the CLI sets 3 working days at 09:30. Do not invent one.
+- Without a stated deadline, omit `--at`: the CLI sets 3 working days from the working start of the schedule. Do not invent one.
 - The event fires only while Tickler.app runs; the deadline is the safety net.
 - At check time, a reminder with `firedReason` set says what happened: start from it.
 
