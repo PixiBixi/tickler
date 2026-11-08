@@ -66,7 +66,7 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select --switch "/Applications/Xcode_${XCODE_VERSION}.app"
 
-      - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+      - uses: github/codeql-action/init@1fc58d04a4d4374f921bdac573c3811c240f9c26 # v4.39.2
         with:
           languages: swift
           build-mode: manual
@@ -74,4 +74,4 @@ jobs:
       - name: Build
         run: swift build
 
-      - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+      - uses: github/codeql-action/analyze@1fc58d04a4d4374f921bdac573c3811c240f9c26 # v4.39.2
