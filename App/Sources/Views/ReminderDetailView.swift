@@ -1,6 +1,7 @@
 import SwiftUI
 import TicklerCore
 
+/// One centered column: project, title, setting chips, the session, live status, notes. Done and Delete stay under the scroll area.
 struct ReminderDetailView: View {
     @Environment(AppModel.self) private var model
     let reminder: Reminder
@@ -12,70 +13,37 @@ struct ReminderDetailView: View {
     @State private var loadedNotes = ""
     @State private var dateText = ""
     @State private var editingDate = false
-    @State private var paneSize = CGSize(width: 800, height: 700)
     @State private var editingNotes = false
-    @State private var sessionHover = false
     @State private var dismissedSuggestion = false
     @FocusState private var notesFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ScrollView {
-                // Wide windows (full screen): the context rail moves to the right instead of piling up below.
-                if paneSize.width >= Self.twoColumnWidth {
-                    HStack(alignment: .top, spacing: 32) {
-                        VStack(alignment: .leading, spacing: 18) {
-                            header
-                            doneSuggestion
-                            actions
-                            resultBlock(wide: true)
-                            notesSection(minHeight: max(260, paneSize.height - 280))
-                        }
-                        .frame(maxWidth: 820, alignment: .leading)
-                        VStack(alignment: .leading, spacing: 18) {
-                            TriggerRow(reminder: reminder)
-                            LiveStatusSection(reminder: reminder)
-                            linksSection
-                            sessionSection(strip: false)
-                            if let run = model.finishedRun(for: reminder) {
-                                AutoRunAnswerCard(run: run)
-                            }
-                            AutoRunRunsList(reminder: reminder, minimum: 1)
-                        }
-                        .frame(width: 400)
+                VStack(alignment: .leading, spacing: 18) {
+                    header
+                    VStack(alignment: .leading, spacing: 8) {
+                        DetailChipRow(reminder: reminder, editingDate: $editingDate, dateText: dateText)
+                        DetailCalendarLine(reminder: reminder)
                     }
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 24)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                } else {
-                    VStack(alignment: .leading, spacing: 18) {
-                        header
-                        actions
-                        resultBlock(wide: false)
-                        if showsStrip {
-                            AutoRunSessionStrip(reminder: reminder, busy: sessionBusy)
-                        }
-                        TriggerRow(reminder: reminder)
-                        LiveStatusSection(reminder: reminder)
-                        notesSection(minHeight: 120)
-                        linksSection
-                        sessionSection(strip: showsStrip)
-                        AutoRunRunsList(reminder: reminder)
+                    doneSuggestion
+                    TriggerRow(reminder: reminder)
+                    if DetailSessionCard.isShown(reminder, model: model) {
+                        DetailSessionCard(reminder: reminder)
                     }
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 22)
-                    .frame(maxWidth: 760, alignment: .leading)
+                    if let run = model.finishedRun(for: reminder) {
+                        AutoRunResultBlock(run: run)
+                    }
+                    LiveStatusSection(reminder: reminder)
+                    DetailExtraLinks(reminder: reminder, notes: notes)
+                    AutoRunRunsList(reminder: reminder)
+                    NotesView(text: $notes, isEditing: $editingNotes, focused: $notesFocused, onCommit: commitNotes)
                 }
+                .padding(.horizontal, 28)
+                .padding(.vertical, 24)
+                .frame(maxWidth: 760, alignment: .leading)
+                .frame(maxWidth: .infinity)
             }
-            // Fill the pane: sized to its content, the scroller sat mid-pane and the width read here stayed narrow.
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(GeometryReader { proxy in
-                Color.clear
-                    .onAppear { paneSize = proxy.size }
-                    .onChange(of: proxy.size) { _, size in paneSize = size }
-            })
-            Divider()
-            footer
         }
         .onAppear {
             title = reminder.title
@@ -113,64 +81,30 @@ struct ReminderDetailView: View {
     // MARK: Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                dueChip
-                if reminder.status == .open, let mode = reminder.autoRunMode {
-                    AutoRunPill(mode: mode)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 12) {
+                if let cwd = reminder.cwd, !cwd.isEmpty {
+                    Text(verbatim: Self.projectName(cwd))
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .help(cwd)
+                        .textSelection(.enabled)
                 }
+                Spacer(minLength: 12)
+                DetailActions(reminder: reminder, pickDate: startRescheduling)
             }
             TextField("Title", text: $title, axis: .vertical)
                 .textFieldStyle(.plain)
-                .font(.system(size: 21, weight: .bold))
+                .font(.system(size: 24, weight: .semibold))
                 .onSubmit(commitTitle)
-            if let cwd = reminder.cwd {
-                Text(abbreviate(cwd))
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .help(cwd)
-                    .textSelection(.enabled)
-            }
         }
     }
 
-    @ViewBuilder
-    private var dueChip: some View {
-        let bucket = DueBucket.of(reminder.dueAt, now: model.now)
-        let soon = reminder.isSoon(now: model.now)
-        let color = reminder.status == .done ? Color
-            .secondary : (bucket == .overdue ? Theme.overdue : (soon ? Theme.accent : Color.primary))
-        Button { startRescheduling() } label: {
-            HStack(spacing: 6) {
-                Text(Format.dueLabel(reminder.dueAt, now: model.now))
-                if reminder.status == .open {
-                    Text("·")
-                    Text(Format.relative(reminder.dueAt, now: model.now))
-                }
-                if reminder.rescheduleCount > 0 {
-                    Text("·")
-                    Text("rescheduled \(reminder.rescheduleCount)×")
-                }
-            }
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(color)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 4)
-            .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
-        }
-        .buttonStyle(.plain)
-        .help("Change the date")
-        .popover(isPresented: $editingDate, arrowEdge: .bottom) {
-            ReschedulePopover(current: reminder.dueAt, initialText: dateText) { date in
-                editingDate = false
-                if let date {
-                    model.reschedule(reminder.id, to: date)
-                }
-            }
-            .environment(model)
-        }
+    /// The folder's last component, or "~" for the home folder itself.
+    private static func projectName(_ cwd: String) -> String {
+        let url = URL(fileURLWithPath: cwd).standardizedFileURL
+        return url.path == URL(fileURLWithPath: NSHomeDirectory()).standardizedFileURL.path ? "~" : url.lastPathComponent
     }
 
     // MARK: Done suggestion
@@ -212,183 +146,6 @@ struct ReminderDetailView: View {
         return parts.joined(separator: ", ")
     }
 
-    // MARK: Actions
-
-    private var actions: some View {
-        let targets = LinkTargets(links: model.links(of: reminder))
-        // After a run the verdict is read and ticked: Done leads, the rest steps back.
-        let ranOpen = reminder.status == .open && reminder.autoRunMode != nil && !autoRunning
-            && model.hasRun(forCurrentDueDateOf: reminder)
-        return FlowLayout(spacing: 8) {
-            if ranOpen {
-                doneButton.buttonStyle(PrimaryButtonStyle())
-                resumeButton
-                SnoozeMenu(reminderId: reminder.id, compact: true) { startRescheduling() }
-                Button { model.autoRunner.start(reminder) } label: { Image(systemName: "arrow.clockwise") }
-                    .buttonStyle(SecondaryButtonStyle())
-                    .help("Run again")
-            } else if reminder.status == .open {
-                autoRunPrimary
-                resumeButton
-                SnoozeMenu(reminderId: reminder.id) { startRescheduling() }
-                doneButton.buttonStyle(SecondaryButtonStyle())
-            } else {
-                resumeButton
-                Button { reopen() } label: { Label("Reopen", systemImage: "arrow.uturn.backward") }
-                    .buttonStyle(SecondaryButtonStyle())
-            }
-            if let ticket = targets.ticket {
-                Button("Open \(ticket.label)") { model.open(ticket) }
-                    .buttonStyle(SecondaryButtonStyle())
-            }
-            if let slack = targets.slack {
-                Button("Open Slack Thread") { model.open(slack) }
-                    .buttonStyle(SecondaryButtonStyle())
-            }
-        }
-    }
-
-    private var doneButton: some View {
-        Button { model.markDone(reminder.id) } label: { Label("Done", systemImage: "checkmark") }
-            .help("⌘↩")
-    }
-
-    // MARK: Sections
-
-    static let twoColumnWidth: CGFloat = 1000
-
-    private func notesSection(minHeight: CGFloat) -> some View {
-        NotesView(text: $notes, isEditing: $editingNotes, focused: $notesFocused, minHeight: minHeight, onCommit: commitNotes)
-    }
-
-    @ViewBuilder
-    private var linksSection: some View {
-        // MRs, tickets and PRs already have a live card above: list only the other links.
-        let tracked = Set(model.liveStatus.supported(model.links(of: reminder)).map(\.url))
-        let links = model.links(of: reminder).filter { !tracked.contains($0.url) }
-        if !links.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                sectionTitle("Links")
-                ForEach(links, id: \.position) { link in
-                    Button { model.open(link) } label: {
-                        HStack(spacing: 10) {
-                            LinkBadge(kind: link.kind)
-                            Text(link.label).font(.system(size: 13))
-                            Spacer()
-                            Image(systemName: "arrow.up.right").font(.system(size: 11)).foregroundStyle(.secondary)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .help(link.url)
-                }
-            }
-        }
-    }
-
-    /// With `strip`, the session row and the auto-run controls are already in the strip under the result: only the prompt stays.
-    @ViewBuilder
-    private func sessionSection(strip: Bool) -> some View {
-        if reminder.sessionId != nil || reminder.fresh || autoRunning {
-            VStack(alignment: .leading, spacing: 6) {
-                sectionTitle("Claude Session")
-                if autoRunning {
-                    AutoRunRunningRow(reminder: reminder)
-                } else if let sessionId = reminder.sessionId, !strip {
-                    sessionRow(sessionId)
-                }
-                if reminder.fresh {
-                    Label("Fresh session", systemImage: "sparkles")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .help("Resume starts a new session in the folder with the prompt")
-                }
-                if reminder.sessionId != nil || reminder.fresh {
-                    ResumePromptField(reminder: reminder)
-                }
-                if !strip {
-                    autoRunControls
-                }
-            }
-        } else {
-            autoRunControls
-        }
-    }
-
-    /// The whole row resumes the session: state first, the id truncated in the middle when space runs out.
-    private func sessionRow(_ sessionId: String) -> some View {
-        let running = model.runningSessions.contains(sessionId)
-        // A finished background run says when it ran: a grey "Ended" read like a failure.
-        let lastRun = running ? nil : model.finishedRun(for: reminder)
-        return Button { model.resume(reminder) } label: {
-            HStack(spacing: 8) {
-                Circle().fill(running ? Color.green : (lastRun?.tint ?? Color.secondary.opacity(0.6))).frame(width: 7, height: 7)
-                Group {
-                    if let ended = lastRun?.endedAt {
-                        Text("Last run · \(Format.relative(ended, now: model.now))")
-                    } else {
-                        Text(running ? "Running" : "Ended")
-                    }
-                }
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(running ? .green : .secondary)
-                .fixedSize()
-                Text(verbatim: sessionId)
-                    .font(.system(size: 11.5, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                Spacer(minLength: 8)
-                Label(running ? "Show Tab" : "Reopen", systemImage: "terminal")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Theme.accent)
-                    .fixedSize()
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(Color.primary.opacity(sessionHover ? 0.08 : 0.04), in: RoundedRectangle(cornerRadius: 8))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(sessionBusy)
-        .onHover { sessionHover = $0 }
-        .help(sessionId)
-    }
-
-    private var footer: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "calendar")
-            Text(footerText)
-            Spacer()
-            Button("Delete", role: .destructive) { model.delete(reminder.id) }
-                .buttonStyle(.borderless)
-        }
-        .font(.system(size: 11))
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 28)
-        .padding(.vertical, 10)
-    }
-
-    private var footerText: String {
-        let start = Format.time(reminder.dueAt)
-        let end = Format.time(reminder.dueAt.addingTimeInterval(15 * 60))
-        if case .synced = model.calendarSync.status, reminder.status == .open {
-            return String(localized: "Also in your calendar, \(start) to \(end)")
-        }
-        let created = Format.dueLabel(reminder.createdAt, now: model.now)
-        if reminder.source == .claude {
-            return String(localized: "Created \(created) by Claude")
-        }
-        return String(localized: "Created \(created) by you")
-    }
-
-    private func sectionTitle(_ text: LocalizedStringKey) -> some View {
-        Text(text).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
-    }
-
     // MARK: Editing
 
     private func commitTitle() {
@@ -409,92 +166,4 @@ struct ReminderDetailView: View {
         dateText = ""
         editingDate = true
     }
-
-    private func reopen() {
-        let date = reminder.dueAt > Date() ? reminder.dueAt : (SnoozePreset.oneHour.date(from: Date()) ?? Date())
-        model.reschedule(reminder.id, to: date)
-    }
-
-    private func abbreviate(_ path: String) -> String {
-        let home = NSHomeDirectory()
-        return path.hasPrefix(home) ? "~" + path.dropFirst(home.count) : path
-    }
 }
-
-extension ReminderDetailView {
-    // MARK: Auto-run
-
-    /// "Run now" while an auto-run is scheduled and has not run for this date; once it has, the actions offer "Run again".
-    @ViewBuilder
-    private var autoRunPrimary: some View {
-        if reminder.status == .open, reminder.autoRunMode != nil, !autoRunning, !model.hasRun(forCurrentDueDateOf: reminder) {
-            Button { model.autoRunner.start(reminder) } label: { Label("Run now", systemImage: "play.fill") }
-                .buttonStyle(PrimaryButtonStyle())
-        }
-    }
-
-    private var autoRunning: Bool {
-        model.autoRunner.isRunning(reminderId: reminder.id)
-    }
-
-    /// Resuming is refused while a background run holds the session.
-    private var sessionBusy: Bool {
-        autoRunning || reminder.continuedSessionId.map { model.autoRunner.runningSessions.contains($0) } == true
-    }
-
-    @ViewBuilder
-    private var resumeButton: some View {
-        if reminder.canResume {
-            let scheduled = reminder.status == .open && reminder.autoRunMode != nil
-            let finished = model.hasRun(forCurrentDueDateOf: reminder)
-            let button = Button { model.resume(reminder) } label: { resumeLabel(scheduled: scheduled, finished: finished) }
-                .disabled(sessionBusy)
-                .help(reminder.resumeMessage.map { "⌘R: \($0)" } ?? "⌘R")
-            if !scheduled {
-                button.buttonStyle(PrimaryButtonStyle())
-            } else {
-                button.buttonStyle(SecondaryButtonStyle())
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func resumeLabel(scheduled: Bool, finished: Bool) -> some View {
-        if finished {
-            Label("Terminal", systemImage: "terminal")
-                .help("Continue in terminal")
-        } else if scheduled {
-            Label("Resume in terminal", systemImage: "terminal")
-        } else if let prompt = reminder.resumeMessage {
-            Label("Resume and say “\(prompt)”", systemImage: "terminal")
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: 360)
-        } else {
-            Label("Resume Session", systemImage: "terminal")
-        }
-    }
-
-    /// Wide panes show the full answer in the side column instead of folded in the block.
-    @ViewBuilder
-    private func resultBlock(wide: Bool) -> some View {
-        if let run = model.finishedRun(for: reminder) {
-            AutoRunResultBlock(run: run, showsFullAnswer: !wide)
-        }
-    }
-
-    /// One column after a run: the session and its auto-run mode sit on one line under the result, not below the notes.
-    private var showsStrip: Bool {
-        reminder.status == .open && reminder.sessionId != nil && reminder.autoRunMode != nil && !autoRunning
-            && model.finishedRun(for: reminder) != nil
-    }
-
-    @ViewBuilder
-    private var autoRunControls: some View {
-        if reminder.status == .open, reminder.sessionId != nil || reminder.cwd != nil || reminder.autoRunMode != nil {
-            ReminderAutoRunToggle(reminder: reminder)
-        }
-    }
-}
-
-// Free-text date input with a live preview of what was understood.

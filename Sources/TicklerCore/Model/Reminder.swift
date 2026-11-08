@@ -42,6 +42,26 @@ public struct Reminder: Codable, Hashable, Sendable, Identifiable, FetchableReco
     public var autoRun: String? = nil // swiftlint:disable:this implicit_optional_initialization
     /// Resume starts a new session in `cwd` with the resume message instead of reopening `sessionId`.
     public var fresh: Bool = false
+    /// Planner footprint in minutes.
+    public var durationMinutes: Int = 15
+    /// Pinned by the user: the planner never moves it.
+    public var fixed: Bool = false
+    /// The planner never places it earlier than this.
+    public var notBefore: Date? = nil // swiftlint:disable:this implicit_optional_initialization
+    public var deadline: Date? = nil // swiftlint:disable:this implicit_optional_initialization
+
+    /// The planner must leave it where it is.
+    public var holdsItsTime: Bool {
+        fixed || autoRun != nil || firedAt != nil
+    }
+
+    public var earliestStart: Date {
+        notBefore ?? dueAt
+    }
+
+    public var isLate: Bool {
+        deadline.map { dueAt > $0 } ?? false
+    }
 
     public var autoRunMode: AutoRunMode? {
         autoRun.flatMap(AutoRunMode.init)
@@ -98,6 +118,10 @@ public struct ReminderDraft: Sendable {
     public var trigger: Trigger?
     public var autoRun: AutoRunMode?
     public var fresh: Bool
+    public var durationMinutes: Int
+    public var fixed: Bool
+    public var notBefore: Date?
+    public var deadline: Date?
 
     public init(
         title: String,
@@ -111,7 +135,11 @@ public struct ReminderDraft: Sendable {
         externalRef: String? = nil,
         trigger: Trigger? = nil,
         autoRun: AutoRunMode? = nil,
-        fresh: Bool = false
+        fresh: Bool = false,
+        durationMinutes: Int = 15,
+        fixed: Bool = false,
+        notBefore: Date? = nil,
+        deadline: Date? = nil
     ) {
         self.title = title
         self.notes = notes
@@ -125,6 +153,10 @@ public struct ReminderDraft: Sendable {
         self.trigger = trigger
         self.autoRun = autoRun
         self.fresh = fresh
+        self.durationMinutes = durationMinutes
+        self.fixed = fixed
+        self.notBefore = notBefore
+        self.deadline = deadline
     }
 }
 

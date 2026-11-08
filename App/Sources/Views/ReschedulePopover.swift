@@ -6,6 +6,10 @@ struct ReschedulePopover: View {
     @Environment(AppModel.self) private var model
     let current: Date
     var initialText = ""
+    var confirmTitle: LocalizedStringKey = "Reschedule"
+    /// Shown in place of Cancel when the value can be removed (a deadline).
+    var clearTitle: LocalizedStringKey?
+    var onClear: (() -> Void)?
     let onFinish: (Date?) -> Void
 
     @State private var text = ""
@@ -159,9 +163,14 @@ struct ReschedulePopover: View {
                 Text("Pick a day and a time").font(.system(size: 12)).foregroundStyle(.secondary)
             }
             Spacer()
-            Button("Cancel") { onFinish(nil) }
-                .buttonStyle(SecondaryButtonStyle())
-            Button("Reschedule") { finish(choice) }
+            if let clearTitle, let onClear {
+                Button(clearTitle, action: onClear)
+                    .buttonStyle(SecondaryButtonStyle())
+            } else {
+                Button("Cancel") { onFinish(nil) }
+                    .buttonStyle(SecondaryButtonStyle())
+            }
+            Button(confirmTitle) { finish(choice) }
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(choice.map { $0 <= Date() } ?? true)
                 .keyboardShortcut(.defaultAction)

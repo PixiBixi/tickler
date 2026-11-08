@@ -31,7 +31,8 @@ public enum CalendarPlanner {
     public static let futureWindow: TimeInterval = 60 * 86400
 
     public static func contentHash(_ reminder: Reminder, links: [ReminderLink]) -> String {
-        let parts = [reminder.title, reminder.notes, String(Int(reminder.dueAt.timeIntervalSince1970))] + links.map(\.url)
+        let due = String(Int(reminder.dueAt.timeIntervalSince1970))
+        let parts = [reminder.title, reminder.notes, due, String(reminder.durationMinutes)] + links.map(\.url)
         let digest = SHA256.hash(data: Data(parts.joined(separator: "\u{1F}").utf8))
         return digest.map { String(format: "%02x", $0) }.joined()
     }

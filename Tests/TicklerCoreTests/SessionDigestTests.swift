@@ -193,4 +193,74 @@ struct SessionDigestTests {
         ))
         #expect(digest.summary == "Tickler: 1 overdue, 2 today in platform; 1 overdue elsewhere")
     }
+
+    private func move(_ id: String, to: String, reason: MoveReason, at: String = "2026-09-30 18:00") -> ScheduleMove {
+        ScheduleMove(reminderId: id, from: Fixture.date("2026-10-01 11:00"), to: Fixture.date(to), reason: reason, at: Fixture.date(at))
+    }
+
+    private func digest(_ reminders: [Reminder], moves: [ScheduleMove]) -> String? {
+        SessionDigest.text(
+            reminders: reminders, moves: moves, sessionFolder: "/work/platform", now: Fixture.now, calendar: Fixture.calendar,
+            gitRoot: roots, folderExists: { _ in true }
+        )
+    }
+
+    @Test func listsMovesWithFixedReasons() throws {
+        var done = reminder("gone01", "Done one", due: "2026-10-02 10:00")
+        done.status = .done
+        let text = try #require(digest(
+            [reminder("mr0001", "Review MR !412", due: "2026-10-02 09:30"), reminder("old001", "Too old", due: "2026-10-02 10:00"), done],
+            moves: [
+                move("mr0001", to: "2026-10-01 12:00", reason: .meeting, at: "2026-09-30 10:00"),
+                move("mr0001", to: "2026-10-02 09:30", reason: .dayFull),
+                move("gone01", to: "2026-10-02 10:00", reason: .meeting),
+                move("nobody", to: "2026-10-02 10:00", reason: .meeting),
+                move("old001", to: "2026-10-02 10:00", reason: .meeting, at: "2026-09-29 23:59"),
+            ]
+        ))
+        #expect(text.contains("Moved since yesterday:\n- Review MR !412 moved to Fri 2 Oct 09:30 (day full)"))
+        #expect(!text.contains("Done one"))
+        #expect(!text.contains("Too old"))
+        #expect(!text.contains("meeting"))
+    }
+
+    @Test func movedLineShowsTheCurrentTime() throws {
+        let text = try #require(digest(
+            [reminder("mr0001", "Review MR !412", due: "2026-10-02 14:00")],
+            moves: [move("mr0001", to: "2026-10-02 09:30", reason: .dayFull)]
+        ))
+        #expect(text.contains("- Review MR !412 moved to Fri 2 Oct 14:00 (day full)"))
+    }
+
+    @Test func migrationMovesHidden() {
+        let text = digest(
+            [reminder("mr0001", due: "2026-10-02 09:30")],
+            moves: [move("mr0001", to: "2026-10-02 09:30", reason: .migration)]
+        )
+        #expect(text == nil)
+    }
+
+    @Test func lateMarked() throws {
+        var late = reminder("late01", "ship it", due: "2026-10-01 17:30")
+        late.deadline = Fixture.date("2026-10-01 16:00")
+        let text = try #require(digest([late]))
+        #expect(text.contains("- today 17:30: [ship it](tickler://open/late01) (late)"))
+    }
+
+    @Test func movedLineNeverStartsWithSlashOrBang() throws {
+        let text = try #require(digest(
+            [reminder("mr0001", "/clear", due: "2026-10-02 09:30")],
+            moves: [move("mr0001", to: "2026-10-02 09:30", reason: .meeting)]
+        ))
+        #expect(text.contains("\n- /clear moved to Fri 2 Oct 09:30 (meeting)"))
+        #expect(text.split(separator: "\n").allSatisfy { !$0.hasPrefix("/") && !$0.hasPrefix("!") })
+    }
+
+    @Test func movedSectionCountsTowardTheLineCap() throws {
+        let reminders = (0 ..< 10).map { reminder("m\($0)", "t\($0)", due: "2026-10-02 09:30") }
+        let moves = (0 ..< 10).map { move("m\($0)", to: "2026-10-02 09:30", reason: .dayFull) }
+        let text = try #require(digest(reminders, moves: moves))
+        #expect(text.contains("- and 3 more: [open today in Tickler](tickler://view/today)"))
+        #expect(text.contains("Moved since yesterday:"))
+    }
 }

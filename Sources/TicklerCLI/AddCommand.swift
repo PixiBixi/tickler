@@ -7,8 +7,12 @@ struct AddCommand: TicklerSubcommand {
 
     @OptionGroup var options: GlobalOptions
     @Argument(help: "What to be reminded of.") var title: String
-    @Option(help: "Due date, \"YYYY-MM-DD HH:MM\" in local time. With --when, the fallback deadline (default: 3 working days, 09:30).")
+    @Option(help: "Earliest time, \"YYYY-MM-DD HH:MM\" or \"YYYY-MM-DD\" (working start). Default: now. With --when, the fallback.")
     var at: String?
+    @Flag(help: "Keep exactly the --at time, even at night or on a weekend: the planner never moves it.") var fixed = false
+    @Option(help: "How long it takes: 15m, 1h, 90m. Default: the working-day setting (15m).") var duration: String?
+    @Option(help: "Latest acceptable start, \"YYYY-MM-DD[ HH:MM]\"; a bare day means the end of the working day. Not with --fixed.")
+    var deadline: String?
     @Option(help: "Event that makes it due now: \(Trigger.usage).") var when: String?
     @Option(help: "Notes, or - to read them from stdin.") var notes: String?
     @Option(name: .customLong("link"), help: "A URL to attach; repeatable.") var links: [String] = []
@@ -22,12 +26,20 @@ struct AddCommand: TicklerSubcommand {
 
     func validate() throws {
         guard !title.trimmingCharacters(in: .whitespaces).isEmpty else { throw ValidationError("the title is empty") }
-        guard at != nil || when != nil else { throw ValidationError("pass --at, --when, or both") }
+        if fixed, at == nil {
+            throw ValidationError("--fixed needs --at")
+        }
+        if fixed, deadline != nil {
+            throw ValidationError("--deadline cannot be used with --fixed")
+        }
         if let when, Trigger(when) == nil {
             throw ValidationError("--when expects \(Trigger.usage), got \"\(when)\"")
         }
         if autoRun == .off {
             throw ValidationError("--auto-run expects \(AutoRunOption.addUsage), got \"off\"")
+        }
+        if autoRun != nil, at == nil, when == nil {
+            throw ValidationError("--auto-run needs --at, --when, or both")
         }
         if autoRun != nil, ReminderStore.normalized(prompt) == nil {
             throw ValidationError("--auto-run needs --prompt: the run has no one to answer a question")
@@ -39,8 +51,10 @@ struct AddCommand: TicklerSubcommand {
 
     func execute(_ context: CLIContext) throws {
         let trigger = when.flatMap(Trigger.init)
-        let due = try at.map { try context.parseFutureDate($0, flag: "--at") }
-            ?? Trigger.defaultDeadline(after: context.now(), calendar: context.calendar)
+        let checkSchedule = try context.scheduleForChecks(options)
+        let asked = try at.map { try context.parseScheduleDate($0, flag: "--at", dayTime: checkSchedule.start) }
+        let minutes = try duration.map { try context.parseDurationMinutes($0, schedule: checkSchedule) }
+        let latest = try deadline.map { try context.parseScheduleDate($0, flag: "--deadline", dayTime: checkSchedule.end).date }
         let noteText = notes.map(context.readNotes) ?? ""
         if let trigger {
             try requireSupportedLink(
@@ -57,13 +71,24 @@ struct AddCommand: TicklerSubcommand {
         }
         // Resume has no session to fall back on: the folder is the only place to start the new one.
         let folderForFresh = fresh ? folder ?? context.currentDirectory : folder
-        let draft = ReminderDraft(
-            title: title, notes: noteText, dueAt: due, links: links, sessionId: sessionId, cwd: folderForFresh,
-            resumePrompt: prompt, source: sessionId == nil ? .human : .claude, trigger: trigger,
-            autoRun: autoRun?.mode, fresh: fresh
-        )
+        // The store is opened after every usage check: a usage error leaves no database behind.
         let store = try context.openStore(options)
-        try context.printResult(store.add(draft), store: store, json: json)
+        let schedule = try store.schedule()
+        let fallback = trigger == nil
+            ? context.now()
+            : Trigger.defaultDeadline(after: context.now(), calendar: context.calendar, schedule: schedule)
+        let start = asked?.date ?? fallback
+        let draft = ReminderDraft(
+            title: title, notes: noteText, dueAt: start, links: links, sessionId: sessionId, cwd: folderForFresh,
+            resumePrompt: prompt, source: sessionId == nil ? .human : .claude, trigger: trigger,
+            autoRun: autoRun?.mode, fresh: fresh, durationMinutes: minutes ?? schedule.defaultDurationMinutes,
+            fixed: fixed, notBefore: fixed ? nil : start, deadline: latest
+        )
+        let added = try store.add(draft)
+        let outcome = try context.runSchedule(store, cause: .reminderAdded, touched: added.id, isNew: true)
+        let shown = try store.require(added.id)
+        let typed = asked.flatMap { $0.hasTime && !fixed ? $0.date : nil }
+        try printSchedule(outcome, placed: shown, asked: typed, context: context, store: store, json: json)
     }
 }
 

@@ -14,6 +14,7 @@ public enum SessionDigest {
     // swiftlint:disable:next function_parameter_count
     public static func text(
         reminders: [Reminder],
+        moves: [ScheduleMove] = [],
         sessionFolder: String,
         now: Date,
         calendar: Calendar,
@@ -21,7 +22,7 @@ public enum SessionDigest {
         folderExists: (String) -> Bool
     ) -> String? {
         digest(
-            reminders: reminders, sessionFolder: sessionFolder, now: now, calendar: calendar,
+            reminders: reminders, moves: moves, sessionFolder: sessionFolder, now: now, calendar: calendar,
             gitRoot: gitRoot, folderExists: folderExists
         )?.context
     }
@@ -29,6 +30,7 @@ public enum SessionDigest {
     // swiftlint:disable:next function_parameter_count
     public static func digest(
         reminders: [Reminder],
+        moves: [ScheduleMove] = [],
         sessionFolder: String,
         now: Date,
         calendar: Calendar,
@@ -57,7 +59,10 @@ public enum SessionDigest {
         let open = reminders.filter { $0.status == .open }
         let mine = open.filter { canProduceOutput($0, now: now, calendar: calendar) && attached($0) }
         let groups = Groups(mine, now: now, calendar: calendar)
-        let lines = groups.lines(now: now, calendar: calendar)
+        let movedIds = Set(moves.map(\.reminderId))
+        let candidates = movedIds.isEmpty ? [] : open.filter { movedIds.contains($0.id) && attached($0) }
+        let moved = movedLines(moves, among: candidates, now: now, calendar: calendar)
+        let lines = groups.lines(now: now, calendar: calendar) + (moved.isEmpty ? [] : ["Moved since yesterday:"] + moved)
         let soon = now.addingTimeInterval(3600)
         let lateElsewhere = open.count { $0.dueAt < now && !attached($0) }
         let soonElsewhere = open.count { $0.dueAt >= now && $0.dueAt < soon && !attached($0) }
@@ -87,7 +92,8 @@ public enum SessionDigest {
         if !elsewhere.isEmpty {
             out.append("Other projects: \(elsewhere). \(todayLink)")
         }
-        let here = groups.counts.isEmpty ? nil : "\(groups.counts) in \(name)"
+        let counts = [groups.counts, moved.isEmpty ? "" : "\(moved.count) moved"].filter { !$0.isEmpty }.joined(separator: ", ")
+        let here = counts.isEmpty ? nil : "\(counts) in \(name)"
         let away = elsewhere.isEmpty ? nil : "\(elsewhere) elsewhere"
         let summary = "Tickler: " + [here, away].compactMap(\.self).joined(separator: "; ")
         return Digest(context: out.joined(separator: "\n"), summary: summary)
@@ -125,6 +131,26 @@ public enum SessionDigest {
         }
     }
 
+    /// The latest move since the start of yesterday of each open reminder in `open`, as `- <title> moved to <when> (<reason>)`.
+    static func movedLines(_ moves: [ScheduleMove], among open: [Reminder], now: Date, calendar: Calendar) -> [String] {
+        guard !moves.isEmpty, let yesterday = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: now)) else { return [] }
+        let byId = Dictionary(open.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        var latest: [String: ScheduleMove] = [:]
+        for move in moves where move.at >= yesterday && move.reason != .migration && byId[move.reminderId] != nil {
+            if let known = latest[move.reminderId], known.at > move.at {
+                continue
+            }
+            latest[move.reminderId] = move
+        }
+        // The reminder's current time, not the move's: a later edit or move may have changed it.
+        let current = latest.keys.compactMap { byId[$0] }.sorted { ($0.dueAt, $0.id) < ($1.dueAt, $1.id) }
+        return current.compactMap { reminder in
+            latest[reminder.id].map {
+                "- \(title(reminder.title)) moved to \(when(reminder.dueAt, now: now, calendar: calendar)) (\($0.reason.rawValue))"
+            }
+        }
+    }
+
     /// Only these can show up in the digest, so only these are worth a git lookup.
     static func canProduceOutput(_ reminder: Reminder, now: Date, calendar: Calendar) -> Bool {
         reminder.dueAt < now || isFired(reminder, now: now) || calendar.isDate(reminder.dueAt, inSameDayAs: now)
@@ -137,11 +163,11 @@ public enum SessionDigest {
 
     /// The title carries the link: Claude repeats it as is, so the owner clicks a name, not an id.
     static func line(_ reminder: Reminder, _ label: String) -> String {
-        "- \(label): [\(title(reminder.title))](tickler://open/\(reminder.id))"
+        "- \(label): [\(title(reminder.title))](tickler://open/\(reminder.id))" + (reminder.isLate ? " (late)" : "")
     }
 
     /// One line, at most 100 characters, no control or format characters, no `[` `]` (so no markdown link).
-    static func title(_ text: String) -> String {
+    public static func title(_ text: String) -> String {
         let joined = text.split(whereSeparator: \.isNewline).joined(separator: " ")
         let kept = joined.unicodeScalars.filter { $0.properties.generalCategory != .control && $0.properties.generalCategory != .format }
         var clean = String(String.UnicodeScalarView(kept))

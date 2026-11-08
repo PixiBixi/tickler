@@ -86,6 +86,41 @@ public struct CLIContext: Sendable {
         return date
     }
 
+    /// "YYYY-MM-DD HH:MM", or a bare day that resolves to `dayTime` on that day. Never in the past.
+    func parseScheduleDate(_ value: String, flag: String, dayTime: TimeOfDay) throws -> (date: Date, hasTime: Bool) {
+        let trimmed = value.trimmingCharacters(in: .whitespaces)
+        guard trimmed.wholeMatch(of: /\d{4}-\d{2}-\d{2}/) != nil else {
+            return try (parseFutureDate(value, flag: flag), true)
+        }
+        guard let midnight = StrictDate.parse(trimmed + " 00:00", calendar: calendar) else {
+            throw CLIError.usage("\(flag) expects \"YYYY-MM-DD HH:MM\" or \"YYYY-MM-DD\", got \"\(value)\"")
+        }
+        guard midnight >= calendar.startOfDay(for: now()) else { throw CLIError.usage("\(flag) \"\(value)\" is in the past") }
+        let minutes = min(max(dayTime.minutes, 0), 24 * 60 - 1)
+        let date = calendar.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: midnight) ?? midnight
+        return (date, false)
+    }
+
+    /// The settings for a usage check made before the store is opened: a usage error must not create the database.
+    func scheduleForChecks(_ options: GlobalOptions) throws -> WorkSchedule {
+        let path = options.db ?? TicklerDatabase.defaultPath(environment: environment)
+        guard FileManager.default.fileExists(atPath: path) else { return .standard }
+        return try openStore(options).schedule()
+    }
+
+    /// `--duration`: minutes, positive, at most the working day.
+    func parseDurationMinutes(_ value: String, schedule: WorkSchedule) throws -> Int {
+        guard let minutes = WorkSchedule.parseDuration(value) else {
+            throw CLIError.usage("--duration expects a positive number and a unit m or h (15m, 1h, 90m), got \"\(value)\"")
+        }
+        guard minutes <= schedule.workingMinutes else {
+            let day = schedule.workingMinutes
+            let length = day % 60 == 0 ? "\(day / 60)h" : "\(day)m"
+            throw CLIError.usage("--duration is longer than the working day (\(length))")
+        }
+        return minutes
+    }
+
     func readNotes(_ value: String) -> String {
         guard value == "-" else { return value }
         return readStdin().trimmingCharacters(in: .newlines)

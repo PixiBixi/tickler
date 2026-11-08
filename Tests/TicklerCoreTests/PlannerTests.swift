@@ -194,6 +194,13 @@ struct CalendarPlannerTests {
         let withLink = CalendarPlanner.contentHash(base, links: [link("hash01", "https://acme.atlassian.net/browse/OPS-1")])
         #expect(withLink != CalendarPlanner.contentHash(base, links: []))
     }
+
+    @Test func hashChangesWithDuration() {
+        let base = reminder("hash02", at: "2026-10-02 09:30")
+        var longer = base
+        longer.durationMinutes = 45
+        #expect(CalendarPlanner.contentHash(base, links: []) != CalendarPlanner.contentHash(longer, links: []))
+    }
 }
 
 struct NotificationPlannerReviewTests {
@@ -313,6 +320,26 @@ struct AutoRunNotificationTests {
         let banner = NotificationPlanner.runRequestId(reminderId: "auto01", runId: "r1")
         let plan = NotificationPlanner.plan(reminders: [item], links: [:], pendingIds: [banner, "gone@x@1"], now: Fixture.now)
         #expect(plan.remove == ["gone@x@1"])
+    }
+
+    @Test func conflictBannerKeptWhileReminderOpen() {
+        let item = reminder("conf01", at: "2026-10-02 14:00")
+        let id = NotificationPlanner.conflictRequestId(reminderId: "conf01", start: Fixture.now)
+        #expect(NotificationPlanner.staleDelivered(deliveredIds: [id], reminders: [item]).isEmpty)
+    }
+
+    @Test func conflictBannerDroppedWhenReminderClosed() {
+        var item = reminder("conf01", at: "2026-10-02 14:00")
+        item.status = .done
+        let id = NotificationPlanner.conflictRequestId(reminderId: "conf01", start: Fixture.now)
+        #expect(NotificationPlanner.staleDelivered(deliveredIds: [id], reminders: [item]) == [id])
+        #expect(NotificationPlanner.staleDelivered(deliveredIds: [id], reminders: []) == [id])
+    }
+
+    @Test func reminderIdParsesConflictId() {
+        let id = NotificationPlanner.conflictRequestId(reminderId: "conf01", start: Fixture.now)
+        #expect(id.hasPrefix("conf01@conflict@"))
+        #expect(NotificationPlanner.reminderId(fromRequestId: id) == "conf01")
     }
 
     @Test func runNotificationStaleWhenDone() {

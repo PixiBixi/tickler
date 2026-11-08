@@ -245,6 +245,7 @@ struct ReminderRow: View {
                         Image(systemName: "arrow.uturn.forward").foregroundStyle(.secondary)
                             .help(Text("Rescheduled \(reminder.rescheduleCount) times"))
                     }
+                    ScheduleMarks(reminder: reminder)
                 }
                 .font(.system(size: 11))
                 .lineLimit(1)

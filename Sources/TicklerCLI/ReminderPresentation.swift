@@ -8,7 +8,8 @@ import TicklerCore
 /// `resumePrompt` (first message on resume), `overdue` (open and past due), `links` (`[{kind, label, url}]`),
 /// `trigger` (awaited event or null), `waiting` (open and waiting), `firedAt`, `firedReason` (why the trigger fired),
 /// `autoRun` (read|write or null), `fresh` (Resume starts a new session in `cwd`), `lastRun` (latest background run or null:
-/// `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`; `figures` is an array, dates are local like `firedAt`).
+/// `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`; `figures` is an array, dates are local like `firedAt`),
+/// `durationMinutes`, `fixed`, `notBefore` and `deadline` (local dates or null), `late` (placed past its deadline).
 struct ReminderJSON: Encodable {
     struct Link: Encodable {
         let kind: String
@@ -65,6 +66,11 @@ struct ReminderJSON: Encodable {
     let autoRun: String?
     let fresh: Bool
     let lastRun: Run?
+    let durationMinutes: Int
+    let fixed: Bool
+    let notBefore: String?
+    let deadline: String?
+    let late: Bool
 
     init(_ reminder: Reminder, links: [ReminderLink], lastRun: AutoRun? = nil, context: CLIContext) {
         let formatter = ISO8601DateFormatter()
@@ -90,6 +96,11 @@ struct ReminderJSON: Encodable {
         firedReason = reminder.firedReason
         autoRun = reminder.autoRun
         fresh = reminder.fresh
+        durationMinutes = reminder.durationMinutes
+        fixed = reminder.fixed
+        notBefore = reminder.notBefore.map { StrictDate.format($0, calendar: context.calendar) }
+        deadline = reminder.deadline.map { StrictDate.format($0, calendar: context.calendar) }
+        late = reminder.isLate
         self.lastRun = lastRun.map { run in
             Run(
                 state: run.state.rawValue, verdict: run.verdict?.rawValue, headline: run.headline, figures: run.figures,
@@ -105,7 +116,7 @@ struct ReminderJSON: Encodable {
         enum Key: String, CodingKey {
             case id, title, notes, due, dueISO, originalDue, rescheduleCount, status, source
             case sessionId, cwd, project, resumePrompt, overdue, links, trigger, waiting, firedAt, firedReason
-            case autoRun, fresh, lastRun
+            case autoRun, fresh, lastRun, durationMinutes, fixed, notBefore, deadline, late
         }
         var container = encoder.container(keyedBy: Key.self)
         try container.encode(id, forKey: .id)
@@ -130,6 +141,11 @@ struct ReminderJSON: Encodable {
         try container.encode(autoRun, forKey: .autoRun)
         try container.encode(fresh, forKey: .fresh)
         try container.encode(lastRun, forKey: .lastRun)
+        try container.encode(durationMinutes, forKey: .durationMinutes)
+        try container.encode(fixed, forKey: .fixed)
+        try container.encode(notBefore, forKey: .notBefore)
+        try container.encode(deadline, forKey: .deadline)
+        try container.encode(late, forKey: .late)
     }
 }
 
