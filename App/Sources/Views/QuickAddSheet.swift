@@ -10,6 +10,9 @@ struct QuickAddSheet: View {
     @State private var when = ""
     @State private var picked: SnoozePreset?
     @State private var notes = ""
+    /// Nil until the user steps it: the default duration of the schedule applies.
+    @State private var minutes: Int?
+    @State private var fixed = false
     @FocusState private var focus: Field?
 
     private enum Field { case title, when, notes }
@@ -23,11 +26,12 @@ struct QuickAddSheet: View {
             Divider().padding(.horizontal, 22)
             VStack(alignment: .leading, spacing: 18) {
                 whenSection(due)
+                planningSection(due)
                 notesSection
             }
             .padding(.horizontal, 22)
             .padding(.vertical, 18)
-            footer(due)
+            footer(due ?? flexibleStart)
         }
         .frame(width: 560)
         .background(Theme.listBackground)
@@ -123,6 +127,30 @@ struct QuickAddSheet: View {
         }
     }
 
+    /// No time typed: the reminder is flexible from now and the planner picks the slot.
+    private var flexibleStart: Date? {
+        picked == nil && when.trimmingCharacters(in: .whitespaces).isEmpty ? model.now : nil
+    }
+
+    private func planningSection(_ due: Date?) -> some View {
+        let defaultMinutes = model.currentSchedule().defaultDurationMinutes
+        return VStack(alignment: .leading, spacing: 10) {
+            label("Schedule")
+            HStack(spacing: 16) {
+                Stepper(value: Binding(get: { minutes ?? defaultMinutes }, set: { minutes = $0 }), in: 5 ... 480, step: 5) {
+                    Text("\(minutes ?? defaultMinutes) min").font(.system(size: 13)).monospacedDigit()
+                }
+                Toggle("Fixed time", isOn: $fixed)
+                    .font(.system(size: 13))
+                    .disabled(due == nil)
+                Spacer()
+            }
+            if due == nil, flexibleStart != nil {
+                Text("Without a time, the reminder is placed in the next free slot.").font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             label("Notes")
@@ -195,9 +223,10 @@ struct QuickAddSheet: View {
 
     private func add(_ due: Date?) {
         guard let due else { return }
+        let pinned = fixed && dueDate != nil
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        model.add(title: trimmed, notes: notes, dueAt: due)
+        model.add(title: trimmed, notes: notes, dueAt: due, durationMinutes: minutes, fixed: pinned)
         dismiss()
     }
 }

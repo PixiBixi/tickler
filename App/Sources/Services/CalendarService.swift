@@ -17,6 +17,8 @@ final class CalendarService {
     private let eventStore = EKEventStore()
     private(set) var status: Status = .disabled
     private(set) var calendars: [EKCalendar] = []
+    /// Every event calendar, read-only ones included: the planner only reads their busy times.
+    private(set) var busyCandidates: [EKCalendar] = []
 
     /// Stored rather than computed: EventKit's status is not observable, and Settings must switch once access is granted.
     private(set) var hasAccess = EKEventStore.authorizationStatus(for: .event) == .fullAccess
@@ -62,11 +64,48 @@ final class CalendarService {
         hasAccess = EKEventStore.authorizationStatus(for: .event) == .fullAccess
         guard hasAccess else {
             calendars = []
+            busyCandidates = []
             return
         }
+        busyCandidates = eventStore.calendars(for: .event)
+            .sorted { ($0.source.title, $0.title) < ($1.source.title, $1.title) }
         calendars = eventStore.calendars(for: .event)
             .filter(\.allowsContentModifications)
             .sorted { ($0.source.title, $0.title) < ($1.source.title, $1.title) }
+    }
+
+    /// Called on `EKEventStoreChanged`, which also fires for our own event writes: the caller must converge.
+    @ObservationIgnored private var storeObserver: NSObjectProtocol?
+
+    func observeChanges(_ onChange: @escaping @MainActor () -> Void) {
+        storeObserver.map { NotificationCenter.default.removeObserver($0) }
+        storeObserver = NotificationCenter.default.addObserver(
+            forName: .EKEventStoreChanged, object: eventStore, queue: .main
+        ) { _ in
+            Task { @MainActor in onChange() }
+        }
+    }
+
+    /// Start and end only: no event text leaves this method. Skips all-day, free, declined and Tickler's own events.
+    /// Nil when there is no access or none of the chosen calendars resolves: unknown, not "no meetings".
+    func busyIntervals(calendarIds: [String], from start: Date, to end: Date) -> [DateInterval]? {
+        guard hasAccess else { return nil }
+        let chosen = calendarIds.compactMap { eventStore.calendar(withIdentifier: $0) }
+        guard !chosen.isEmpty else { return nil }
+        let predicate = eventStore.predicateForEvents(withStart: start, end: end, calendars: chosen)
+        return eventStore.events(matching: predicate).filter(Self.blocksTime).compactMap { event in
+            event.endDate > event.startDate ? DateInterval(start: event.startDate, end: event.endDate) : nil
+        }
+    }
+
+    private static func blocksTime(_ event: EKEvent) -> Bool {
+        if event.isAllDay || event.availability == .free || event.status == .canceled {
+            return false
+        }
+        if CalendarMarker.reminderId(url: event.url, notes: event.notes) != nil {
+            return false
+        }
+        return event.attendees?.first(where: \.isCurrentUser)?.participantStatus != .declined
     }
 
     func reconcile(store: ReminderStore, calendarId: String?) {
@@ -182,7 +221,7 @@ final class CalendarService {
     private func fill(_ event: EKEvent, reminder: Reminder, links: [ReminderLink]) {
         event.title = reminder.title
         event.startDate = reminder.dueAt
-        event.endDate = reminder.dueAt.addingTimeInterval(15 * 60)
+        event.endDate = reminder.dueAt.addingTimeInterval(Double(reminder.durationMinutes) * 60)
         event.availability = .free
         event.alarms = nil
         event.url = URL(string: CalendarMarker.link(for: reminder.id))

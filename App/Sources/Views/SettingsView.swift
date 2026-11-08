@@ -4,7 +4,7 @@ import TicklerCore
 /// Settings in tabs, each as tall as its content.
 struct SettingsView: View {
     enum Tab: String {
-        case general, calendar, sessions, live, claude
+        case general, schedule, calendar, sessions, live, claude
     }
 
     @State private var tab = Self.initialTab
@@ -14,6 +14,9 @@ struct SettingsView: View {
             GeneralSettings()
                 .tabItem { Label("General", systemImage: "gearshape") }
                 .tag(Tab.general)
+            ScheduleSettings()
+                .tabItem { Label("Schedule", systemImage: "clock") }
+                .tag(Tab.schedule)
             CalendarSettings()
                 .tabItem { Label("Calendar", systemImage: "calendar") }
                 .tag(Tab.calendar)
@@ -40,7 +43,7 @@ struct SettingsView: View {
 }
 
 /// One tab: a grouped form as tall as its content, so the window resizes per tab instead of scrolling.
-private struct SettingsTab<Content: View>: View {
+struct SettingsTab<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {

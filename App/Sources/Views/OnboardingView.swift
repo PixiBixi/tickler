@@ -15,6 +15,7 @@ struct OnboardingView: View {
     @State private var skillInstalled = false
     @State private var versions: [ExternalTool: String] = [:]
     @State private var hasHomebrew = false
+    @State private var schedule = WorkSchedule.standard
 
     var body: some View {
         @Bindable var preferences = model.preferences
@@ -30,11 +31,12 @@ struct OnboardingView: View {
                 VStack(alignment: .leading, spacing: 22) {
                     step(1, "Notifications", done: model.notifications.authorized) { notificationsStep }
                     step(2, "Calendar", done: model.calendarSync.hasAccess && preferences.calendarId != nil) { calendarStep }
-                    step(3, "Terminal", done: true) { terminalStep }
-                    step(4, "Live status tools", done: checkedTools && toInstall.isEmpty) { toolsStep }
-                    step(5, "Claude Code skill", done: skillInstalled) { skillStep }
+                    step(3, "Planning", done: true) { planningStep }
+                    step(4, "Terminal", done: true) { terminalStep }
+                    step(5, "Live status tools", done: checkedTools && toInstall.isEmpty) { toolsStep }
+                    step(6, "Claude Code skill", done: skillInstalled) { skillStep }
                     if preferences.enabledTools.contains(.jira) {
-                        step(6, "Jira token (optional)", done: jiraTokenSaved) { jiraStep }
+                        step(7, "Jira token (optional)", done: jiraTokenSaved) { jiraStep }
                     }
                 }
                 .padding(24)
@@ -120,6 +122,16 @@ struct OnboardingView: View {
                 }
             }
         }
+    }
+
+    private var planningStep: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SchedulingModeRow(schedule: $schedule)
+            WorkingDaysRow(schedule: $schedule)
+            WorkingHoursRow(schedule: $schedule)
+            BusyCalendarsRow(schedule: $schedule, noAccessHint: "Allow calendar access in the step above.")
+        }
+        .savesSchedule($schedule)
     }
 
     private var terminalStep: some View {

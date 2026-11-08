@@ -50,6 +50,10 @@ final class AppModel {
     private(set) var lastRuns: [String: AutoRun] = [:]
     private(set) var runningSessions: Set<String> = []
     private(set) var now = Date()
+    /// The latest unseen planner move of each reminder moved since yesterday; marks the list and the detail pane.
+    var unseenMoves: [String: ScheduleMove] = [:]
+    /// Reminders with a recorded conflict that has not ended yet.
+    var conflictedIds: Set<String> = []
 
     var filter: SidebarFilter = .today {
         didSet {
@@ -109,7 +113,7 @@ final class AppModel {
     private var observer: ChangeObserver?
     private var ticker: Timer?
     private var toastTask: Task<Void, Never>?
-    private let calendar = Calendar.current
+    let calendar = Calendar.current
 
     private init() {
         do {
@@ -133,8 +137,15 @@ final class AppModel {
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { _ in
             Task { @MainActor in
                 AppModel.shared.reload()
+                AppModel.shared.busyDirty = true
                 AppModel.shared.requestReconcile(catchUp: true)
                 AppModel.shared.triggerWatcher.check()
+            }
+        }
+        calendarSync.observeChanges { AppModel.shared.markBusyDirty() }
+        for name in [NSNotification.Name.NSSystemTimeZoneDidChange, .NSCalendarDayChanged] {
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in
+                Task { @MainActor in AppModel.shared.requestReconcile() }
             }
         }
         // Permissions granted in System Settings take effect when the user comes back.
@@ -164,6 +175,7 @@ final class AppModel {
             links = try store.links(for: (open + done).map(\.id))
             lastRuns = try store.lastRuns(for: (open + done).map(\.id))
             now = Date()
+            loadScheduleMarks(store: store)
             refreshSessions()
             island.update()
         } catch {
@@ -196,6 +208,14 @@ final class AppModel {
 
     // MARK: Reconciliation
 
+    // Busy-copy state of the scheduler, see AppModel+Schedule.swift.
+    var busyDirty = true
+    var lastBusyIds: [String]?
+    /// Why the next scheduler run happens, when the app knows better than "routine" (settings saved, reminder added).
+    var pendingScheduleCause: ScheduleCause?
+    /// The reminder the app just created: its placement skips the freeze and logs no move.
+    var pendingNewReminderId: String?
+
     private var reconciling = false
     private var reconcileAgain = false
     private var catchUpRequested = false
@@ -223,6 +243,7 @@ final class AppModel {
     private func reconcileOnce(catchUp: Bool) async {
         guard let store else { return }
         // The decisions below are made on this snapshot; `open` may be reloaded while they await.
+        await runScheduler(store: store)
         let snapshot = open
         let alreadyDelivered = await notifications.reconcile(reminders: snapshot, links: links)
         var notified = alreadyDelivered
@@ -422,14 +443,6 @@ final class AppModel {
         }
     }
 
-    func add(title: String, notes: String, dueAt: Date) {
-        perform {
-            let reminder = try $0.add(ReminderDraft(title: title, notes: notes, dueAt: dueAt, source: .human))
-            self.selection = reminder.id
-            return String(localized: "Added for \(Format.dueLabel(dueAt, now: Date()))")
-        }
-    }
-
     func resumeSelected() {
         if let reminder = selectedReminder {
             resume(reminder)
@@ -490,7 +503,7 @@ final class AppModel {
     }
 
     /// Runs a store write, then reloads and reconciles. The closure returns the confirmation to show, if any.
-    private func perform(_ work: @escaping (ReminderStore) async throws -> String?) {
+    func perform(_ work: @escaping (ReminderStore) async throws -> String?) {
         guard let store else { return }
         Task {
             do {

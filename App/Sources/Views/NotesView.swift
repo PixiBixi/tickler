@@ -6,7 +6,6 @@ struct NotesView: View {
     @Binding var text: String
     @Binding var isEditing: Bool
     var focused: FocusState<Bool>.Binding
-    let minHeight: CGFloat
     let onCommit: () -> Void
 
     var body: some View {
@@ -21,39 +20,38 @@ struct NotesView: View {
                     Button("Done") { finish() }
                         .buttonStyle(SecondaryButtonStyle())
                         .controlSize(.small)
+                } else if isEmpty {
+                    Button { start() } label: { Label("Add notes", systemImage: "plus") }
+                        .buttonStyle(.borderless)
+                        .font(.system(size: 11))
                 } else {
                     Button { start() } label: { Label("Edit", systemImage: "pencil") }
                         .buttonStyle(.borderless)
                         .font(.system(size: 11))
                 }
             }
-            Group {
-                if isEditing {
-                    TextEditor(text: $text)
-                        .font(.system(size: 12.5, design: .monospaced))
-                        .lineSpacing(3)
-                        .scrollContentBackground(.hidden)
-                        .focused(focused)
-                        .onExitCommand { finish() }
-                } else if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("Add notes, commands or links…")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.tertiary)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                        .contentShape(Rectangle())
-                        .onTapGesture { start() }
-                } else {
-                    MarkdownView(markdown: text)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                        .contentShape(Rectangle())
-                        .onTapGesture(count: 2) { start() }
-                }
+            if isEditing {
+                TextEditor(text: $text)
+                    .font(.system(size: 12.5, design: .monospaced))
+                    .lineSpacing(3)
+                    .scrollContentBackground(.hidden)
+                    .focused(focused)
+                    .onExitCommand { finish() }
+                    .frame(minHeight: 160)
+                    .padding(10)
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Theme.accent.opacity(0.6)))
+            } else if !isEmpty {
+                MarkdownView(markdown: text)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2) { start() }
             }
-            .frame(minHeight: minHeight, alignment: .topLeading)
-            .padding(10)
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
-            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(isEditing ? Theme.accent.opacity(0.6) : .clear))
         }
+    }
+
+    private var isEmpty: Bool {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func start() {

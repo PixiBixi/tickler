@@ -1,11 +1,9 @@
 import SwiftUI
 import TicklerCore
 
-/// "Result": the verdict, key figures and next step, edged by the verdict colour. The full answer folds in here,
-/// or sits in its own card (`AutoRunAnswerCard`) when the pane is wide.
+/// "Result": the verdict, key figures and next step, edged by the verdict colour, with the full answer folded in.
 struct AutoRunResultBlock: View {
     let run: AutoRun
-    var showsFullAnswer = true
     @State private var expanded = false
 
     var body: some View {
@@ -17,9 +15,7 @@ struct AutoRunResultBlock: View {
                 verdictLine
                 figures
                 nextStep
-                if showsFullAnswer {
-                    fullAnswer
-                }
+                fullAnswer
             }
         }
         .padding(.vertical, 14)
@@ -159,23 +155,6 @@ struct AutoRunResultBlock: View {
     }
 }
 
-/// The whole answer, unfolded in the side column of a wide pane.
-struct AutoRunAnswerCard: View {
-    let run: AutoRun
-
-    var body: some View {
-        if let output = run.trimmedOutput {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Claude's answer").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
-                MarkdownView(markdown: output)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .padding(14)
-                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
-            }
-        }
-    }
-}
-
 extension AutoRun {
     /// The answer, nil when Claude printed nothing.
     var trimmedOutput: String? {
@@ -230,8 +209,8 @@ struct AutoRunRunningRow: View {
 struct AutoRunRunsList: View {
     @Environment(AppModel.self) private var model
     let reminder: Reminder
-    /// 2 in one column, where a single run is already the result block; 1 in the wide side column.
-    var minimum = 2
+    /// A single run is already the result block.
+    private let minimum = 2
     @State private var runs: [AutoRun] = []
 
     var body: some View {

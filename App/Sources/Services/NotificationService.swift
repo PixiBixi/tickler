@@ -172,6 +172,27 @@ final class NotificationService: NSObject {
         try? await center.add(request)
     }
 
+    /// One banner per new conflict, under its own id: the text names the reminder and the time, never the meeting.
+    func notifyConflicts(_ conflicts: [ScheduleConflict], reminders: [String: Reminder]) async {
+        for conflict in conflicts {
+            // Spec: a flexible reminder only gets the in-app mark; a banner is for the ones the owner pinned.
+            guard let reminder = reminders[conflict.reminderId], reminder.fixed else { continue }
+            let content = UNMutableNotificationContent()
+            content.title = String(localized: "Conflict")
+            let title = Self.truncated(SessionDigest.title(reminder.title))
+            content.body = String(localized: "\(title) at \(Format.time(reminder.dueAt)) overlaps a meeting")
+            content.sound = .default
+            content.threadIdentifier = "tickler"
+            content.userInfo = ["reminderId": reminder.id]
+            let request = UNNotificationRequest(
+                identifier: NotificationPlanner.conflictRequestId(reminderId: reminder.id, start: conflict.interval.start),
+                content: content,
+                trigger: nil
+            )
+            try? await center.add(request)
+        }
+    }
+
     private static func truncated(_ title: String, limit: Int = 80) -> String {
         title.count > limit ? String(title.prefix(limit - 1)) + "…" : title
     }

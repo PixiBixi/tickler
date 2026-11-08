@@ -14,6 +14,16 @@
         }
       }
     },
+    "%@ at %@ overlaps a meeting": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ à %2$@ chevauche une réunion"
+          }
+        }
+      }
+    },
     "%@ will merge when the pipeline passes": {
       "localizations": {
         "fr": {
@@ -60,6 +70,266 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "%lld calendars": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld calendar"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld calendars"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld calendrier"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld calendriers"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "+ auto-run": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ exécution auto"
+          }
+        }
+      }
+    },
+    "+ deadline": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ échéance"
+          }
+        }
+      }
+    },
+    "+ fixed time": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ heure fixe"
+          }
+        }
+      }
+    },
+    "Add a deadline": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter une échéance"
+          }
+        }
+      }
+    },
+    "Add a fixed time": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter une heure fixe"
+          }
+        }
+      }
+    },
+    "Add auto-run": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter l'exécution automatique"
+          }
+        }
+      }
+    },
+    "Add notes": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter des notes"
+          }
+        }
+      }
+    },
+    "Allow access in the Calendar tab": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorisez l'accès dans l'onglet Calendrier"
+          }
+        }
+      }
+    },
+    "Auto-run": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exécution automatique"
+          }
+        }
+      }
+    },
+    "Before %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avant %@"
+          }
+        }
+      }
+    },
+    "Break length": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durée de la pause"
+          }
+        }
+      }
+    },
+    "Change the deadline": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changer l'échéance"
+          }
+        }
+      }
+    },
+    "Clear the deadline": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Effacer l'échéance"
+          }
+        }
+      }
+    },
+    "Conflicts with a meeting": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En conflit avec une réunion"
+          }
+        }
+      }
+    },
+    "day full": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "journée pleine"
+          }
+        }
+      }
+    },
+    "Default duration": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durée par défaut"
+          }
+        }
+      }
+    },
+    "Duration": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durée"
+          }
+        }
+      }
+    },
+    "Edit the resume message": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifier le message de reprise"
+          }
+        }
+      }
+    },
+    "Fixed time": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heure fixe"
+          }
+        }
+      }
+    },
+    "Hours": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Horaires"
+          }
+        }
+      }
+    },
+    "Keep a lunch break free": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garder une pause déjeuner libre"
+          }
+        }
+      }
+    },
+    "Late for its deadline": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En retard sur son échéance"
           }
         }
       }
@@ -444,22 +714,142 @@
         }
       }
     },
-    "Claude's answer": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Réponse de Claude"
-          }
-        }
-      }
-    },
     "Last run · %@": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Dernier run · %@"
+          }
+        }
+      }
+    },
+    "Let the planner move it again": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laisser le planificateur le déplacer à nouveau"
+          }
+        }
+      }
+    },
+    "Lunch": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déjeuner"
+          }
+        }
+      }
+    },
+    "meeting": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "réunion"
+          }
+        }
+      }
+    },
+    "More actions": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus d'actions"
+          }
+        }
+      }
+    },
+    "No resume message": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun message de reprise"
+          }
+        }
+      }
+    },
+    "No session yet": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pas encore de session"
+          }
+        }
+      }
+    },
+    "Only start and end times are read.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seuls les horaires de début et de fin sont lus."
+          }
+        }
+      }
+    },
+    "Pin it: the planner never moves it": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'épingler : le planificateur ne le déplace jamais"
+          }
+        }
+      }
+    },
+    "replanned": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "replanifié"
+          }
+        }
+      }
+    },
+    "Meetings that block time": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réunions qui bloquent du temps"
+          }
+        }
+      }
+    },
+    "migration": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "migration"
+          }
+        }
+      }
+    },
+    "Moved by the planner (%@)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déplacé par le planificateur (%@)"
+          }
+        }
+      }
+    },
+    "Moved from %@ (%@)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déplacé depuis %1$@ (%2$@)"
           }
         }
       }
@@ -474,12 +864,92 @@
         }
       }
     },
-    "Session": {
+    "Pinned by its auto-run": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Session"
+            "value": "Fixé par son exécution automatique"
+          }
+        }
+      }
+    },
+    "Pinned by its fired trigger": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fixé par son déclencheur"
+          }
+        }
+      }
+    },
+    "reminder added": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "reminder ajouté"
+          }
+        }
+      }
+    },
+    "Run the resume prompt in the background when due": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exécute le message de reprise en arrière-plan à l'échéance"
+          }
+        }
+      }
+    },
+    "Runs on its own: can modify": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S'exécute seul : peut modifier"
+          }
+        }
+      }
+    },
+    "Runs on its own: read only": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S'exécute seul : lecture seule"
+          }
+        }
+      }
+    },
+    "Schedule": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planning"
+          }
+        }
+      }
+    },
+    "Set a deadline": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Définir une échéance"
+          }
+        }
+      }
+    },
+    "settings changed": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "réglages modifiés"
           }
         }
       }
@@ -500,6 +970,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Afficher le prochain rappel près de l'encoche"
+          }
+        }
+      }
+    },
+    "slot freed": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "créneau libéré"
+          }
+        }
+      }
+    },
+    "Somewhere between": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quelque part entre"
           }
         }
       }
@@ -637,16 +1127,6 @@
         }
       }
     },
-    "Add notes, commands or links…": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajoute des notes, commandes ou liens…"
-          }
-        }
-      }
-    },
     "Added for %@": {
       "localizations": {
         "fr": {
@@ -683,6 +1163,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Autoriser l'accès au calendrier"
+          }
+        }
+      }
+    },
+    "Allow calendar access in the step above.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorisez l'accès au calendrier à l'étape ci-dessus."
           }
         }
       }
@@ -887,12 +1377,12 @@
         }
       }
     },
-    "Claude Session": {
+    "Conflict": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Session Claude"
+            "value": "Conflit"
           }
         }
       }
@@ -1347,6 +1837,76 @@
         }
       }
     },
+    "Off": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Désactivé"
+          }
+        }
+      }
+    },
+    "Place only": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Placement seul"
+          }
+        }
+      }
+    },
+    "Places new reminders and moves them around meetings and freed slots.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Place les nouveaux rappels et les déplace autour des réunions et des créneaux libérés."
+          }
+        }
+      }
+    },
+    "Places new reminders in a free slot, then never moves them.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Place les nouveaux rappels dans un créneau libre, puis ne les déplace plus."
+          }
+        }
+      }
+    },
+    "Planning": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planning"
+          }
+        }
+      }
+    },
+    "Reminders keep the time they get. Nothing is moved.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les rappels gardent l'heure qu'ils reçoivent. Rien n'est déplacé."
+          }
+        }
+      }
+    },
+    "Scheduling": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planification"
+          }
+        }
+      }
+    },
     "This skill was edited or not installed by Tickler. Replacing it discards those changes.": {
       "localizations": {
         "fr": {
@@ -1627,16 +2187,6 @@
         }
       }
     },
-    "Turn off auto-run": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Désactiver l'auto-run"
-          }
-        }
-      }
-    },
     "Type the shortcut…": {
       "localizations": {
         "fr": {
@@ -1653,6 +2203,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Réinitialiser"
+          }
+        }
+      }
+    },
+    "Unavailable calendar": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendrier indisponible"
           }
         }
       }
@@ -1903,16 +2463,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ouvrir"
-          }
-        }
-      }
-    },
-    "Open %@": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvrir %@"
           }
         }
       }
@@ -2333,16 +2883,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reprendre la session"
-          }
-        }
-      }
-    },
-    "Resume and say “%@”": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reprendre et dire « %@ »"
           }
         }
       }
@@ -3177,6 +3717,16 @@
         }
       }
     },
+    "Will say: “%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dira : « %@ »"
+          }
+        }
+      }
+    },
     "·": {
       "shouldTranslate": false
     },
@@ -3362,52 +3912,12 @@
         }
       }
     },
-    "AUTO · read only": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AUTO · lecture seule"
-          }
-        }
-      }
-    },
-    "AUTO · can modify": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AUTO · peut modifier"
-          }
-        }
-      }
-    },
     "Run now": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Lancer maintenant"
-          }
-        }
-      }
-    },
-    "Resume in terminal": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reprendre dans le terminal"
-          }
-        }
-      }
-    },
-    "Continue in terminal": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continuer dans le terminal"
           }
         }
       }
@@ -3618,6 +4128,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reprendre démarre une nouvelle session dans le dossier avec le prompt"
+          }
+        }
+      }
+    },
+    "Without a time, the reminder is placed in the next free slot.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sans heure, le reminder est placé dans le prochain créneau libre."
+          }
+        }
+      }
+    },
+    "Working days": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jours travaillés"
+          }
+        }
+      }
+    },
+    "Working hours": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heures de travail"
           }
         }
       }

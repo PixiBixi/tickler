@@ -72,20 +72,6 @@ extension AppModel {
     }
 }
 
-/// "AUTO · read only" next to the due date.
-struct AutoRunPill: View {
-    let mode: AutoRunMode
-
-    var body: some View {
-        Text(mode == .read ? "AUTO · read only" : "AUTO · can modify")
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(Theme.accent)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 4)
-            .background(Theme.accent.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
-    }
-}
-
 /// Replaces the due dot of an auto-run reminder: scheduled, spinner while running, the verdict colour once done.
 struct AutoRunMark: View {
     @Environment(AppModel.self) private var model
