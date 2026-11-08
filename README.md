@@ -85,13 +85,16 @@ tickler hook install
 
 | Command | Does |
 |---|---|
-| `tickler add <title> --at "YYYY-MM-DD HH:MM"` | Creates a reminder. `--when <event>` (`merged`, `pipeline-green`, `pipeline-failed`, `approved`, `jira:done`, `jira:<status>`; without `--at`, the deadline is 3 working days at 09:30), `--notes <text>` or `--notes -` (stdin), `--link <url>` (repeatable), `--session <uuid>`, `--cwd <dir>`, `--prompt <text>` (first message to Claude on resume), `--auto-run <read\|write>` (needs `--prompt` and a folder), `--fresh` (Resume starts a new session in the folder with the prompt; use it with a handoff file; needs `--prompt`), `--json` |
+| `tickler add <title>` | Creates a reminder. `--at "YYYY-MM-DD HH:MM"` or `"YYYY-MM-DD"` (optional, earliest time; default now; a bare day means the working start), `--fixed` (keeps exactly the `--at` time, never moved), `--duration <15m\|1h\|90m>` (default from `config`), `--deadline "YYYY-MM-DD[ HH:MM]"` (latest start; not with `--fixed`), `--when <event>` (`merged`, `pipeline-green`, `pipeline-failed`, `approved`, `jira:done`, `jira:<status>`; without `--at`, the deadline is 3 working days from the working start), `--notes <text>` or `--notes -` (stdin), `--link <url>` (repeatable), `--session <uuid>`, `--cwd <dir>`, `--prompt <text>` (first message to Claude on resume), `--auto-run <read\|write>` (needs `--prompt` and a folder), `--fresh` (Resume starts a new session in the folder with the prompt; use it with a handoff file; needs `--prompt`), `--json` |
 | `tickler list` (alias `ls`) | Open reminders. `--due today` (default, overdue included), `week`, `overdue`, `all`; `--project <name>`; `--status done`; `--waiting`; `--json` |
 | `tickler show <id>` | One reminder with notes, links and session. `--json` |
 | `tickler done <id>` | Marks it done |
 | `tickler snooze <id> --for 1h` | Pushes it back from now: `15m`, `1h`, `2d`. Or `--to "YYYY-MM-DD HH:MM"` |
-| `tickler edit <id>` | `--title`, `--at`, `--notes <text>` or `--notes -`, `--prompt <text>` (`""` removes it), `--when <event>` (`""` removes it), `--auto-run <read\|write\|off>`, `--fresh` or `--no-fresh` |
+| `tickler edit <id>` | `--title`, `--at` (also date-only), `--duration`, `--fixed` or `--no-fixed`, `--deadline` (`none` removes it), `--notes <text>` or `--notes -`, `--prompt <text>` (`""` removes it), `--when <event>` (`""` removes it), `--auto-run <read\|write\|off>`, `--fresh` or `--no-fresh` |
 | `tickler rm <id>` | Deletes it |
+| `tickler plan [YYYY-MM-DD]` | Shows a day (default today): busy blocks without titles, reminders with times and durations, fixed ones marked, free gaps. `--json` |
+| `tickler slot` | Prints where a new reminder would go, creates nothing. `--duration <15m\|1h>`, `--day YYYY-MM-DD`, `--json` |
+| `tickler config` | Shows the schedule settings. `config set <key> <value>`: `scheduling` (`auto`, `place-only`, `off`), `working-days` (`mon-fri`, `mon,wed,fri`), `working-hours` (`09:30-19:30`), `default-duration` (`15m`), `lunch` (`off`, `45m@12:00-14:00`) |
 | `tickler resume <id>` | Focuses the tab of the reminder's Claude session in WezTerm, Ghostty or iTerm2, or reopens it with `claude --resume` in the reminder's folder. A session of the Claude desktop app opens in the app instead, through its `claude://code/continue` link, which carries no prompt. A resume prompt is sent as the first message of a reopened session, and typed without Return into a running one (WezTerm, iTerm2). A `--fresh` reminder skips all of this and starts a new session in its folder with `claude -- <prompt>`. `TICKLER_TERMINAL=wezterm\|ghostty\|iterm` picks where new tabs open |
 | `tickler status <id>` | Live state of the linked GitLab MRs, Jira issues and GitHub PRs (pipeline, approvals, ticket status, checks). `--json` |
 | `tickler completion zsh` | Prints the shell completion script (also `bash`, `fish`): subcommands, options, and reminder ids with their title |
@@ -104,7 +107,7 @@ tickler hook install
 - Completion: add `source <(tickler completion zsh)` to `~/.zshrc`; `tickler rm <Tab>` then lists open reminders as `id -- date title`.
 - `--session` defaults to `CLAUDE_CODE_SESSION_ID`, and `--cwd` to the current directory when a session is known.
 - `--when` refuses a link Tickler cannot query (a Jira key not in capitals, a partial MR path) and a GitLab host `glab` has no login for: the reminder would otherwise wait until its deadline.
-- Dates on the CLI take only the strict local format `YYYY-MM-DD HH:MM`.
+- Dates on the CLI take only the strict local formats `YYYY-MM-DD HH:MM` and `YYYY-MM-DD`.
 - In a terminal, `list` prints a table grouped by Overdue, Today, Tomorrow, Later, and each id is a link that opens the reminder in the app (⌘-click in WezTerm, Ghostty or iTerm2). Piped, or with `NO_COLOR`, it prints one plain line per reminder.
 - Exit codes: `0` ok, `1` runtime error, `2` usage error, `3` unknown id.
 - `TICKLER_DB=<path>` (or the hidden `--db <path>`) points everything at another database.
@@ -119,6 +122,11 @@ tickler hook install
   "title": "OPS-2204: check le dashboard CTO",
   "notes": "Epic https://acme.atlassian.net/browse/OPS-2204",
   "due": "2026-10-01 11:00",
+  "notBefore": "2026-10-01 09:30",
+  "deadline": null,
+  "durationMinutes": 15,
+  "fixed": false,
+  "late": false,
   "dueISO": "2026-10-01T11:00:00+02:00",
   "firedAt": null,
   "firedReason": null,
@@ -139,7 +147,7 @@ tickler hook install
 }
 ```
 
-`trigger` is the awaited event; once it fires, `firedReason` says why (`MR !412 merged`) and the reminder is due at `firedAt`. `autoRun` is `read`, `write` or null; `fresh` is true when Resume, and an auto-run, start a new session in `cwd` instead of continuing `sessionId`; `lastRun` is null or `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`. Runs happen in Tickler.app only, never from the CLI. `read` runs only what your Claude Code allow rules already permit (`dontAsk`), so a broad allowlist widens it.
+`due` is the planned time of a flexible reminder and the exact time of a fixed one; `notBefore` is the earliest time asked, `deadline` the latest start or null, `late` is true when no slot fits before the deadline. `trigger` is the awaited event; once it fires, `firedReason` says why (`MR !412 merged`) and the reminder is due at `firedAt`. `autoRun` is `read`, `write` or null; `fresh` is true when Resume, and an auto-run, start a new session in `cwd` instead of continuing `sessionId`; `lastRun` is null or `{state, verdict, headline, figures, nextStep, denials, startedAt, endedAt}`. Runs happen in Tickler.app only, never from the CLI. `read` runs only what your Claude Code allow rules already permit (`dontAsk`), so a broad allowlist widens it.
 
 Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 
@@ -153,7 +161,7 @@ Link kinds: `gitlabMR`, `jira`, `grafana`, `slack`, `githubPR`, `other`.
 | Live status | For each linked GitLab MR, Jira issue or GitHub PR: pipeline, approvals, threads, conflicts, ticket status and assignee, checks. **Approve…** appears when GitLab says you may approve, and asks for confirmation first. Data from `glab`, `jira` and `gh`, refreshed when older than 2 minutes. GitLab links are only queried on hosts listed in glab's `config.yml` (plus `gitlab.com` and `GITLAB_HOST`), so a link to an unknown host never receives a token. The Jira API token goes in Settings > Live Status, kept in the keychain and passed to `jira` as `JIRA_API_TOKEN`; without it, `jira` falls back to its own config and your login shell |
 | Triggers | Every 5 minutes while the app runs, reminders waiting for an event check their links; when it happens the reminder becomes due now and notifies with the reason. **Stop Waiting** in the detail pane keeps the date and drops the event |
 | Notch | When turned on in Settings, the next reminder due within 5 minutes (adjustable) shows in a pill under the notch, or under the menu bar on a screen without one, with a countdown and a `+N` badge for the others; "now" for 5 minutes after its time. Waiting reminders are left out until their event fires, and the pill stays off full screen apps. A click opens the reminder, the MR/PR logo opens the first MR or PR link, the terminal icon resumes the session; each hides the pill until the reminder is rescheduled |
-| Calendar | Every open reminder from 7 days ago to 60 days ahead becomes a 15 min event marked Free, without alert, with a `tickler://open/<id>` link |
+| Calendar | Every open reminder from 7 days ago to 60 days ahead becomes an event of its duration (15 min by default) marked Free, without alert, with a `tickler://open/<id>` link |
 
 URLs: `tickler://open/<id>` opens a reminder, `tickler://view/today|week|overdue|all|done` opens the window on that view.
 
@@ -170,6 +178,7 @@ The date fields accept French and English: `demain 9h30`, `lundi 10h`, `dans 2h`
 | General | Open at login | Off |
 | General | New reminder from anywhere | On, `⌥⌘N`: click the shortcut to record another one (needs `⌘`, `⌥` or `⌃`) |
 | General | Show the next reminder near the notch | Off; 5 minutes before when on (1 to 120) |
+| Schedule | Scheduling mode (automatic, place only, off), working days, working hours, default duration, lunch, busy calendars | Automatic, Mon-Fri, 09:30-19:30, 15 min, no lunch, none chosen. Flexible reminders are placed in free time outside the chosen calendars' events |
 | Calendar | Copy reminders to | None. Pick a writable calendar, for instance a "Claude" calendar created in Google Calendar with its default notifications set to none |
 | Sessions | Terminal | Automatic: a running session is found in WezTerm, Ghostty or iTerm2; new tabs open in the first one running. Or pick one of those installed, which then always gets the new tabs. Ghostty 1.3 cannot tell which tab holds a session: Tickler brings Ghostty forward instead of the exact tab |
 | Sessions | WezTerm binary | Found automatically in `/opt/homebrew/bin`, `/usr/local/bin`, then the app bundle |
