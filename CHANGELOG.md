@@ -4,6 +4,17 @@ All notable changes to Tickler, generated from the commits by [cocogitto](https:
 
 - - -
 
+## [v0.14.0](https://github.com/PixiBixi/tickler/compare/v0.13.0..v0.14.0) - 2026-11-08
+#### Features
+- (**app**) scheduling settings and a one-column reminder detail - ([b69a95b](https://github.com/PixiBixi/tickler/commit/b69a95b559092cc884c3bc49f3df8561eb5a0501)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**cli**) scheduling flags and commands - ([d43a8cc](https://github.com/PixiBixi/tickler/commit/d43a8ccb5992f2be36d14113579e53b2374a3bea)) - [@PixiBixi](https://github.com/PixiBixi)
+- (**core**) automatic scheduling of flexible reminders - ([9146ff4](https://github.com/PixiBixi/tickler/commit/9146ff44181bad771849eb480e95a6ddf52dc988)) - [@PixiBixi](https://github.com/PixiBixi)
+#### Bug Fixes
+- (**deps**) update dependency astro to v7.4.5 - ([7c92ade](https://github.com/PixiBixi/tickler/commit/7c92adeb18a5a63f9fafeac4b8e3f1f9c468b390)) - renovate[bot]
+- (**deps**) update dependency groue/grdb.swift to from: "7.12.0" - ([b3ee707](https://github.com/PixiBixi/tickler/commit/b3ee707b8b79def485c14b85a810a11c8469a701)) - renovate[bot]
+
+- - -
+
 ## [v0.13.0](https://github.com/PixiBixi/tickler/compare/v0.12.0..v0.13.0) - 2026-11-04
 #### Features
 - (**skill**) enforce a fresh resume and a handoff for late reminders from large sessions - ([ef1befe](https://github.com/PixiBixi/tickler/commit/ef1befe94ba653d9148d75c1cdd221d443b7483b)) - [@PixiBixi](https://github.com/PixiBixi)
