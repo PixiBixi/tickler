@@ -26,7 +26,24 @@ public final class TicklerDatabase: Sendable {
     }
 
     static var migrator: DatabaseMigrator {
+        migrator(now: Date(), calendar: .current)
+    }
+
+    /// `now` and `calendar` only matter to the data migration of `v6-schedule`.
+    static func migrator(now: Date, calendar: Calendar) -> DatabaseMigrator {
         var migrator = DatabaseMigrator()
+        registerBaseMigrations(&migrator)
+        migrator.registerMigration("v6-schedule") { db in
+            try db.create(table: "setting") { table in
+                table.primaryKey("key", .text)
+                table.column("value", .text).notNull()
+            }
+            try Self.migrateSchedule(db, now: now, calendar: calendar)
+        }
+        return migrator
+    }
+
+    private static func registerBaseMigrations(_ migrator: inout DatabaseMigrator) {
         migrator.registerMigration("v1") { db in
             try db.create(table: "reminder") { table in
                 table.primaryKey("id", .text)
@@ -60,6 +77,10 @@ public final class TicklerDatabase: Sendable {
                 table.column("syncedHash", .text).notNull()
             }
         }
+        registerRunMigrations(&migrator)
+    }
+
+    private static func registerRunMigrations(_ migrator: inout DatabaseMigrator) {
         migrator.registerMigration("v2-resume-prompt") { db in
             try db.alter(table: "reminder") { table in
                 table.add(column: "resumePrompt", .text)
@@ -101,6 +122,47 @@ public final class TicklerDatabase: Sendable {
                 table.add(column: "fresh", .boolean).notNull().defaults(to: false)
             }
         }
-        return migrator
+    }
+
+    /// Scheduling columns, busy copy, move log and conflict log, then the first classification of open rows.
+    private static func migrateSchedule(_ db: Database, now: Date, calendar: Calendar) throws {
+        try db.alter(table: "reminder") { table in
+            table.add(column: "durationMinutes", .integer).notNull().defaults(to: 15)
+            table.add(column: "fixed", .boolean).notNull().defaults(to: false)
+            table.add(column: "notBefore", .datetime)
+            table.add(column: "deadline", .datetime)
+        }
+        try db.create(table: "busyInterval") { table in
+            table.column("start", .datetime).notNull()
+            table.column("end", .datetime).notNull()
+            table.primaryKey(["start", "end"])
+        }
+        try db.create(table: "scheduleMove") { table in
+            table.autoIncrementedPrimaryKey("id")
+            table.column("reminderId", .text).notNull().indexed().references("reminder", onDelete: .cascade)
+            table.column("from", .datetime).notNull()
+            table.column("to", .datetime).notNull()
+            table.column("reason", .text).notNull()
+            table.column("at", .datetime).notNull().indexed()
+            table.column("seen", .boolean).notNull().defaults(to: false)
+        }
+        try db.create(table: "scheduleConflict") { table in
+            table.column("reminderId", .text).notNull().references("reminder", onDelete: .cascade)
+            table.column("start", .datetime).notNull()
+            table.column("end", .datetime).notNull()
+            table.column("at", .datetime).notNull()
+            table.primaryKey(["reminderId", "start", "end"])
+        }
+        try db.execute(sql: "UPDATE reminder SET fixed = 1 WHERE status = 'open' AND (autoRun IS NOT NULL OR firedAt IS NOT NULL)")
+        // No stored schedule exists yet: the standard start of day stands in.
+        let start = WorkSchedule.standard.start.minutes
+        let rows = try Row.fetchAll(
+            db, sql: "SELECT id, dueAt FROM reminder WHERE status = 'open' AND fixed = 0 AND dueAt > ?", arguments: [now]
+        )
+        for row in rows {
+            let due: Date = row["dueAt"]
+            let notBefore = calendar.date(byAdding: .minute, value: start, to: calendar.startOfDay(for: due)) ?? due
+            try db.execute(sql: "UPDATE reminder SET notBefore = ? WHERE id = ?", arguments: [notBefore, row["id"] as String])
+        }
     }
 }

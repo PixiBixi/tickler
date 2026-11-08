@@ -5,12 +5,14 @@ public enum StoreError: Error, Equatable, CustomStringConvertible {
     case notFound(String)
     case autoRunNeedsPrompt
     case autoRunNeedsFolder
+    case invalid(String)
 
     public var description: String {
         switch self {
         case let .notFound(id): "no reminder with id \(id)"
         case .autoRunNeedsPrompt: "auto-run needs a resume prompt"
         case .autoRunNeedsFolder: "auto-run needs a session folder"
+        case let .invalid(message): message
         }
     }
 }
@@ -98,7 +100,9 @@ public final class ReminderStore: Sendable {
                 rescheduleCount: 0, status: .open, sessionId: draft.sessionId, cwd: draft.cwd,
                 resumePrompt: Self.normalized(draft.resumePrompt), source: draft.source,
                 externalRef: draft.externalRef, notifiedAt: nil, doneAt: nil, createdAt: stamp, updatedAt: stamp,
-                trigger: draft.trigger?.rawValue, autoRun: draft.autoRun?.rawValue, fresh: draft.fresh
+                trigger: draft.trigger?.rawValue, autoRun: draft.autoRun?.rawValue, fresh: draft.fresh,
+                durationMinutes: draft.durationMinutes, fixed: draft.fixed, notBefore: draft.notBefore,
+                deadline: draft.deadline
             )
             try reminder.insert(db)
             for link in LinkExtractor.links(reminderId: id, notes: draft.notes, explicit: draft.links) {
@@ -119,9 +123,13 @@ public final class ReminderStore: Sendable {
     }
 
     /// Moves the due date. Clears `notifiedAt` so the new time gets its own notification.
+    /// A flexible reminder also gets `notBefore`, so the planner keeps it from sliding earlier.
     @discardableResult
     public func reschedule(_ id: String, to dueAt: Date) throws -> Reminder {
         try mutate(id) { reminder, _ in
+            if !reminder.holdsItsTime {
+                reminder.notBefore = dueAt
+            }
             reminder.dueAt = dueAt
             reminder.rescheduleCount += 1
             reminder.notifiedAt = nil

@@ -47,4 +47,13 @@ struct TriggerTests {
         #expect(Trigger.defaultDeadline(after: Fixture.date("2026-10-03 12:00"), calendar: Fixture.calendar)
             == Fixture.date("2026-10-07 09:30"))
     }
+
+    @Test func defaultDeadlineFollowsSchedule() {
+        let schedule = WorkSchedule(
+            workingDays: [2, 4], start: TimeOfDay(minutes: 10 * 60), end: TimeOfDay(minutes: 18 * 60), defaultDurationMinutes: 15
+        )
+        // From Thursday 2026-10-01: Mon 5, Wed 7, Mon 12.
+        #expect(Trigger.defaultDeadline(after: Fixture.now, calendar: Fixture.calendar, schedule: schedule)
+            == Fixture.date("2026-10-12 10:00"))
+    }
 }

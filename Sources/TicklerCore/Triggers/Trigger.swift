@@ -47,16 +47,13 @@ public enum Trigger: Hashable, Sendable {
         }
     }
 
-    /// The fallback deadline when none is given: 3 working days later, at 09:30.
-    public static func defaultDeadline(after now: Date, calendar: Calendar) -> Date {
-        var day = calendar.startOfDay(for: now)
-        var left = 3
-        while left > 0 {
-            day = calendar.date(byAdding: .day, value: 1, to: day)!
-            if !calendar.isDateInWeekend(day) {
-                left -= 1
-            }
+    /// The fallback deadline when none is given: 3 working days later, at the working start.
+    public static func defaultDeadline(after now: Date, calendar: Calendar, schedule: WorkSchedule = .standard) -> Date {
+        if let date = WorkingTime(schedule: schedule, calendar: calendar).addingWorkingDays(3, to: now) {
+            return date
         }
-        return calendar.date(bySettingHour: 9, minute: 30, second: 0, of: day)!
+        // No working day in the settings: three plain days later at the start time.
+        let day = calendar.date(byAdding: .day, value: 3, to: calendar.startOfDay(for: now)) ?? now
+        return WorkingTime(schedule: schedule, calendar: calendar).date(schedule.start, on: day) ?? day
     }
 }

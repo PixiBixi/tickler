@@ -101,6 +101,12 @@ public enum NotificationPlanner {
     }
 
     private static let runMarker = "@run@"
+    private static let conflictMarker = "@conflict@"
+
+    /// `<id>@conflict@<start epoch>`: the banner of a fixed reminder over a meeting, kept while its reminder is open.
+    public static func conflictRequestId(reminderId: String, start: Date) -> String {
+        "\(reminderId)\(conflictMarker)\(Int(start.timeIntervalSince1970))"
+    }
 
     public static func isRunRequestId(_ requestId: String) -> Bool {
         requestId.contains(runMarker)
@@ -133,7 +139,7 @@ public enum NotificationPlanner {
         let keep = Set(wanted.map(\.id)).union(pendingIds.filter { current.contains($0) && !isFuture($0, now: now) })
         return (
             add: wanted.filter { !pendingIds.contains($0.id) },
-            remove: pendingIds.subtracting(keep).filter { !isRunRequestId($0) }.sorted()
+            remove: pendingIds.subtracting(keep).filter { !isRunRequestId($0) && !$0.contains(conflictMarker) }.sorted()
         )
     }
 
@@ -142,7 +148,7 @@ public enum NotificationPlanner {
         let current = Set(reminders.filter { $0.status == .open }.map(requestId(for:)))
         let open = Set(reminders.filter { $0.status == .open }.map(\.id))
         return deliveredIds.filter {
-            if $0.contains(runMarker) {
+            if $0.contains(runMarker) || $0.contains(conflictMarker) {
                 return !open.contains(reminderId(fromRequestId: $0))
             }
             return !$0.hasPrefix(NotificationCategory.summaryIdentifier) && !$0.hasPrefix(NotificationCategory.announcementPrefix)
