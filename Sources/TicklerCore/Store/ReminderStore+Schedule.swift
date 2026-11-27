@@ -19,13 +19,7 @@ public extension ReminderStore {
                 guard var reminder = try Reminder.fetchOne(db, key: placement.reminderId),
                       reminder.status == .open, reminder.dueAt == placement.from,
                       expecting[placement.reminderId].map({ Self.sameDecision($0, reminder) }) ?? true else { continue }
-                // A row from an older CLI has no anchor: keep its original time so it cannot drift later.
-                if reminder.notBefore == nil {
-                    reminder.notBefore = placement.from
-                }
-                reminder.dueAt = placement.to
-                reminder.notifiedAt = nil
-                reminder.updatedAt = date
+                reminder = Self.placed(reminder, by: placement, at: date)
                 try reminder.update(db)
                 wrote = true
                 guard let why = reason(placement) else { continue }
@@ -40,31 +34,53 @@ public extension ReminderStore {
         return moves
     }
 
+    /// The row `place` writes; `ScheduleRunner` fingerprints the same result before the write.
+    static func placed(_ reminder: Reminder, by placement: Placement, at date: Date) -> Reminder {
+        var reminder = reminder
+        // A row from an older CLI has no anchor: keep its original time so it cannot drift later.
+        if reminder.notBefore == nil {
+            reminder.notBefore = placement.from
+        }
+        reminder.dueAt = placement.to
+        reminder.notifiedAt = nil
+        reminder.updatedAt = date
+        return reminder
+    }
+
     private static func sameDecision(_ read: Reminder, _ current: Reminder) -> Bool {
         read.dueAt == current.dueAt && read.fixed == current.fixed && read.autoRun == current.autoRun
             && read.firedAt == current.firedAt && read.notBefore == current.notBefore
             && read.durationMinutes == current.durationMinutes && read.deadline == current.deadline
     }
 
-    /// Replaces the whole busy copy and stamps its age, in one transaction.
-    func replaceBusy(_ intervals: [DateInterval], at date: Date) throws {
+    /// Replaces the busy copy and stamps its age, in one transaction. Unchanged intervals only restamp the age.
+    /// Returns whether the intervals changed.
+    @discardableResult
+    func replaceBusy(_ intervals: [DateInterval], at date: Date) throws -> Bool {
         try database.pool.write { db in
-            try db.execute(sql: "DELETE FROM busyInterval")
-            for interval in Set(intervals) {
-                try db.execute(
-                    sql: #"INSERT INTO busyInterval ("start", "end") VALUES (?, ?)"#,
-                    arguments: [interval.start, interval.end]
-                )
+            let wanted = Set(intervals)
+            let changed = try Set(Self.busy(in: db)) != wanted
+            if changed {
+                try db.execute(sql: "DELETE FROM busyInterval")
+                for interval in wanted {
+                    try db.execute(
+                        sql: #"INSERT INTO busyInterval ("start", "end") VALUES (?, ?)"#,
+                        arguments: [interval.start, interval.end]
+                    )
+                }
             }
             try Self.setSetting(Self.busySnapshotKey, ISO8601DateFormatter().string(from: date), in: db)
+            return changed
         }
     }
 
     func busy() throws -> [DateInterval] {
-        try database.pool.read { db in
-            try Row.fetchAll(db, sql: #"SELECT "start", "end" FROM busyInterval ORDER BY "start", "end""#).map { row in
-                DateInterval(start: row["start"], end: row["end"])
-            }
+        try database.pool.read { db in try Self.busy(in: db) }
+    }
+
+    private static func busy(in db: Database) throws -> [DateInterval] {
+        try Row.fetchAll(db, sql: #"SELECT "start", "end" FROM busyInterval ORDER BY "start", "end""#).map { row in
+            DateInterval(start: row["start"], end: row["end"])
         }
     }
 

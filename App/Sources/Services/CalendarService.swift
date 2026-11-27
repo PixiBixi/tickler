@@ -87,26 +87,11 @@ final class CalendarService {
         }
     }
 
-    /// Start and end only: no event text leaves this method. Skips all-day, free, declined and Tickler's own events.
     /// Nil when there is no access or none of the chosen calendars resolves: unknown, not "no meetings".
-    func busyIntervals(calendarIds: [String], from start: Date, to end: Date) -> [DateInterval]? {
+    /// The EventKit query runs on `CalendarSyncer`, off the main actor.
+    func busyIntervals(calendarIds: [String], from start: Date, to end: Date) async -> [DateInterval]? {
         guard hasAccess else { return nil }
-        let chosen = calendarIds.compactMap { eventStore.calendar(withIdentifier: $0) }
-        guard !chosen.isEmpty else { return nil }
-        let predicate = eventStore.predicateForEvents(withStart: start, end: end, calendars: chosen)
-        return eventStore.events(matching: predicate).filter(Self.blocksTime).compactMap { event in
-            event.endDate > event.startDate ? DateInterval(start: event.startDate, end: event.endDate) : nil
-        }
-    }
-
-    private static func blocksTime(_ event: EKEvent) -> Bool {
-        if event.isAllDay || event.availability == .free || event.status == .canceled {
-            return false
-        }
-        if CalendarMarker.reminderId(url: event.url, notes: event.notes) != nil {
-            return false
-        }
-        return event.attendees?.first(where: \.isCurrentUser)?.participantStatus != .declined
+        return await syncer.busyIntervals(calendarIds: calendarIds, from: start, to: end)
     }
 
     /// #25: the EventKit and SQLite work runs on `CalendarSyncer`, only the status comes back to the main actor.

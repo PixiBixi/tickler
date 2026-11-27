@@ -17,7 +17,7 @@ extension AppModel {
     func runScheduler(store: ReminderStore) async {
         guard let schedule = try? store.schedule() else { return }
         let dirty = busyDirty || lastBusyIds != schedule.busyCalendarIds
-        let wroteBusy = refreshBusy(store: store, schedule: schedule, dirty: dirty)
+        let wroteBusy = await refreshBusy(store: store, schedule: schedule, dirty: dirty)
         // Still dirty only when access exists but the write failed; without access there is nothing to retry.
         busyDirty = dirty && !wroteBusy && calendarSync.hasAccess && !isDemo
         lastBusyIds = schedule.busyCalendarIds
@@ -25,10 +25,15 @@ extension AppModel {
         pendingScheduleCause = nil
         let created = pendingNewReminderId
         pendingNewReminderId = nil
-        guard let outcome = try? ScheduleRunner.run(
-            store: store, now: Date(), calendar: calendar, cause: cause, touched: created, touchedIsNew: created != nil,
-            freshBusy: wroteBusy
-        ) else { return }
+        let calendar = calendar
+        // Off the main actor: a replan that cannot reuse the last stamp walks every open reminder.
+        let run = Task.detached {
+            try? ScheduleRunner.run(
+                store: store, now: Date(), calendar: calendar, cause: cause, touched: created, touchedIsNew: created != nil,
+                freshBusy: wroteBusy
+            )
+        }
+        guard let outcome = await run.value else { return }
         if !outcome.moves.isEmpty {
             reload()
         }
@@ -37,7 +42,7 @@ extension AppModel {
 
     /// No chosen calendar is a real empty copy, written whatever the access. Chosen calendars that cannot be read write
     /// nothing, so the CLI sees the copy age instead of "no meetings".
-    private func refreshBusy(store: ReminderStore, schedule: WorkSchedule, dirty: Bool) -> Bool {
+    private func refreshBusy(store: ReminderStore, schedule: WorkSchedule, dirty: Bool) async -> Bool {
         let ids = schedule.busyCalendarIds
         guard !isDemo, ids.isEmpty || calendarSync.hasAccess else { return false }
         let now = Date()
@@ -47,11 +52,12 @@ extension AppModel {
         if !ids.isEmpty {
             let horizon = WorkingTime(schedule: schedule, calendar: calendar).addingWorkingDays(30, to: now)
             let end = horizon ?? now.addingTimeInterval(60 * 86400)
-            guard let read = calendarSync.busyIntervals(calendarIds: ids, from: calendar.startOfDay(for: now), to: end) else {
+            guard let read = await calendarSync.busyIntervals(calendarIds: ids, from: calendar.startOfDay(for: now), to: end) else {
                 return false
             }
             intervals = read
         }
+        // Unchanged intervals only restamp the age, and the replan then reuses the last stamp.
         return (try? store.replaceBusy(intervals, at: now)) != nil
     }
 

@@ -3,7 +3,7 @@ import Foundation
 import TicklerCore
 
 /// The calendar sync's EventKit and SQLite work, off the main actor on its own event store (#25).
-/// Its only caller runs from `AppModel.requestReconcile`, which already allows one sync at a time.
+/// Its callers run from `AppModel.requestReconcile`, which already allows one run at a time.
 actor CalendarSyncer {
     typealias Status = CalendarService.Status
 
@@ -55,6 +55,28 @@ actor CalendarSyncer {
         }
         try store.updateMappings(saving: pass.mappings, deleting: pass.unmapped)
         return pass.failures
+    }
+
+    /// Start and end only: no event text and no `EKEvent` leaves the actor.
+    /// Skips all-day, free, declined and Tickler's own events.
+    func busyIntervals(calendarIds: [String], from start: Date, to end: Date) -> [DateInterval]? {
+        let events = currentStore()
+        let chosen = calendarIds.compactMap { events.calendar(withIdentifier: $0) }
+        guard !chosen.isEmpty else { return nil }
+        let predicate = events.predicateForEvents(withStart: start, end: end, calendars: chosen)
+        return events.events(matching: predicate).filter(Self.blocksTime).compactMap { event in
+            event.endDate > event.startDate ? DateInterval(start: event.startDate, end: event.endDate) : nil
+        }
+    }
+
+    private static func blocksTime(_ event: EKEvent) -> Bool {
+        if event.isAllDay || event.availability == .free || event.status == .canceled {
+            return false
+        }
+        if CalendarMarker.reminderId(url: event.url, notes: event.notes) != nil {
+            return false
+        }
+        return event.attendees?.first(where: \.isCurrentUser)?.participantStatus != .declined
     }
 
     private func removeAll(store: ReminderStore, hasAccess: Bool) throws {
