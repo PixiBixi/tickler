@@ -162,6 +162,14 @@ extension CLIContext {
         )
     }
 
+    /// Same output as `json(_:store:)` per reminder, with one links query and one runs query for the whole list.
+    func json(_ reminders: [Reminder], store: ReminderStore) throws -> [ReminderJSON] {
+        let ids = reminders.map(\.id)
+        let links = try store.links(for: ids)
+        let runs = try store.lastRuns(for: ids)
+        return reminders.map { ReminderJSON($0, links: links[$0.id] ?? [], lastRun: runs[$0.id], context: self) }
+    }
+
     func summaryLine(_ reminder: Reminder) -> String {
         "\(reminder.id)\t\(reminder.title.displaySafeLine)\t\(StrictDate.format(reminder.dueAt, calendar: calendar))"
     }

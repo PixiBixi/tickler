@@ -171,7 +171,7 @@ final class AppModel {
         guard let store else { return }
         do {
             open = try store.list(ReminderFilter(due: .all))
-            done = try Array(store.list(ReminderFilter(due: .all, status: .done)).prefix(100))
+            done = try store.list(ReminderFilter(due: .all, status: .done, limit: 100))
             links = try store.links(for: (open + done).map(\.id))
             lastRuns = try store.lastRuns(for: (open + done).map(\.id))
             now = Date()

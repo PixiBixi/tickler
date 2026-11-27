@@ -80,9 +80,15 @@ public final class ReminderStore: Sendable {
             request = request.filter(Column("dueAt") < current.addingTimeInterval(7 * 86400))
         }
         let order = filter.status == .done ? Column("doneAt").desc : Column("dueAt").asc
-        let reminders = try database.pool.read { db in try request.order(order, Column("createdAt")).fetchAll(db) }
+        request = request.order(order, Column("createdAt"))
+        // The project is derived from cwd in Swift, so the SQL LIMIT only applies without it.
+        if filter.project == nil, let limit = filter.limit {
+            request = request.limit(limit)
+        }
+        let reminders = try database.pool.read { db in try request.fetchAll(db) }
         guard let project = filter.project else { return reminders }
-        return reminders.filter { $0.project == project }
+        let matching = reminders.filter { $0.project == project }
+        return filter.limit.map { Array(matching.prefix($0)) } ?? matching
     }
 
     // MARK: Writes
