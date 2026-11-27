@@ -256,7 +256,7 @@ final class AppModel {
             reload()
         }
         // Demo recordings never touch the user's real calendar.
-        calendarSync.reconcile(store: store, calendarId: isDemo ? nil : preferences.calendarId)
+        await calendarSync.reconcile(store: store, calendarId: isDemo ? nil : preferences.calendarId)
         autoRunner.reconcile()
     }
 

@@ -17,7 +17,19 @@ public enum CalendarMarker {
         return id.isEmpty ? nil : id
     }
 
-    /// The notes written to the event: the reminder notes, its links, then the marker line.
+    /// Events by the reminder their marker names, first one kept: one scan per sync run, not one per event (#25).
+    public static func index<Event>(_ events: [Event], marker: (Event) -> (url: URL?, notes: String?)) -> [String: Event] {
+        var byReminder: [String: Event] = [:]
+        for event in events {
+            let (url, notes) = marker(event)
+            if let id = reminderId(url: url, notes: notes), byReminder[id] == nil {
+                byReminder[id] = event
+            }
+        }
+        return byReminder
+    }
+
+    /// The notes written to the event:the reminder notes, its links, then the marker line.
     public static func notes(for reminder: Reminder, links: [ReminderLink]) -> String {
         var blocks = [reminder.notes.trimmingCharacters(in: .whitespacesAndNewlines)]
         if !links.isEmpty {
