@@ -42,7 +42,7 @@ struct ListCommand: TicklerSubcommand {
         let filter = ReminderFilter(due: waiting ? .all : due.filter, status: status.status, project: project)
         let reminders = try store.list(filter).filter { !waiting || $0.isWaiting }
         if json {
-            try context.stdout.line(context.encodeJSON(reminders.map { try context.json($0, store: store) }))
+            try context.stdout.line(context.encodeJSON(context.json(reminders, store: store)))
         } else if let width = context.terminalWidth {
             context.stdout.line(ReminderTable(now: context.now(), calendar: context.calendar, width: width, color: true).render(reminders))
         } else {

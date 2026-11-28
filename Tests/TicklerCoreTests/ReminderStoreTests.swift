@@ -231,10 +231,24 @@ struct ReminderStoreSyncTests {
         let doneUnmapped = try store.add(Fixture.draft("done unmapped", at: "2026-10-01 13:00"))
         try store.markDone(doneMapped.id)
         try store.markDone(doneUnmapped.id)
-        try store.saveMapping(CalendarMapping(reminderId: doneMapped.id, eventIdentifier: "ev", calendarId: "c", syncedHash: "h"))
+        let mapping = CalendarMapping(reminderId: doneMapped.id, eventIdentifier: "ev", calendarId: "c", syncedHash: "h")
+        try store.updateMappings(saving: [mapping], deleting: [])
 
         #expect(try store.syncCandidates().map(\.id) == [open.id, doneMapped.id])
-        try store.deleteMapping(reminderId: doneMapped.id)
+        try store.updateMappings(saving: [], deleting: [doneMapped.id])
         #expect(try store.calendarMappings().isEmpty)
+    }
+
+    @Test func updateMappingsSavesAndDeletesInOneCall() throws {
+        let store = try Fixture.store()
+        let ids = try ["a", "b", "c"].map { try store.add(Fixture.draft($0, at: "2026-10-01 11:00")).id }
+        func mapping(_ index: Int, _ hash: String) -> CalendarMapping {
+            CalendarMapping(reminderId: ids[index], eventIdentifier: "ev\(index)", calendarId: "c", syncedHash: hash)
+        }
+        try store.updateMappings(saving: [mapping(0, "1"), mapping(1, "1")], deleting: [])
+        try store.updateMappings(saving: [mapping(1, "2"), mapping(2, "1")], deleting: [ids[0], "missing"])
+
+        let hashes = try Dictionary(uniqueKeysWithValues: store.calendarMappings().map { ($0.reminderId, $0.syncedHash) })
+        #expect(hashes == [ids[1]: "2", ids[2]: "1"])
     }
 }

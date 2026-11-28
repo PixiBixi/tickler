@@ -7,7 +7,7 @@ import TicklerCore
 @MainActor
 @Observable
 final class CalendarService {
-    enum Status: Equatable {
+    enum Status: Equatable, Sendable {
         case disabled
         case needsAccess
         case synced(Date)
@@ -15,6 +15,7 @@ final class CalendarService {
     }
 
     private let eventStore = EKEventStore()
+    private let syncer = CalendarSyncer()
     private(set) var status: Status = .disabled
     private(set) var calendars: [EKCalendar] = []
     /// Every event calendar, read-only ones included: the planner only reads their busy times.
@@ -86,145 +87,15 @@ final class CalendarService {
         }
     }
 
-    /// Start and end only: no event text leaves this method. Skips all-day, free, declined and Tickler's own events.
     /// Nil when there is no access or none of the chosen calendars resolves: unknown, not "no meetings".
-    func busyIntervals(calendarIds: [String], from start: Date, to end: Date) -> [DateInterval]? {
+    /// The EventKit query runs on `CalendarSyncer`, off the main actor.
+    func busyIntervals(calendarIds: [String], from start: Date, to end: Date) async -> [DateInterval]? {
         guard hasAccess else { return nil }
-        let chosen = calendarIds.compactMap { eventStore.calendar(withIdentifier: $0) }
-        guard !chosen.isEmpty else { return nil }
-        let predicate = eventStore.predicateForEvents(withStart: start, end: end, calendars: chosen)
-        return eventStore.events(matching: predicate).filter(Self.blocksTime).compactMap { event in
-            event.endDate > event.startDate ? DateInterval(start: event.startDate, end: event.endDate) : nil
-        }
+        return await syncer.busyIntervals(calendarIds: calendarIds, from: start, to: end)
     }
 
-    private static func blocksTime(_ event: EKEvent) -> Bool {
-        if event.isAllDay || event.availability == .free || event.status == .canceled {
-            return false
-        }
-        if CalendarMarker.reminderId(url: event.url, notes: event.notes) != nil {
-            return false
-        }
-        return event.attendees?.first(where: \.isCurrentUser)?.participantStatus != .declined
-    }
-
-    func reconcile(store: ReminderStore, calendarId: String?) {
-        do {
-            guard let calendarId else {
-                try removeAll(store: store)
-                status = .disabled
-                return
-            }
-            guard hasAccess else {
-                status = .needsAccess
-                return
-            }
-            guard let calendar = eventStore.calendar(withIdentifier: calendarId) else {
-                status = .failed(String(localized: "The chosen calendar no longer exists. Pick another one in Settings."))
-                return
-            }
-            let reminders = try store.syncCandidates()
-            let links = try store.links(for: reminders.map(\.id))
-            let actions = try CalendarPlanner.plan(
-                reminders: reminders, links: links, mappings: store.calendarMappings(), calendarId: calendarId, now: Date()
-            )
-            // One event that cannot be written must not block the others; its mapping stays and it is retried next time.
-            var failures: [String] = []
-            for action in actions {
-                do {
-                    try apply(action, calendar: calendar, links: links, store: store)
-                } catch {
-                    failures.append(error.localizedDescription)
-                }
-            }
-            if let first = failures.first {
-                status = .failed(String(localized: "\(failures.count) calendar events could not be written: \(first)"))
-            } else {
-                status = .synced(Date())
-            }
-        } catch {
-            eventStore.reset()
-            status = .failed(error.localizedDescription)
-        }
-    }
-
-    private func apply(_ action: CalendarAction, calendar: EKCalendar, links: [String: [ReminderLink]], store: ReminderStore) throws {
-        switch action {
-        case let .create(reminder, hash):
-            // A previous run may have saved the event and failed before recording it: reuse it rather than duplicate it.
-            let event = findEvent(reminderId: reminder.id, in: calendar) ?? EKEvent(eventStore: eventStore)
-            if event.calendar == nil {
-                event.calendar = calendar
-            }
-            try write(event, reminder: reminder, links: links[reminder.id] ?? [], hash: hash, store: store)
-        case let .update(reminder, eventIdentifier, hash):
-            // An event deleted by hand comes back only because the reminder itself changed.
-            let event = eventStore.event(withIdentifier: eventIdentifier)
-                ?? findEvent(reminderId: reminder.id, in: calendar)
-                ?? EKEvent(eventStore: eventStore)
-            if event.calendar == nil {
-                event.calendar = calendar
-            }
-            try write(event, reminder: reminder, links: links[reminder.id] ?? [], hash: hash, store: store)
-        case let .delete(eventIdentifier, reminderId):
-            let owner = eventStore.calendars(for: .event)
-            if let event = eventStore.event(withIdentifier: eventIdentifier) ?? owner.lazy.compactMap({ self.findEvent(
-                reminderId: reminderId,
-                in: $0
-            ) }).first {
-                try eventStore.remove(event, span: .thisEvent, commit: true)
-            }
-            try store.deleteMapping(reminderId: reminderId)
-        }
-    }
-
-    /// Saved one by one: the event identifier is only reliable once committed.
-    private func write(_ event: EKEvent, reminder: Reminder, links: [ReminderLink], hash: String, store: ReminderStore) throws {
-        fill(event, reminder: reminder, links: links)
-        try eventStore.save(event, span: .thisEvent, commit: true)
-        try store.saveMapping(CalendarMapping(
-            reminderId: reminder.id,
-            eventIdentifier: event.eventIdentifier,
-            calendarId: event.calendar.calendarIdentifier,
-            syncedHash: hash
-        ))
-    }
-
-    /// The event carrying this reminder's marker, for when its stored identifier went stale.
-    private func findEvent(reminderId: String, in calendar: EKCalendar) -> EKEvent? {
-        let now = Date()
-        let predicate = eventStore.predicateForEvents(
-            withStart: now.addingTimeInterval(-CalendarPlanner.pastWindow - 86400),
-            end: now.addingTimeInterval(CalendarPlanner.futureWindow + 86400),
-            calendars: [calendar]
-        )
-        return eventStore.events(matching: predicate).first {
-            CalendarMarker.reminderId(url: $0.url, notes: $0.notes) == reminderId
-        }
-    }
-
-    private func removeAll(store: ReminderStore) throws {
-        let mappings = try store.calendarMappings()
-        guard !mappings.isEmpty else { return }
-        if hasAccess {
-            for mapping in mappings {
-                if let event = eventStore.event(withIdentifier: mapping.eventIdentifier) {
-                    try eventStore.remove(event, span: .thisEvent, commit: true)
-                }
-            }
-        }
-        for mapping in mappings {
-            try store.deleteMapping(reminderId: mapping.reminderId)
-        }
-    }
-
-    private func fill(_ event: EKEvent, reminder: Reminder, links: [ReminderLink]) {
-        event.title = reminder.title
-        event.startDate = reminder.dueAt
-        event.endDate = reminder.dueAt.addingTimeInterval(Double(reminder.durationMinutes) * 60)
-        event.availability = .free
-        event.alarms = nil
-        event.url = URL(string: CalendarMarker.link(for: reminder.id))
-        event.notes = CalendarMarker.notes(for: reminder, links: links)
+    /// #25: the EventKit and SQLite work runs on `CalendarSyncer`, only the status comes back to the main actor.
+    func reconcile(store: ReminderStore, calendarId: String?) async {
+        status = await syncer.reconcile(store: store, calendarId: calendarId, hasAccess: hasAccess)
     }
 }

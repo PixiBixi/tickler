@@ -137,7 +137,7 @@ struct ScheduleStoreTests {
         let store = try Fixture.store()
         let r = try store.add(Fixture.draft("A", at: "2026-10-01 14:00"))
         let interval = DateInterval(start: Fixture.date("2026-10-01 14:00"), end: Fixture.date("2026-10-01 15:00"))
-        try store.recordConflicts([ScheduleConflict(reminderId: r.id, interval: interval)], at: Fixture.now)
+        _ = try store.recordConflicts([ScheduleConflict(reminderId: r.id, interval: interval)], at: Fixture.now)
         #expect(try store.conflictedReminderIds(endingAfter: Fixture.date("2026-10-01 14:30")) == [r.id])
         #expect(try store.conflictedReminderIds(endingAfter: Fixture.date("2026-10-01 15:00")).isEmpty)
     }

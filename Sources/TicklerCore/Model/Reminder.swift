@@ -173,11 +173,14 @@ public struct ReminderFilter: Sendable, Equatable {
     public var due: Due
     public var status: Reminder.Status
     public var project: String?
+    /// Keeps the first rows of the sort order (applied after the project filter).
+    public var limit: Int?
 
-    public init(due: Due = .all, status: Reminder.Status = .open, project: String? = nil) {
+    public init(due: Due = .all, status: Reminder.Status = .open, project: String? = nil, limit: Int? = nil) {
         self.due = due
         self.status = status
         self.project = project
+        self.limit = limit
     }
 }
 

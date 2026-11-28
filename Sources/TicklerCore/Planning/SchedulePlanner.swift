@@ -11,6 +11,9 @@ public struct SchedulePlan: Equatable, Sendable {
     public var late: Set<String>
     public var unplaced: Set<String>
     public var conflicts: [ScheduleConflict]
+    /// Same inputs give the same plan before this instant: a planned reminder then reaches the freeze,
+    /// or the horizon of one that found no slot moves to the next day.
+    public var stableUntil: Date = .distantFuture
 
     public init(
         placements: [Placement] = [],
@@ -43,9 +46,30 @@ public enum SchedulePlanner {
     }
 
     private struct State {
-        var blockers: [DateInterval]
-        /// The lunch gap of each day, by the day's window start; computed once per plan.
-        var lunch: [Date: DateInterval?] = [:]
+        var blockers: BlockerIndex
+        /// Each day walked, by its midnight, and the next one: computed once per plan.
+        var days: [Date: WorkDay?] = [:]
+        var nextDays: [Date: Date?] = [:]
+    }
+
+    /// A working day: its window, its midnight (the 5 minute grid origin) and its lunch gap.
+    private struct WorkDay {
+        let window: DateInterval
+        let midnight: Date
+        let lunch: DateInterval?
+
+        /// The latest end among the blockers and the lunch gap overlapping `[start, end)`.
+        func latestEnd(overlappingFrom start: Date, to end: Date, in index: BlockerIndex) -> Date? {
+            let latest = index.latestEnd(overlappingFrom: start, to: end)
+            guard let lunch, lunch.duration > 0, lunch.start < end, lunch.end > start else { return latest }
+            return max(latest ?? lunch.end, lunch.end)
+        }
+
+        /// `roundedUp` without a calendar call. A date past this day is past the window too, so the fit fails either way.
+        func roundedUp(_ date: Date) -> Date {
+            let seconds = date.timeIntervalSince(midnight)
+            return midnight.addingTimeInterval((seconds / gridSeconds).rounded(.up) * gridSeconds)
+        }
     }
 
     private struct Split {
@@ -69,20 +93,21 @@ public enum SchedulePlanner {
         // Only a reminder created by this very command skips the freeze and the lead.
         let newId = touchedIsNew ? touched : nil
         let split = split(open, now: now, scope: scope, newId: newId, mode: schedule.mode)
-        // Outside auto nothing moves away from a meeting, so a pinned flexible reminder gets the in-app mark too.
-        let watched = schedule.mode == .auto ? split.held : split.held + split.staying
-        var result = SchedulePlan(conflicts: conflicts(of: watched, busy: busy, schedule: schedule, now: now))
+        var result = SchedulePlan(conflicts: conflicts(of: watched(split, mode: schedule.mode), busy: busy, schedule: schedule, now: now))
         let time = WorkingTime(schedule: schedule, calendar: calendar)
         guard time.isUsable else {
             // Unusable settings: nothing can be placed, nothing is moved.
             result.unplaced = Set(split.planned.map(\.id))
+            for reminder in split.planned {
+                result.stableUntil = min(result.stableUntil, reminder.dueAt.addingTimeInterval(-freezeSeconds))
+            }
             return result
         }
         let heldSpans = split.held.map { span($0, schedule: schedule) }
         let environment = Environment(
             schedule: schedule, calendar: calendar, time: time, now: now, fixedBlockers: (busy + heldSpans).sorted { $0.start < $1.start }
         )
-        var state = State(blockers: busy + heldSpans + split.staying.map { span($0, schedule: schedule) })
+        var state = State(blockers: BlockerIndex(busy + heldSpans + split.staying.map { span($0, schedule: schedule) }))
         for reminder in split.staying where isLate(reminder, start: reminder.dueAt) {
             result.late.insert(reminder.id)
         }
@@ -96,7 +121,20 @@ public enum SchedulePlanner {
         return result
     }
 
+    /// The conflicts a full-scope `plan` reports, without placing anything: a skipped run still sees new ones.
+    static func conflicts(reminders: [Reminder], busy: [DateInterval], schedule: WorkSchedule, now: Date) -> [ScheduleConflict] {
+        let open = reminders.filter { $0.status == .open }
+        let busy = busy.filter { $0.duration > 0 }.sorted { $0.start < $1.start }
+        let split = split(open, now: now, scope: .all, newId: nil, mode: schedule.mode)
+        return conflicts(of: watched(split, mode: schedule.mode), busy: busy, schedule: schedule, now: now)
+    }
+
     // MARK: Steps
+
+    /// Outside auto nothing moves away from a meeting, so a pinned flexible reminder gets the in-app mark too.
+    private static func watched(_ split: Split, mode: SchedulingMode) -> [Reminder] {
+        mode == .auto ? split.held : split.held + split.staying
+    }
 
     private static func split(_ open: [Reminder], now: Date, scope: PlanScope, newId: String?, mode: SchedulingMode) -> Split {
         var split = Split()
@@ -151,13 +189,19 @@ public enum SchedulePlanner {
             result.unplaced.insert(reminder.id)
             let floor = environment.now.addingTimeInterval(lead)
             let kept = reminder.dueAt >= floor ? reminder.dueAt : roundedUp(floor, calendar: environment.calendar)
-            state.blockers.append(DateInterval(start: kept, duration: TimeInterval(minutes * 60)))
+            let horizonMoves = nextDay(after: environment.calendar.startOfDay(for: bound), calendar: environment.calendar, state: &state)
+            result.stableUntil = min(
+                result.stableUntil, kept.addingTimeInterval(-freezeSeconds),
+                (horizonMoves ?? environment.now).addingTimeInterval(-freezeSeconds)
+            )
+            state.blockers.insert(DateInterval(start: kept, duration: TimeInterval(minutes * 60)))
             if kept != reminder.dueAt {
                 result.placements.append(Placement(reminderId: reminder.id, from: reminder.dueAt, to: kept))
             }
             return
         }
-        state.blockers.append(DateInterval(start: start, duration: TimeInterval(minutes * 60)))
+        state.blockers.insert(DateInterval(start: start, duration: TimeInterval(minutes * 60)))
+        result.stableUntil = min(result.stableUntil, start.addingTimeInterval(-freezeSeconds))
         if isLate(reminder, start: start) {
             result.late.insert(reminder.id)
         }
@@ -177,13 +221,15 @@ public enum SchedulePlanner {
             now: environment.now,
             fixedBlockers: []
         )
-        var state = State(blockers: [])
+        var state = State(blockers: BlockerIndex())
         let minutes = minutes(of: reminder, schedule: schedule)
         let bound = max(reminder.earliestStart, environment.now)
         guard let start = firstSlot(minutes: minutes, from: bound, environment: bare, state: &state) else {
             result.unplaced.insert(reminder.id)
+            result.stableUntil = min(result.stableUntil, environment.now)
             return
         }
+        result.stableUntil = min(result.stableUntil, start.addingTimeInterval(-freezeSeconds))
         if isLate(reminder, start: start) {
             result.late.insert(reminder.id)
         }
@@ -202,40 +248,52 @@ public enum SchedulePlanner {
         var workingDays = 0
         var calendarDays = 0
         while workingDays < horizonWorkingDays, calendarDays < horizonWorkingDays * WorkingTime.maxGapDays {
-            if let window = environment.time.window(on: day) {
+            if let workDay = workDay(on: day, environment: environment, state: &state) {
                 workingDays += 1
-                var dayBlockers = state.blockers
-                if state.lunch[window.start] == nil {
-                    state.lunch[window.start] = .some(lunchGap(in: window, environment: environment))
-                }
-                if let lunch = state.lunch[window.start].flatMap(\.self) {
-                    dayBlockers.append(lunch)
-                }
-                if let start = firstFit(minutes: minutes, in: window, from: bound, blockers: dayBlockers, calendar: calendar) {
+                if let start = firstFit(minutes: minutes, on: workDay, from: bound, blockers: state.blockers) {
                     return start
                 }
             }
-            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { return nil }
+            guard let next = nextDay(after: day, calendar: calendar, state: &state) else { return nil }
             day = next
             calendarDays += 1
         }
         return nil
     }
 
-    private static func firstFit(
-        minutes: Int,
-        in window: DateInterval,
-        from bound: Date,
-        blockers: [DateInterval],
-        calendar: Calendar
-    ) -> Date? {
+    private static func workDay(on day: Date, environment: Environment, state: inout State) -> WorkDay? {
+        if let cached = state.days[day] {
+            return cached
+        }
+        let workDay = environment.time.window(on: day).map { window in
+            WorkDay(
+                window: window,
+                midnight: environment.calendar.startOfDay(for: window.start),
+                lunch: lunchGap(in: window, environment: environment)
+            )
+        }
+        state.days[day] = .some(workDay)
+        return workDay
+    }
+
+    private static func nextDay(after day: Date, calendar: Calendar, state: inout State) -> Date? {
+        if let cached = state.nextDays[day] {
+            return cached
+        }
+        let next = calendar.date(byAdding: .day, value: 1, to: day)
+        state.nextDays[day] = .some(next)
+        return next
+    }
+
+    /// The earliest grid start from which `minutes` fit before the window ends, jumping past the latest blocker hit.
+    private static func firstFit(minutes: Int, on day: WorkDay, from bound: Date, blockers: BlockerIndex) -> Date? {
         let length = TimeInterval(minutes * 60)
-        var candidate = roundedUp(max(bound, window.start), calendar: calendar)
-        while candidate.addingTimeInterval(length) <= window.end {
-            let end = candidate.addingTimeInterval(length)
-            let hits = blockers.filter { $0.duration > 0 && $0.start < end && $0.end > candidate }
-            guard let latest = hits.map(\.end).max() else { return candidate }
-            candidate = roundedUp(latest, calendar: calendar)
+        var candidate = day.roundedUp(max(bound, day.window.start))
+        while candidate.addingTimeInterval(length) <= day.window.end {
+            guard let latest = day.latestEnd(overlappingFrom: candidate, to: candidate.addingTimeInterval(length), in: blockers) else {
+                return candidate
+            }
+            candidate = day.roundedUp(latest)
         }
         return nil
     }

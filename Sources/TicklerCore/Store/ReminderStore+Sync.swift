@@ -18,11 +18,14 @@ public extension ReminderStore {
         try database.pool.read { db in try CalendarMapping.fetchAll(db) }
     }
 
-    func saveMapping(_ mapping: CalendarMapping) throws {
-        try database.pool.write { db in try mapping.save(db) }
-    }
-
-    func deleteMapping(reminderId: String) throws {
-        _ = try database.pool.write { db in try CalendarMapping.deleteOne(db, key: reminderId) }
+    /// One transaction per sync run rather than one per event (#25).
+    func updateMappings(saving: [CalendarMapping], deleting reminderIds: [String]) throws {
+        guard !saving.isEmpty || !reminderIds.isEmpty else { return }
+        try database.pool.write { db in
+            _ = try CalendarMapping.deleteAll(db, keys: reminderIds)
+            for mapping in saving {
+                try mapping.save(db)
+            }
+        }
     }
 }

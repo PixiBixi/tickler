@@ -55,6 +55,15 @@ public enum ScheduleRunner {
         }
         let read = try store.list(ReminderFilter(due: .all, status: .open))
         let schedule = try store.schedule()
+        let pending = try scope == .all && !store.isScheduleMigrated()
+        // Only a full-scope run leaves or reuses a stamp; a touched reminder always replans.
+        let stamping = scope == .all && !pending
+        let inputs = PlanInputs(reminders: read, busy: input.busy, schedule: schedule, calendar: calendar)
+        let fingerprint = try stamping && touched == nil ? inputs.fingerprint() : nil
+        if let fingerprint, let stamp = try store.planStamp(), stamp.fingerprint == fingerprint, now < stamp.validUntil {
+            let conflicts = SchedulePlanner.conflicts(reminders: read, busy: input.busy, schedule: schedule, now: now)
+            return ScheduleOutcome(late: Set(stamp.late), conflicts: conflicts, warning: input.warning)
+        }
         let plan = SchedulePlanner.plan(
             reminders: read,
             busy: input.busy,
@@ -65,7 +74,6 @@ public enum ScheduleRunner {
             touched: touched,
             touchedIsNew: touchedIsNew
         )
-        let pending = try scope == .all && !store.isScheduleMigrated()
         // The one-time repack moves reminders: only automatic mode may, the others just mark it done.
         let migrating = pending && schedule.mode == .auto
         let moves = try store.place(
@@ -81,9 +89,26 @@ public enum ScheduleRunner {
         if pending {
             try store.markScheduleMigrated()
         }
+        if stamping {
+            try stamp(plan, inputs: inputs, store: store, now: now)
+        }
         return ScheduleOutcome(
             moves: moves, late: plan.late, unplaced: plan.unplaced, conflicts: plan.conflicts, warning: input.warning
         )
+    }
+
+    /// Stamps the state the placements lead to. Replanning it before `stableUntil` gives the same plan with no move:
+    /// each placed reminder keeps its slot while the bound `now + 15 min` has not passed it.
+    private static func stamp(_ plan: SchedulePlan, inputs: PlanInputs, store: ReminderStore, now: Date) throws {
+        let validUntil = min(plan.stableUntil, now.addingTimeInterval(PlanStamp.maxReuseSeconds))
+        guard validUntil > now else { return }
+        let byId = Dictionary(plan.placements.map { ($0.reminderId, $0) }, uniquingKeysWith: { first, _ in first })
+        var after = inputs
+        after.reminders = inputs.reminders.map { reminder in
+            byId[reminder.id].map { ReminderStore.placed(reminder, by: $0, at: now) } ?? reminder
+        }
+        let fingerprint = try after.fingerprint()
+        try store.setPlanStamp(PlanStamp(fingerprint: fingerprint, validUntil: validUntil, late: plan.late.sorted()))
     }
 
     static func busyChoice(store: ReminderStore, now: Date, freshBusy: Bool = false) throws -> BusyChoice {

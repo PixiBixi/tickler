@@ -30,6 +30,11 @@ public enum CalendarPlanner {
     public static let pastWindow: TimeInterval = 7 * 86400
     public static let futureWindow: TimeInterval = 60 * 86400
 
+    /// Where an event written for a reminder can sit: the sync window plus a day on each side.
+    public static func searchWindow(now: Date) -> DateInterval {
+        DateInterval(start: now.addingTimeInterval(-pastWindow - 86400), end: now.addingTimeInterval(futureWindow + 86400))
+    }
+
     public static func contentHash(_ reminder: Reminder, links: [ReminderLink]) -> String {
         let due = String(Int(reminder.dueAt.timeIntervalSince1970))
         let parts = [reminder.title, reminder.notes, due, String(reminder.durationMinutes)] + links.map(\.url)
